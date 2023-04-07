@@ -68,7 +68,7 @@ Pull Grammar
 ### Grammar Syntax
 
 ```
-<pre class="example" id="org34c1e85">
+
 '' literal
 "" string
 [] = list or vector
@@ -85,7 +85,7 @@ Pull Grammar
 ### Pull Pattern Grammar
 
 ```
-<pre class="example" id="orgd590cb1" linkedtable="true">pattern             = [attr-spec+]attr-spec           = attr-name | wildcard | map-spec | attr-exprattr-name           = an edn keyword that names an attrmap-spec            = { ((attr-name | attr-expr) (pattern | recursion-limit))+ }attr-expr           = [attr-name attr-option+] | legacy-attr-expras-expr             = [attr-name :as any-value]limit-expr          = [attr-name :limit (positive-number | nil)] default-expr        = [attr-name :default any-value]xform-expr          = [attr-name :xform symbol]attr-option         = as-expr | limit-expr | default-expr | xform-exprwildcard            = "*" or '*'recursion-limit     = positive-number | '...'legacy-attr-expr    = legacy-limit-expr | legacy-default-exprlegacy-limit-expr   = [("limit" | 'limit') attr-name (positive-number | nil)]legacy-default-expr = [("default" | 'default') attr-name any-value]
+pattern             = [attr-spec+]attr-spec           = attr-name | wildcard | map-spec | attr-exprattr-name           = an edn keyword that names an attrmap-spec            = { ((attr-name | attr-expr) (pattern | recursion-limit))+ }attr-expr           = [attr-name attr-option+] | legacy-attr-expras-expr             = [attr-name :as any-value]limit-expr          = [attr-name :limit (positive-number | nil)] default-expr        = [attr-name :default any-value]xform-expr          = [attr-name :xform symbol]attr-option         = as-expr | limit-expr | default-expr | xform-exprwildcard            = "*" or '*'recursion-limit     = positive-number | '...'legacy-attr-expr    = legacy-limit-expr | legacy-default-exprlegacy-limit-expr   = [("limit" | 'limit') attr-name (positive-number | nil)]legacy-default-expr = [("default" | 'default') attr-name any-value]
 ```
 
 Terminals such as "limit" can be strings, but where languages have a symbol type you should prefer the idiomatic symbolic type, e.g. `(limit :friends 100)` in Clojure instead of `("limit" "friends" 100)`.
@@ -102,7 +102,7 @@ Patterns
 A pattern is a list of Attribute Specifications.
 
 ```
-<pre class="example" id="org3b051a9">
+
 pattern            = [attr-spec+]
 ```
 
@@ -114,7 +114,7 @@ Attribute Specifications
 ------------------------
 
 ```
-<pre class="example" id="org4f4f295">
+
 attr-spec           = attr-name | wildcard | map-spec | attr-expr
 attr-expr           = [attr-name attr-option+] | legacy-attr-expr
 attr-option         = as-expr | limit-expr | default-expr | xform-expr
@@ -135,7 +135,7 @@ Attribute Names
 ---------------
 
 ```
-<pre class="example" id="org7c66f4a">
+
 attr-name          = an edn keyword that names an attr
 ```
 
@@ -279,7 +279,7 @@ Map Specification
 -----------------
 
 ```
-<pre class="example" id="orgabfabd7">
+
 map-spec           = { ((attr-name | limit-expr) (pattern | recursion-limit))+ }
 limit-expr         = [("limit" | 'limit') attr-name (positive-number | nil)]
 recursion-limit    = positive-number | '...'
@@ -368,7 +368,7 @@ Attribute Spec
 --------------
 
 ```
-<pre class="example" id="org6025f08">
+
 attr-spec           = attr-name | wildcard | map-spec | attr-expr | xform-expr
 attr-expr           = [attr-name attr-option+] | legacy-attr-expr
 attr-option         = as-expr | limit-expr | default-expr
@@ -388,7 +388,7 @@ Note that the pattern appears in a seq. This necessitates that the whole clause 
 ----------
 
 ```
-<pre class="example" id="org8f54b08">
+
 [attr-name :as any-value]
 ```
 
@@ -427,7 +427,7 @@ The following pattern uses an :as option to pull an `:artist/name`, replacing th
 -------------
 
 ```
-<pre class="example" id="orgecfe862">
+
 [attr-name :limit (positive-number | nil)]
 ```
 
@@ -564,7 +564,7 @@ This pattern below returns all of Led Zeppelin's tracks, without limit:
 ---------------
 
 ```
-<pre class="example" id="org8702838">
+
 [attr-name :default any-value]
 ```
 
@@ -677,7 +677,7 @@ Wildcards
 ---------
 
 ```
-<pre class="example" id="org373b09d">
+
 wildcard           = '*'
 ```
 
@@ -776,7 +776,7 @@ Recursion Limits
 ----------------
 
 ```
-<pre class="example" id="org67af14b">
+
 recursion-limit    = positive-number | '...'
 map-spec           = { ((attr-name | limit-expr) (pattern | recursion-limit))+ }
 ```
@@ -1006,7 +1006,7 @@ Legacy Attribute Expressions
 > NOTE: [Attributes Specifications](#attribute-with-options) provides a superset of the functionality of Attribute Expressions and is preferred, however `limit` and `default` Attribute Expressions will continue to be supported.
 
 ```
-<pre class="example" id="org44317a0">
+
 attr-expr           = [attr-name attr-option+] | legacy-attr-expr
 legacy-attr-expr    = legacy-limit-expr | legacy-default-expr
 legacy-limit-expr   = [("limit" | 'limit') attr-name (positive-number | nil)]
@@ -1023,7 +1023,7 @@ Legacy Limit Expression
 -----------------------
 
 ```
-<pre class="example" id="orgd39f35c">
+
 legacy-limit-expr   = [("limit" | 'limit') attr-name (positive-number | nil)]
 ```
 
@@ -1037,7 +1037,7 @@ Legacy Default Expressions
 --------------------------
 
 ```
-<pre class="example" id="org6855225">
+
 legacy-default-expr = [("default" | 'default') attr-name any-value]
 ```
 

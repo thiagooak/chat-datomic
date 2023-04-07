@@ -28,14 +28,14 @@ You will typically launch the SQL CLI with three arguments:
 The `catalog` and `schema` arguments are defaults for queries that do not explicitly name a catalog and schema, so that in your queries you can use table names directly, e.g. `country` instead of `tomhanks.mbrainz.country`.
 
 ```
-<pre class="example" id="org575d788">
+
 ./presto --server localhost:8989 --catalog <my-catalog> --schema <db-name>
 ```
 
 You should be presented with a SQL prompt:
 
 ```
-<pre class="example" id="orgb65560a">
+
 presto>
 ```
 
@@ -49,7 +49,7 @@ Validating Configuration
 The examples below presume a Datomic system named `tomhanks` with a database named `mbrainz`, and a SQL CLI launched with:
 
 ```
-<pre class="example" id="orga53ff92">
+
 ./presto --server localhost:8989 --catalog tomhanks --schema mbrainz
 ```
 
@@ -88,7 +88,7 @@ You should see a `system`catalog, plus one entry per [catalog properties file](a
 The following query shows all the [schemas](analytics-concepts.html#sql-mapping) in the default catalog:
 
 ```
-<pre class="example">
+
 show schemas;
 ```
 

@@ -664,7 +664,7 @@ If you are not using SSL to access Cassandra, Datomic configures a KeyStore for 
 If the console output includes a line of the form:
 
 ```
-<pre class="example" id="orgcd83e1a">
+
 System started {URI}
 ```
 
@@ -738,7 +738,7 @@ Once you have verified that your transactor is working with your storage configu
 To enable transparent use of memcached, first ensure that your transactor is configured with a paid Datomic Pro license key. Then, uncomment the *memcached* entry in your transactor properties file, and set its value to a comma-delimited list of host:port pairs naming your memcached endpoints:
 
 ```
-<pre class="example" id="org35ff01a">
+
 memcached=m1.example.com:11211,m2.example.com:11211
 ```
 
@@ -767,7 +767,7 @@ Typical error message when unable to connect to Cassandra via SSL:
 noslide
 
 ```
-<pre class="example" id="org35d03af">
+
 com.datastax.driver.core.exceptions.NoHostAvailableException: All host(s) tried for query failed
 ```
 
@@ -776,6 +776,6 @@ If you see the following error message, this indicates that the transactor and p
 noslide
 
 ```
-<pre class="example" id="org749aa1d">
+
 HornetQNotConnectedException HQ119007: Cannot connect to server(s). Tried with all available servers.  org.hornetq.core.client.impl.ServerLocatorImpl.createSessionFactory
 ```

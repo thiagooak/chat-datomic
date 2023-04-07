@@ -21,7 +21,7 @@ Query Grammar
 ### Syntax Used In Grammar
 
 ```
-<pre class="example" id="orge05abe3">
+
 '' literal
 "" string
 [] = list or vector
@@ -39,7 +39,7 @@ Query Grammar
 ### Query Arg Grammar
 
 ```
-<pre class="example" id="orgcd6db6f" linkedtable="true">query             = [find-spec return-map-spec? with-clause? inputs? where-clauses?]find-spec         = ':find' find-relreturn-map-spec   = (return-keys | return-syms | return-strs)find-rel          = find-elem+return-keys       = ':keys' symbol+return-syms       = ':syms' symbol+return-strs       = ':strs' symbol+find-elem         = (variable | pull-expr | aggregate)pull-expr         = ['pull' variable pattern]pattern           = (pattern-name | pattern-data-literal)pattern-name      = plain-symbolaggregate         = [aggregate-fn-name fn-arg+]fn-arg            = (variable | constant | src-var)with-clause       = ':with' variable+where-clauses     = ':where' clause+inputs            = ':in' (src-var | binding | pattern-name | rules-var)+src-var           = symbol starting with "$"variable          = symbol starting with "?"rules-var         = the symbol plain-symbol      = symbol that does not begin with "$", "?", or "%"and-clause        = [ 'and' clause+ ]expression-clause = (data-pattern | pred-expr | fn-expr | rule-expr)rule-expr         = [ src-var? rule-name (variable | constant | '_')+]not-clause        = [ src-var? 'not' clause+ ]not-join-clause   = [ src-var? 'not-join' [variable+] clause+ ]or-clause         = [ src-var? 'or' (clause | and-clause)+]or-join-clause    = [ src-var? 'or-join' [variable+] (clause | and-clause)+ ]rule-vars         = [variable+ | ([variable+] variable*)]clause            = (not-clause | not-join-clause | or-clause | or-join-clause | expression-clause)data-pattern      = [ src-var? (variable | constant | '_')+ ]constant          = any non-variable data literalpred-expr         = [ [pred fn-arg+] ]fn-expr           = [ [fn fn-arg+] binding]binding           = (bind-scalar | bind-tuple | bind-coll | bind-rel)bind-scalar       = variablebind-tuple        = [ (variable | '_')+]bind-coll         = [variable '...']bind-rel          = = [ [(variable | '_')+] ]
+query             = [find-spec return-map-spec? with-clause? inputs? where-clauses?]find-spec         = ':find' find-relreturn-map-spec   = (return-keys | return-syms | return-strs)find-rel          = find-elem+return-keys       = ':keys' symbol+return-syms       = ':syms' symbol+return-strs       = ':strs' symbol+find-elem         = (variable | pull-expr | aggregate)pull-expr         = ['pull' variable pattern]pattern           = (pattern-name | pattern-data-literal)pattern-name      = plain-symbolaggregate         = [aggregate-fn-name fn-arg+]fn-arg            = (variable | constant | src-var)with-clause       = ':with' variable+where-clauses     = ':where' clause+inputs            = ':in' (src-var | binding | pattern-name | rules-var)+src-var           = symbol starting with "$"variable          = symbol starting with "?"rules-var         = the symbol plain-symbol      = symbol that does not begin with "$", "?", or "%"and-clause        = [ 'and' clause+ ]expression-clause = (data-pattern | pred-expr | fn-expr | rule-expr)rule-expr         = [ src-var? rule-name (variable | constant | '_')+]not-clause        = [ src-var? 'not' clause+ ]not-join-clause   = [ src-var? 'not-join' [variable+] clause+ ]or-clause         = [ src-var? 'or' (clause | and-clause)+]or-join-clause    = [ src-var? 'or-join' [variable+] (clause | and-clause)+ ]rule-vars         = [variable+ | ([variable+] variable*)]clause            = (not-clause | not-join-clause | or-clause | or-join-clause | expression-clause)data-pattern      = [ src-var? (variable | constant | '_')+ ]constant          = any non-variable data literalpred-expr         = [ [pred fn-arg+] ]fn-expr           = [ [fn fn-arg+] binding]binding           = (bind-scalar | bind-tuple | bind-coll | bind-rel)bind-scalar       = variablebind-tuple        = [ (variable | '_')+]bind-coll         = [variable '...']bind-rel          = = [ [(variable | '_')+] ]
 ```
 
 See [the pull pattern grammar](query-pull.html#pull-grammar) for the description of the pattern-data-literal rule.
@@ -53,7 +53,7 @@ See [the pull pattern grammar](query-pull.html#pull-grammar) for the description
 Note that the rule grammar reuses some terms from the query grammar above.
 
 ```
-<pre class="example" id="org58728ef">
+
 rule                       = [ [rule-head clause+]+ ]
 rule-head                  = [rule-name rule-vars]
 rule-name                  = plain-symbol
@@ -69,7 +69,7 @@ Queries
 -------
 
 ```
-<pre class="example" id="org2cedaf9">
+
 query                      = [find-spec with-clause? inputs? where-clauses?]
 ```
 
@@ -134,7 +134,7 @@ Find Specs
 ----------
 
 ```
-<pre class="example" id="org6f6a70a">
+
 find-spec                  = ':find' find-rel
 find-rel                   = find-elem+
 find-elem                  = (variable | pull-expr | aggregate)
@@ -156,7 +156,7 @@ Variables
 ---------
 
 ```
-<pre class="example" id="org46d041b">
+
 variable                   = symbol starting with "?"
 ```
 
@@ -214,7 +214,7 @@ Pull Expressions
 ----------------
 
 ```
-<pre class="example" id="orgc0d0106">
+
 pull-expr                  = ['pull' variable pattern]
 pattern                    = (pattern-name | pattern-data-literal)
 ```
@@ -408,7 +408,7 @@ Aggregates
 ----------
 
 ```
-<pre class="example" id="org4c454a5">
+
 aggregate                  = [aggregate-fn-name fn-arg+]
 fn-arg                     = (variable | constant | src-var)
 ```
@@ -664,7 +664,7 @@ Inputs
 ------
 
 ```
-<pre class="example" id="org6861f86">
+
 inputs                     = ':in' (src-var | binding | pattern-name | rules-var)+
 ```
 
@@ -792,7 +792,7 @@ Binding FormBinds?ascalar\[?a ?b\]tuple\[?a …\]collection\[ \[?a ?b \] \]relat
 ### Tuple Binding
 
 ```
-<pre class="example" id="orgd44d51b">
+
 bind-tuple                 = [ (variable | '_')+]
 ```
 
@@ -838,7 +838,7 @@ A tuple binding binds a set of variables to a single value each, passed in as a 
 ### Collection Binding
 
 ```
-<pre class="example" id="org40a9e60">
+
 bind-coll                  = [variable '...']
 ```
 
@@ -885,7 +885,7 @@ A collection binding binds a single variable to multiple values passed in as a c
 ### Relation Binding
 
 ```
-<pre class="example" id="orgf9a11e6">
+
 bind-rel                   = [ [(variable | '_')+] ]
 ```
 
@@ -938,7 +938,7 @@ Where Clauses
 -------------
 
 ```
-<pre class="example" id="orga3af5aa">
+
 where-clauses              = ':where' clause+
 clause                     = (not-clause | not-join-clause | or-clause | or-join-clause | expression-clause)
 expression-clause          = (data-pattern | pred-expr | fn-expr | rule-expr)
@@ -1042,7 +1042,7 @@ Data Patterns
 -------------
 
 ```
-<pre class="example" id="org4a55b5e">
+
 data-pattern               = [ src-var? (variable | constant | '_')+ ]
 ```
 
@@ -1148,7 +1148,7 @@ Predicates
 ----------
 
 ```
-<pre class="example" id="org12aed31">
+
 pred-expr                  = [ [pred fn-arg+] ]
 ```
 
@@ -1228,7 +1228,7 @@ Functions
 ---------
 
 ```
-<pre class="example" id="orgd17418b">
+
 fn-expr                    = [ [fn fn-arg+] binding]
 ```
 
@@ -1721,7 +1721,7 @@ Not Clauses
 -----------
 
 ```
-<pre class="example" id="org762f9df">
+
 not-clause                 = [ src-var? 'not' clause+ ]
 ```
 
@@ -1968,7 +1968,7 @@ And Clause
 ----------
 
 ```
-<pre class="example" id="org470f7f3">
+
 and-clause                 = [ 'and' clause+ ]
 ```
 
@@ -2157,7 +2157,7 @@ Datomic datalog allows you to package up sets of `:where` clauses into named *ru
 ### Defining a Rule
 
 ```
-<pre class="example" id="org6b164a7">
+
 rule                       = [ [rule-head clause+]+ ]
 rule-head                  = [rule-name rule-vars]
 rule-name                  = plain-symbol
@@ -2184,7 +2184,7 @@ In the example below, the rule-head is `track-info`, and the three clauses of th
 ### Using a Rule
 
 ```
-<pre class="example" id="orgbe6b5dd">
+
 inputs                     = ':in' (src-var | binding | pattern-name | rules-var)+
 rules-var                  = the symbol "%"
 rule-expr                  = [ src-var? rule-name (variable | constant | '_')+]

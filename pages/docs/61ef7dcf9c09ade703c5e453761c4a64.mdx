@@ -11,7 +11,7 @@ Schema Grammar
 ### Syntax Used in Grammar
 
 ```
-<pre class="example" id="org426a04c">
+
 '' literal
 "" string
 [] = list or vector
@@ -29,7 +29,7 @@ Schema Grammar
 ### Schema Map Grammar
 
 ```
-<pre class="example" id="orgf8812d0">
+
 attr-def       = {':db/ident' keyword
                   ':db/cardinality' cardinality
                   ':db/valueType' type
@@ -83,7 +83,7 @@ Because schema is composed of ordinary Datomic data, the schema grammar is a spe
 -----------------
 
 ```
-<pre class="example" id="org07d53e8">
+
 {':db/cardinality' cardinality}
 cardinality = (':db.cardinality/one' | ':db.cardinality/many)                   
 ```
@@ -103,7 +103,7 @@ The values allowed for `:db/cardinality` are:
 ---------
 
 ```
-<pre class="example" id="org9d6a848">
+
 ':db/doc' = string
 ```
 
@@ -117,7 +117,7 @@ The optional `:db/doc` specifies a documentation string, and can be any string v
 --------
 
 ```
-<pre class="example" id="org17cdcd2">
+
 {:db/id' n-identifier}
 n-identifier   = (identifier | tempid)
 identifier     = (eid | lookup-ref | ident)
@@ -149,7 +149,7 @@ Entity identifiers are much more common in ordinary transaction data, and they a
 -----------
 
 ```
-<pre class="example" id="org994faf5">
+
 {':db/ident' keyword}
 ```
 
@@ -198,7 +198,7 @@ Use only letters, numbers, hyphens, and underscores in `:db/ident`values.
 -----------------
 
 ```
-<pre class="example" id="org2ff8d5d">
+
 {':db/isComponent' boolean}
 ```
 
@@ -214,7 +214,7 @@ Omitting `:db/isComponent` for an entity is semantically equivalent to setting i
 ---------------
 
 ```
-<pre class="example" id="org726c229">
+
 {':db/noHistory' boolean}
 ```
 
@@ -236,7 +236,7 @@ Specifies a boolean value indicating whether past values of an attribute should 
 ------------
 
 ```
-<pre class="example" id="org8a0ed33">
+
 {':db/unique' unique}
 unique         = (':db.unique/identity' | ':db.unique/value')
 ```
@@ -301,7 +301,7 @@ Unique values have the same semantics as unique identities, with one critical di
 > **Note:** Symbols require 480-8770 or later and a compatible base schema.
 
 ```
-<pre class="example" id="orgd2a5aa5">
+
 {':db/valueType' type}
 type           = (':db.type/bigdec' | ':db.type/bigint' | ':db.type/boolean' | 
                   ':db.type/double' | ':db.type/float' | ':db.type/instant' | 

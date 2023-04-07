@@ -36,7 +36,7 @@ Connect to the Access Gateway
 To connect to the access gateway, run the [datomic access](../operation/cli-tools.html#client-access) command to create an SOCKS proxy connection, passing your [system name](../operation/howto.html#system-name):
 
 ```
-<pre class="example" copyable="true" id="org43b4257">
+
 datomic client access <system>
 ```
 
@@ -52,14 +52,14 @@ Test Access Gateway Connection
 Run the following command to test your system's ability to reach Datomic through the SOCKS proxy, replacing `[system]`, `[region]`. and `[port]` with your [system-name, region](../operation/howto.html#system-name) and port.
 
 ```
-<pre class="example" copyable="true" id="org8447a04">
+
 curl -x socks5h://localhost:8182 http://entry.[system].[region].datomic.net:8182/
 ```
 
 On success, this command will return text like:
 
 ```
-<pre class="example" id="org9cb9316">
+
 {:s3-auth-path [bucket-name]}
 ```
 

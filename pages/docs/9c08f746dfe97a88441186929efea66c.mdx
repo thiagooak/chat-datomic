@@ -25,7 +25,7 @@ Follow these steps to create a Cloud Formation template:
     Note that, by default, the CloudFormation properties only allows access to the Transactor from other EC2 machines. You can enable access from anywhere if desired, simply uncomment the line:
 
 ```
-<pre class="example" id="org4c3ca31">
+
 aws-ingress-cidrs=0.0.0.0/0
 ```
 
@@ -146,7 +146,7 @@ The Transactor can copy its logs to [S3](https://aws.amazon.com/s3/) and publish
 To enable log copying, uncomment this line in your transactor properties file:
 
 ```
-<pre class="example" id="org69545df">
+
 #aws-s3-log-bucket-id=
 ```
 
@@ -155,7 +155,7 @@ If you leave the values blank, an S3 bucket will be created for you. Alternative
 To enable CloudWatch metrics, uncomments these lines in your transactor properties file:
 
 ```
-<pre class="example" id="orga9d4889">
+
 #aws-cloudwatch-dimension-value=your-system=name
 #aws-cloudwatch-region=
 ```
@@ -183,7 +183,7 @@ Start your transactor with the properties file output by the *ensure-transactor*
 To enable log copying, uncomment this line in your transactor properties file:
 
 ```
-<pre class="example" id="org7c9c376">
+
 #aws-s3-log-bucket-id=
 ```
 
@@ -192,7 +192,7 @@ Set its value to the name of an existing S3 bucket.
 To enable CloudWatch metrics, uncomments these lines in your transactor properties file:
 
 ```
-<pre class="example" id="org416980d">
+
 #aws-cloudwatch-dimension-value=your-system=name
 #aws-cloudwatch-region=
 ```

@@ -90,7 +90,7 @@ Each EC2 instance will create a separate log stream. Usually you will want to se
     The `datomic log list` command can be piped to grep with the `-B 1` option to be used to find specific logs for a given time period:
     
     ```
-    <pre class="example" id="org4a309eb">
+    
     datomic log list my-datomic-system \
     -f all --tod 2019-06-24T03:41:23.491 --minutes-back 150 \
     | grep -B 1 CloudWatchMetrics

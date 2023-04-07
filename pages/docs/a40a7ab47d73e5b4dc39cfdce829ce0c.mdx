@@ -222,7 +222,7 @@ Attempting to connect to a db without the proper dependencies will throw an erro
 Unsupported protocol error:
 
 ```
-<pre class="example" id="org54b2283">
+
 CompilerException java.lang.IllegalArgumentException: :db.error/unsupported-protocol Unsupported protocol :dev, compiling:(core.clj:36:11) 
 ```
 
@@ -237,7 +237,7 @@ Transactors use the *data-dir* specified in the transactor properties file as th
 Insufficient write and/or create-directory permissions can result in the error:
 
 ```
-<pre class="example" id="org963b3bc">
+
 WARN  default    datomic.index - {:message "merge-db failed", :pid 11316, :tid 22}
 java.io.IOException: No such file or directory
     at java.io.UnixFileSystem.createFileExclusively(Native Method) ~[na:1.7.0_101]
@@ -252,7 +252,7 @@ java.io.IOException: No such file or directory
 After enabling [Health Check Endpoint](../overview/transactor.html#health-check-endpoint) the transactor fails to start with:
 
 ```
-<pre class="example" id="org1f1dff1">
+
 java.lang.RuntimeException: Unable to start ping endpoint localhost:9999
 ...
 ...
@@ -271,7 +271,7 @@ In some containerized deployments, there is an issue in thread calculation when 
 If the storage service fails to read or write data, Datomic will throw an exception on any data access that needs to read a segment that the underlying storage cannot return. In particular, warnings in the transactor log of this type:
 
 ```
-<pre class="example" id="orga385f1a">
+
 WARN default datomic.index - {:tid 645868, :pid 20809, :message "merge-one-index failed"} 
 java.lang.Exception: Key not found: 
 ```
@@ -289,7 +289,7 @@ Datomic uses storage to coordinate transactor location. The network location of 
 Peers must be able to reach the transactor at the address specified by either the *host* or the *alt-host* property. The lack of proper entries for *host* and *alt-host* in the transactor properties file will result in the following error upon attempting to connect a peer:
 
 ```
-<pre class="example" id="org86b9405">
+
 Caused by: clojure.lang.ExceptionInfo: Error communicating with HOST 0.0.0.0 on PORT 4334 {:alt-host nil, :peer-version 2, :password "...", :username "...", :port 4334, :host "0.0.0.0", :version "0.9.5130", :timestamp 1449708475587, :encrypt-channel true}
    at clojure.core$ex_info.invoke(core.clj:4593)
 
@@ -307,7 +307,7 @@ Further description of the peer connection process is available [here](../overvi
 Calling the Datomic API [*shutdown*](../clojure/#datomic.api/shutdown) or Clojure *shutdown-agents* function will shut down the Peer library. If either of these functions is called prior to an attempt to run a Datomic query, the query will fail with the exception:
 
 ```
-<pre class="example" id="org1666b1d">
+
 Task java.util.concurrent.FutureTask@7ff48e13 rejected from java.util.concurrent.ThreadPoolExecutor@3407eed0[Shutting down, pool size = 7, active threads = 7, queued tasks = 0, completed tasks = 7]
         datalog.clj:1454 datomic.datalog/eval-rule[fn]
         datalog.clj:1434 datomic.datalog/eval-rule

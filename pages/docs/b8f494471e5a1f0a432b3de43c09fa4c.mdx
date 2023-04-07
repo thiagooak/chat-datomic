@@ -2,7 +2,7 @@ datomic.client.api.async
 ========================
 
 ```
-<pre class="plaintext">Async client API for Datomic. See also datomic.client.api
+Async client API for Datomic. See also datomic.client.api
 for the corresponding synchronous API.
 
 Functions in this namespace that communicate with a separate process
@@ -39,7 +39,7 @@ lookup (keyword) access via :e :a :v :t :added.
 `(administer-system client arg-map)`
 
 ```
-<pre class="plaintext">Run :action on system.
+Run :action on system.
 
 Currently the only supported action is:
 
@@ -61,7 +61,7 @@ Returns a diganostic value on success, throws on failure.
 `(as-of db t)`
 
 ```
-<pre class="plaintext">Returns the value of the database as of some time-point.
+Returns the value of the database as of some time-point.
 
 See https://docs.datomic.com/cloud/time/filters.html.
 ```
@@ -75,7 +75,7 @@ See https://docs.datomic.com/cloud/time/filters.html.
 `(client arg-map)`
 
 ```
-<pre class="plaintext">Create a client for a Datomic system. This function does not
+Create a client for a Datomic system. This function does not
 communicate with a server and returns immediately.
 
 For a cloud system, arg-map requires:
@@ -121,7 +121,7 @@ Returns a client object.
 `(connect client db-name)`
 
 ```
-<pre class="plaintext">Connects to a database. Takes a client object and an arg-map with keys:
+Connects to a database. Takes a client object and an arg-map with keys:
 
 :db-name               database name
 
@@ -143,7 +143,7 @@ keys are:
 `(create-database client arg-map)`
 
 ```
-<pre class="plaintext">Creates a database specified by arg-map with key:
+Creates a database specified by arg-map with key:
 
 :db-name    The database name.
 
@@ -160,7 +160,7 @@ See namespace doc for error and timeout handling.
 `(datoms db arg-map)`
 
 ```
-<pre class="plaintext">Returns datoms from an index as specified by arg-map:
+Returns datoms from an index as specified by arg-map:
 
  :index       One of :eavt, :aevt, :avet, or :vaet.
  :components  Optional vector in the same order as the index
@@ -195,7 +195,7 @@ See namespace doc for timeout, offset/limit, and error handling.
 `(db conn)`
 
 ```
-<pre class="plaintext">Returns the current database value for a connection.
+Returns the current database value for a connection.
 
 Supports ILookup interface for key-based access. Supported keys are:
 
@@ -215,7 +215,7 @@ Supports ILookup interface for key-based access. Supported keys are:
 `(db-stats db)`
 
 ```
-<pre class="plaintext">Queries for database stats.
+Queries for database stats.
 Returns a channel of a map including at least:
 
  :datoms      total count of datoms in the (history) database
@@ -232,7 +232,7 @@ See namespace doc for timeout and error handling.
 `(delete-database client arg-map)`
 
 ```
-<pre class="plaintext">Deletes a database specified by arg-map with keys:
+Deletes a database specified by arg-map with keys:
 
  :db-name    The database name.
 
@@ -249,7 +249,7 @@ See namespace doc for error and timeout handling.
 `(history db)`
 
 ```
-<pre class="plaintext">Returns a database value containing all assertions and
+Returns a database value containing all assertions and
 retractions across time. A history database can be passed to 'datoms',
 'index-range', and 'q', but not to 'with' or 'pull'. Note
 that queries against a history database will include retractions
@@ -269,7 +269,7 @@ See https://docs.datomic.com/cloud/time/filters.html.
 `(index-pull db arg-map)`
 
 ```
-<pre class="plaintext">Walks an index, pulling entities via :e if :avet or :v if :aevt,
+Walks an index, pulling entities via :e if :avet or :v if :aevt,
 using the selector.
 ​
     :index     :avet or :aevt
@@ -294,7 +294,7 @@ Returns a channel of a map
 `(index-range db arg-map)`
 
 ```
-<pre class="plaintext">Returns datoms from the AVET index as specified by arg-map:
+Returns datoms from the AVET index as specified by arg-map:
 
  :attrid  An attribute entity identifier.
  :start   Optional. The start value, inclusive, of the requested
@@ -319,7 +319,7 @@ See namespace doc for chunk, offset/limit, timeout, and error handling.
 `(list-databases client arg-map)`
 
 ```
-<pre class="plaintext">Lists all databases. arg-map requires no keys but can contain any of
+Lists all databases. arg-map requires no keys but can contain any of
 the optional keys listed in the namespace doc.
 
 Returns a channel of a collection of database names.
@@ -334,7 +334,7 @@ Returns a channel of a collection of database names.
 `(pull db arg-map)`
 
 ```
-<pre class="plaintext">Returns a hierarchical selection described by the keys in arg-map:
+Returns a hierarchical selection described by the keys in arg-map:
 
  :selector   the selector expression
  :eid        entity id
@@ -354,7 +354,7 @@ Returns a channel of a map.
 `(q arg-map)`
 
 ```
-<pre class="plaintext">Performs the query described by arg-map's :query and :args:
+Performs the query described by arg-map's :query and :args:
 
   :query  The query to perform: a map, list, or string (see below).
   :args   Data sources for the query, e.g. database values
@@ -390,7 +390,7 @@ See namespace doc for chunk, offset/limit, timeout, and error handling.
 `(qseq arg-map)`
 
 ```
-<pre class="plaintext">Performs the query described by query and args (as per 'q'),
+Performs the query described by query and args (as per 'q'),
   returning a channel of collections of tuples that closes when all results
   are returned.  Item transformations such as
   'pull' are deferred until the seq is consumed. For queries with
@@ -409,7 +409,7 @@ See namespace doc for chunk, offset/limit, timeout, and error handling.
 `(qseq* arg-map)`
 
 ```
-<pre class="plaintext">Doing the work of qseq that is common to sync/async
+Doing the work of qseq that is common to sync/async
 ```
 
 
@@ -421,7 +421,7 @@ See namespace doc for chunk, offset/limit, timeout, and error handling.
 `(since db t)`
 
 ```
-<pre class="plaintext">Returns the value of the database since some time-point.
+Returns the value of the database since some time-point.
 
 See https://docs.datomic.com/cloud/time/filters.html.
 ```
@@ -435,7 +435,7 @@ See https://docs.datomic.com/cloud/time/filters.html.
 `(sync conn t)`
 
 ```
-<pre class="plaintext">Used to coordinate with other clients.
+Used to coordinate with other clients.
 
 Returns channel of a database value with basis :t >= t.
 Does *not* make a remote call.
@@ -450,7 +450,7 @@ Does *not* make a remote call.
 `(transact conn arg-map)`
 
 ```
-<pre class="plaintext">Submits a transaction specified by arg-map:
+Submits a transaction specified by arg-map:
 
  :tx-data    a collection of list forms or map forms
 
@@ -476,7 +476,7 @@ See namespace doc for timeout and error handling.
 `(tx-range conn arg-map)`
 
 ```
-<pre class="plaintext">Retrieve transactions from the log as specified by arg-map:
+Retrieve transactions from the log as specified by arg-map:
 
  :start   Optional. The start time-point or nil to start from the
           beginning of the transaction log.
@@ -505,7 +505,7 @@ See namespace doc for chunk, offset/limit, timeout, and error handling.
 `(with db m)`
 
 ```
-<pre class="plaintext">Applies tx-data to a database returned from 'with-db' or a
+Applies tx-data to a database returned from 'with-db' or a
 prior call to 'with'.  The result of calling 'with' is a
 database value as-if the data was applied in a transaction, but
 the durable database is unaffected.
@@ -524,5 +524,5 @@ See namespace doc for timeout and error handling.
 `(with-db conn)`
 
 ```
-<pre class="plaintext">Returns a channel of a with-db value suitable for passing to 'with'.
+Returns a channel of a with-db value suitable for passing to 'with'.
 ```

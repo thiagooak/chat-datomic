@@ -140,7 +140,7 @@ Connecting
 The Client API [`connect`](../../client-api/datomic.client.api.html#var-connect) takes a [client object](../../client-api/index.html) and a map with a key of `:db-name` the value of the database that you want to connect to.
 
 ```
-<pre class="example">
+
 (def cfg {:server-type :peer-server
 	:access-key "myaccesskey"
 	:secret "mysecret"
@@ -149,29 +149,29 @@ The Client API [`connect`](../../client-api/datomic.client.api.html#var-connect)
 ```
 
 ```
-<pre class="example">
+
 =>
 #+user/cfg
 ```
 
 ```
-<pre class="example">
+
 (def client (d/client cfg))
 ```
 
 ```
-<pre class="example">
+
 =>
 #'user/client
 ```
 
 ```
-<pre class="example">
+
 (def conn (d/connect client {:db-name "hello"}))
 ```
 
 ```
-<pre class="example">
+
 =>
 #'user/conn
 ```

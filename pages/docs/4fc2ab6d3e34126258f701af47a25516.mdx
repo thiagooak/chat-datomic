@@ -221,7 +221,7 @@ Datomic Cloud runs the [Amazon Coretto 11](https://docs.aws.amazon.com/corretto/
 instance typeHeap (-Xmx)Stack (-Xss)t3.small1189m512kt3.medium2540m1mt3.large5333m1mt3.xlarge10918m1mi3.large10520m1mi3.xlarge21280m1mAdditionally all instances use the following flags:
 
 ```
-<pre class="example" id="org0860608">
+
 -XX:+UseG1GC -XX:MaxGCPauseMillis=50 -Dclojure.spec.skip-macros=true
 ```
 
@@ -239,21 +239,21 @@ Ion *push* packages your application into runnable artifacts. Push creates an AW
 To push an application revision, call datomic.ion.dev with an `:op` of `:push`:
 
 ```
-<pre class="example" id="org5483152">
+
 clojure -A:ion-dev '{:op :push (options)}'
 ```
 
 Keywordrequiredvalueexample:opyes:push:push:unameno[unreproducible name](#unreproducible)"janes-wip":creds-profileno[AWS profile name](../operation/howto.html#aws-access-keys)"janes-profile":regionno[AWS region](../operation/account-setup.html#regions)"us-east-1"Push will ensure that your application's dependencies (git and maven libs) exist in your [ion code bucket](../operation/howto.html#ion-code-bucket):
 
 ```
-<pre class="example" id="org81a78d0">
+
 s3://$(ion-code-bucket)/datomic/libs
 ```
 
 and will create an application revision located at
 
 ```
-<pre class="example" id="orge8d6b92">
+
 s3://$(ion-code-bucket)/datomic/apps/$(app-name)/$(git-sha|uname).zip
 ```
 
@@ -311,7 +311,7 @@ Node deployment happens one node at a time, so a Datomic system will remain avai
 To deploy an application, call datomic.ion.dev with an `:op` of `:deploy`:
 
 ```
-<pre class="example" id="org32f708d">
+
 clojure -A:ion-dev '{:op :deploy (options)}'
 ```
 
@@ -337,14 +337,14 @@ You can monitor a deployment with the [deploy-status command](#deploy-status) or
 To check the status of a [deploy](#deploy), call datomic.ion.dev with an `:op` of `:deploy-status`:
 
 ```
-<pre class="example" id="orgdc136d6">
+
 clojure -A:ion-dev '{:op :deploy-status ...}'
 ```
 
 keywordrequiredvalueexample:opyes:deploy-status:deploy-status:execution-arnyesoutput from [deploy](#deploy)"arn:aws:states:us-east-1:123456789012:execution:datomic-compute:datomic-compute-1526506240469":creds-profileno[AWS profile name](../howto.html#aws-access-keys)"janes-profile":regionno[AWS region](../operation/account-setup.html#supported-regions)"us-east-1"Deploy Status returns the [the Step Functions reference](https://docs.aws.amazon.com/step-functions/latest/apireference/API_DescribeExecution.html#StepFunctions-DescribeExecution-response-status)of the overall ion deploy and of the code deploy as a map:
 
 ```
-<pre class="example" id="orgf9bb80c">
+
 {:deploy-status "SUCCEEDED"
  :code-deploy-status "SUCCEEDED"}
 ```
@@ -401,7 +401,7 @@ If your compute template does not have an `IonApiGatewayEndpoint`, see [older ve
 When you deploy an application with lambda ions, Datomic will create AWS Lambdas named:
 
 ```
-<pre class="example" id="org4973fe5">
+
 $(group)-$(name)
 ```
 
@@ -547,7 +547,7 @@ Then, this prefix is used to name configuration keys in the parameter store. dep
 Given this convention, the following AWS CLI commands will create the parameters for the "prod" environment:
 
 ```
-<pre class="example" id="orgff596fb">
+
 # actual parameter values not shown
 aws ssm put-parameter --name /datomic-shared/prod/deploy-monitor/db-name --value $DB_NAME --type String
 aws ssm put-parameter --name /datomic-shared/prod/deploy-monitor/channel --value $CHANNEL --type String

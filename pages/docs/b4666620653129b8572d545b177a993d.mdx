@@ -71,7 +71,7 @@ Replace (System) and (Region) in the instructions below with your system name.
 At the time of this writing, the "Deregister scalable targets" step is not available in the AWS GUI console. Replace (Region) and (System) to run the AWS CLI commands shown below.
 
 ```
-<pre class="example" copyable="true" id="orgc96d9c9">
+
 aws --region (Region) application-autoscaling \
 deregister-scalable-target --service-namespace dynamodb \
 --scalable-dimension dynamodb:table:WriteCapacityUnits \
@@ -79,7 +79,7 @@ deregister-scalable-target --service-namespace dynamodb \
 ```
 
 ```
-<pre class="example" copyable="true" id="org4f14962">
+
 aws --region (Region) application-autoscaling \
 deregister-scalable-target --service-namespace dynamodb \
 --scalable-dimension dynamodb:table:ReadCapacityUnits \
@@ -128,14 +128,14 @@ If your stack deletion fails with `DELETE_FAILED`, the following list maps the C
 This error will include an additional Status reason shown below. Extra values inside the `[]` indicate other potential errors.
 
 ```
-<pre class="example" id="orgc41a0c6">
+
 The following resource(s) failed to delete: [LambdaSecurityGroup].
 ```
 
 Or
 
 ```
-<pre class="example" id="org01c1410">
+
 The following resource(s) failed to delete: [DeleteDatomicLambdaEnis, LambdaSecurityGroup].
 ```
 

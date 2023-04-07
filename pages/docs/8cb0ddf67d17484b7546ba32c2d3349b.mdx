@@ -162,7 +162,7 @@ Analytics support requires you to configure a [catalog](analytics-concepts.html#
 The configuration directory must contain two subdirectories: `datomic` and `catalog`:
 
 ```
-<pre class="example" id="org24867e9">
+
 my-config-dir/
 ├── catalog
 │   └── my-system.properties
@@ -181,7 +181,7 @@ Populate the catalog and metaschema files as described below.
 The `catalog` subdirectory of your [local configuration directory](#configuration-directory)should contain a `[your-catalog-name].properties` file with the contents:
 
 ```
-<pre class="example" id="orgc0ab719">
+
 connector.name=datomic
 
 #optional - limit exposed dbs by listing them here:
@@ -228,14 +228,14 @@ If your analytics tool scans the database to discover the schema, you may need t
 The `analytics sync` command in the [datomic tools](../operation/cli-tools.html) updates analytics configuration to match your local [configuration directory](#configuration-directory). Call `sync` with your [system name](../operation/howto.html#system-name) and configuration dir:
 
 ```
-<pre class="example" id="org91532f4">
+
 datomic analytics sync <system> <path-to-config-dir>
 ```
 
 The access gateway performs queries against your Datomic system, using the [primary compute](../whatis/architecture.html#primary-compute-resources) group by default. If you find that analytics queries are competing for resources with other uses of your system, you can create a dedicated [query group](../whatis/architecture.html#query-groups) for analytics, and configure analytics to use this dedicated query group with the `-q`option to `sync`
 
 ```
-<pre class="example" id="org167165a">
+
 datomic analytics sync <system> <path-to-config-dir> -q <query-group-name>
 ```
 
@@ -248,6 +248,6 @@ datomic analytics sync <system> <path-to-config-dir> -q <query-group-name>
 To restart the access gateway, pass `restart` and your system name to the [datomic gateway](../operation/cli-tools.html#gateway-restart) [CLI tool](../operation/cli-tools).
 
 ```
-<pre class="example" id="orgcf73b33">
+
 datomic gateway restart <system>
 ```

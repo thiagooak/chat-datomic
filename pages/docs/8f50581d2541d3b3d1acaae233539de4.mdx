@@ -76,7 +76,7 @@ Pull Grammar
 ### Grammar Syntax
 
 ```
-<pre class="example" id="orga5ed6b1">
+
 '' literal
 "" string
 [] = list or vector
@@ -93,7 +93,7 @@ Pull Grammar
 ### Pull Pattern Grammar
 
 ```
-<pre class="example" id="org552fa87">
+
 pattern             = [attr-spec+]
 attr-spec           = attr-name | wildcard | map-spec | attr-expr
 attr-name           = an edn keyword that names an attr
@@ -125,7 +125,7 @@ Patterns
 A pattern is a list of Attribute Specifications.
 
 ```
-<pre class="example" id="org6f7f191">
+
 pattern            = [attr-spec+]
 ```
 
@@ -137,7 +137,7 @@ Attribute Specifications
 ------------------------
 
 ```
-<pre class="example" id="org14eb136">
+
 attr-spec           = attr-name | wildcard | map-spec | attr-expr
 attr-expr           = [attr-name attr-option+] | legacy-attr-expr
 attr-option         = as-expr | limit-expr | default-expr
@@ -158,7 +158,7 @@ Attribute Names
 ---------------
 
 ```
-<pre class="example" id="org31b76f0">
+
 attr-name          = an edn keyword that names an attr
 ```
 
@@ -222,7 +222,7 @@ Map Specifications
 ------------------
 
 ```
-<pre class="example" id="orgdf97370">
+
 map-spec           = { ((attr-name | limit-expr) (pattern | recursion-limit))+ }
 limit-expr         = [("limit" | 'limit') attr-name (positive-number | nil)]
 recursion-limit    = positive-number | '...'
@@ -575,7 +575,7 @@ Wildcards
 ---------
 
 ```
-<pre class="example" id="org1affe89">
+
 wildcard           = "*" or '*'
 ```
 
@@ -671,7 +671,7 @@ Recursion Limits
 ----------------
 
 ```
-<pre class="example" id="org3638489">
+
 recursion-limit    = positive-number | '...'
 map-spec           = { ((attr-name | limit-expr) (pattern | recursion-limit))+ }
 ```
@@ -905,7 +905,7 @@ Legacy Attribute Expressions
 > NOTE: [Attributes Specifications](#attribute-with-options) provides a superset of the functionality of Attribute Expressions and is preferred, however `limit` and `default` Attribute Expressions will continue to be supported.
 
 ```
-<pre class="example" id="org43b6a5c">
+
 attr-expr           = [attr-name attr-option+] | legacy-attr-expr
 legacy-attr-expr    = legacy-limit-expr | legacy-default-expr
 legacy-limit-expr   = [("limit" | 'limit') attr-name (positive-number | nil)]
@@ -922,7 +922,7 @@ Legacy Limit Expression
 -----------------------
 
 ```
-<pre class="example" id="org58c335a">
+
 legacy-limit-expr   = [("limit" | 'limit') attr-name (positive-number | nil)]
 ```
 
@@ -936,7 +936,7 @@ Legacy Default Expressions
 --------------------------
 
 ```
-<pre class="example" id="org46cdfb6">
+
 legacy-default-expr = [("default" | 'default') attr-name any-value]
 ```
 

@@ -49,7 +49,7 @@ If the status of the stack is "CREATE\_FAILED" there was an error starting the s
 If the production topology fails to create in CloudFormation with a *CREATE\_FAILED* on the `AWS::AutoScaling::AutoScalingGroup` for the `TxAutoScalingGroup` resource with the message:
 
 ```
-<pre class="example" id="org95989b2">
+
 You have requested more instances (2) than your current instance limit of 1 allows for the specified instance type. Please visit http://aws.amazon.com/contact-us/ec2-request to request an adjustment to this limit. Launching EC2 instance failed.
 ```
 
@@ -64,7 +64,7 @@ You need to [request a limit increase](operation/account-setup.html#i3-limit) in
 Without a storage system, compute will fail immediately and rollback. The stack event message will report the following error, substitute &lt;system-name&gt; for the system name you specified when launching your compute stack.
 
 ```
-<pre class="example" id="orgdced680">
+
 No export named <system-name>-FileSystemId found. Rollback requested by user.
 ```
 
@@ -91,7 +91,7 @@ See [Setting Up](setting-up.html) for more information.
 A failed compute stack update to or past version 470-8654 with the error:
 
 ```
-<pre class="example" id="org0756089">
+
 Export <SystemName>-VpcEndpointServiceName cannot be deleted as it is in use by <systemname>-vpc-endpoint
 ```
 
@@ -162,7 +162,7 @@ Troubleshooting Client Errors
 If you leave out a required argument.
 
 ```
-<pre class="example" id="orgeb9d721">
+
 CompilerException clojure.lang.ExceptionInfo: Expected string for :query-group {:cognitect.anomalies/category :cognitect.anomalies/incorrect, :cognitect.anomalies/message "Expected string for :query-group", :datomic.client.impl.shared.validator/got {:server-type :cloud, :region "us-east-1", :system "errortest2", :endpoint "http://entry.errortest2.us-east-1.datomic.net:8182/", :proxy-port 8888}, :datomic.client.impl.shared.validator/op :client, :datomic.client.impl.shared.validator/requirements {:region string, :system string, :query-group string, :endpoint string, :server-type keyword}}, compiling:(form-init8129817634595122502.clj:1:13)
 ```
 
@@ -184,7 +184,7 @@ If you get a *forbidden* error when using the Client API, this means that your A
 ### ExceptionInfo Forbidden to read keyfile
 
 ```
-<pre class="example" id="org2bd09ac">
+
 >d/create-database client {:db-name "test"})
 ExceptionInfo Forbidden to read keyfile at s3://datomic-test-storagef7f305e7-1bpzuyaf5d-s3datomic-1wgl6uvtl9bei/datomic-test/datomic/access/admin/.keys. Make sure that your endpoint is correct, and that your ambient AWS credentials allow you to GetObject on the keyfile.  clojure.core/ex-info (core.clj:4739)
 ```
@@ -214,7 +214,7 @@ Exception in thread "main" clojure.lang.ExceptionInfo: Unable to connect to syst
 Accompanied by the following message from your SOCKS Proxy:
 
 ```
-<pre class="example" id="orgac84410">
+
 debug1: channel 2: new [dynamic-tcpip]
 channel 2: open failed: administratively prohibited: open failed
 ```
@@ -232,7 +232,7 @@ Indicates that the client was unable to reach the Datomic system through the pro
 On `com.datomic/client-cloud 0.8.56` and Java 9+ you'll run into this error when connecting:
 
 ```
-<pre class="example" id="orge35930d">
+
 CompilerException clojure.lang.ExceptionInfo: java.lang.NoClassDefFoundError: javax/xml/bind/DatatypeConverter #:cognitect.anomalies{:category :cognitect.anomalies/fault, :message "java.lang.NoClassDefFoundError: javax/xml/bind/DatatypeConverter"}, compiling:(form-init692047429040487558.clj:1:11)
 ```
 
@@ -432,7 +432,7 @@ Datomic system not-a-system not found, make sure your system name and AWS creds 
 ### AccessDeniedException
 
 ```
-<pre class="example" id="org92c135a">
+
 An error occurred (AccessDeniedException) when calling the GetResources operation: User: arn:aws:iam::<number>:user/<user-name> is not authorized to perform: tag:GetResources
 Datomic system <system-name> not found, make sure your system name and AWS creds are correct.
 ```
@@ -508,7 +508,7 @@ Troubleshooting Ion push
 If you attempt to [*push*](ions/ions-reference.html#push) an ion project with uncommitted local changes, you will see the following exception:
 
 ```
-<pre class="example" id="org48da966">
+
 java.lang.IllegalArgumentException: You must either specify a uname or deploy from clean git commit
 ```
 
@@ -572,7 +572,7 @@ If you encounter this error, [install the ion-dev tools](operation/howto.html#io
 The ion-dev tools require a recent version of the Clojure CLI. If you see the following error:
 
 ```
-<pre class="example" id="orgeb5e18a">
+
 Error building classpath. Unknown alias key: :deps
 ```
 
@@ -638,7 +638,7 @@ Troubleshooting Ions
 Returning an unsupported type from a Lambda Ion will result in the exception:
 
 ```
-<pre class="example" id="orgf3724bc">
+
 datomic.ion.lambda.handler.exceptions.Incorrect: No implementation of method: :->bbuf of protocol: #'datomic.ion.lambda.dispatcher/ToBbuf found for class: clojure.lang.LazySeq
 ```
 
@@ -683,12 +683,12 @@ If you are leveraging authorization, such as Cognito, in your API Gateway on you
 
 - <a id="org8eb55de"></a>Chrome  
     ```
-    <pre class="example">
+    
     Access to XMLHttpRequest at 'https://a3gy67dew7.execute-api.us-east-1.amazonaws.com/dev/api/v1/authenticated-example' from origin 'http://localhost:9876' has been blocked by CORS policy: Response to preflight request doesn't pass access control check: No 'Access-Control-Allow-Origin' header is present on the requested resource.
     ```
 - <a id="orgc292b52"></a>FireFox  
     ```
-    <pre class="example">
+    
     Cross-Origin Request Blocked: The Same Origin Policy disallows reading the remote resource at https://a3gy67dew7.execute-api.us-east-1.amazonaws.com/dev/api/v1/authenticated-example. (Reason: CORS header 'Access-Control-Allow-Origin' missing).
     ```
 

@@ -58,7 +58,7 @@ Queries the supplied Datomic Compute Group for logs.
 `log` requires one argument: a [`compute-group-name`](../operation/howto.html#compute-group-name)
 
 ```
-<pre class="example" id="org68fa625">
+
 datomic log list <compute-group>
 ```
 
@@ -79,7 +79,7 @@ Returns the details of a specific log. Returns a JSON array.
 `detail` requires two arguments: a [`compute-group-name`](../operation/howto.html#compute-group-name) and a [message-id](#log-list) supplied to `-m`.
 
 ```
-<pre class="example" id="org53124d4">
+
 datomic log detail <compute-group> -m <message-id>
 ```
 
@@ -103,7 +103,7 @@ System
 `list-instances` displays the [EC2 Instances](https://aws.amazon.com/ec2/instance-types/), with their instance-id and current status, that are utilized by the supplied `system-name`.
 
 ```
-<pre class="example" id="orge2bad93">
+
 datomic system list-instances <system>
 ```
 
@@ -118,7 +118,7 @@ datomic system list-instances <system>
 `describe-groups` displays information about the compute groups of the supplied Datomic Cloud system.
 
 ```
-<pre class="example" id="org4360f9f">
+
 datomic system describe-groups <system>
 ```
 
@@ -156,7 +156,7 @@ Cloud
 lists all current active and inactive Datomic systems on the sourced or specified account.
 
 ```
-<pre class="example" id="org9fe0296">
+
 datomic cloud list-systems
 ```
 
@@ -189,7 +189,7 @@ The `client` commands use ssh to allow connections from outside the [Datomic VPC
     The `access` script continues to run once launched. If the script terminates (as it might for e.g. connection loss after laptop sleep), you will need to restart it.
     
     ```
-    <pre class="example" id="org03f7d7e">
+    
     datomic client access <system>
     ```
     
@@ -226,7 +226,7 @@ Enable the access gateway, setting the ASG to 1.
 `enable` requires a single argument: [`system-name`](../operation/howto.html#system-name)
 
 ```
-<pre class="example" id="orgc6305a2">
+
 datomic gateway enable <system>
 ```
 
@@ -243,7 +243,7 @@ Disable the access gateway, setting the ASG to 0.
 `disable` requires a single argument: [`system-name`](../operation/howto.html#system-name)
 
 ```
-<pre class="example" id="org0cf8b50">
+
 datomic gateway disable <system>
 ```
 
@@ -260,7 +260,7 @@ Restarts the analytics support on the access gateway.
 `restart` requires a single argument: [`system-name`](../operation/howto.html#system-name)
 
 ```
-<pre class="example" id="org424da01">
+
 datomic gateway restart <system>
 ```
 
@@ -284,7 +284,7 @@ datomic gateway restart <system>
     Sets the [ASG](https://docs.aws.amazon.com/autoscaling/ec2/userguide/AutoScalingGroup.html) for the specified Datomic solo system to 1.
     
     ```
-    <pre class="example" id="org79d6ddd">
+    
     datomic solo up <system> 
     ```
     
@@ -295,7 +295,7 @@ datomic gateway restart <system>
     Sets the [ASG](https://docs.aws.amazon.com/autoscaling/ec2/userguide/AutoScalingGroup.html) for the specified Datomic solo system to 0.
     
     ```
-    <pre class="example" id="orgffd4dae">
+    
     datomic solo down <system> 
     ```
     
@@ -306,7 +306,7 @@ datomic gateway restart <system>
     Terminates the Datomic Solo system node and access gateway which allows [the ASG](https://docs.aws.amazon.com/autoscaling/ec2/userguide/AutoScalingGroup.html)to start new instances.
     
     ```
-    <pre class="example" id="org55774c7">
+    
     datomic solo reset <system> 
     ```
     
@@ -328,7 +328,7 @@ Tools for utilizing [Datomic Analytics](../analytics/analytics-concepts.html).
     `access` requires a single argument: [`system-name`](../operation/howto.html#system-name).
     
     ```
-    <pre class="example" id="orga4a7d13">
+    
     datomic analytics access <system> 
     ```
     
@@ -342,7 +342,7 @@ Tools for utilizing [Datomic Analytics](../analytics/analytics-concepts.html).
     `sync` requires two arguments: [`system-name`](../operation/howto.html#system-name) and your local configuration directory
     
     ```
-    <pre class="example" id="org7d507af">
+    
     datomic analytics sync <system> <directory>
     ```
     
