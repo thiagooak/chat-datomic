@@ -12,8 +12,8 @@ Using the venv [created previously](analytics-python.html#setup-venv):
 
 - From the directory created when making the venv (my-python-env):
 
-```
-<pre class="src src-example">. venv/bin/activate
+```example
+. venv/bin/activate
 ```
 
 
@@ -22,8 +22,8 @@ Follow the [superset install and setup instructions](https://superset.apache.org
 
 Once installed, as indicated in the docs, you can launch superset with:
 
-```
-<pre class="src src-example">superset run -p 8080 --with-threads --reload --debugger
+```example
+superset run -p 8080 --with-threads --reload --debugger
 ```
 
 
@@ -51,8 +51,8 @@ Using Superset with Datomic Analytics
 
 In the Superset Menu Bar Click "Sources" → "Databases" Click the + button to add a new database Choose a name for the DB and enter it in the Name field. In the SQL Alchemy URI field add the DB URI for the Datomic Analytics system:
 
-```
-<pre class="src src-example">presto://<host>:<port>/<catalog>/<schema>
+```example
+presto://<host>:<port>/<catalog>/<schema>
 ```
 
 

@@ -68,15 +68,15 @@ In an ion application, your client code and Datomic run in the same process on a
 
 The following example shows how to create a client that connects to the inventory-dev system in us-east-1 during development. When deployed as an ion, the same code will create an in-memory client on the system it is deployed to.
 
-```
-<pre class="src src-clojure">(<span style="color: #a0522d;">require</span> '[datomic.client.api <span style="color: #008b8b;">:as</span> d])
+```clojure
+(require '[datomic.client.api :as d])
 
-(<span style="color: #a020f0;">def</span> <span style="color: #0000ff;">cfg</span> {<span style="color: #008b8b;">:server-type</span> <span style="color: #008b8b;">:ion</span>
-          <span style="color: #008b8b;">:region</span> <span style="color: #8b2252;">"us-east-1"</span>
-          <span style="color: #008b8b;">:system</span> <span style="color: #8b2252;">"inventory-dev"</span>
-          <span style="color: #008b8b;">:endpoint</span> <span style="color: #8b2252;">"https://ljfrt3pr18.execute-api.us-east-1.amazonaws.com"</span>})
+(def cfg {:server-type :ion
+          :region "us-east-1"
+          :system "inventory-dev"
+          :endpoint "https://ljfrt3pr18.execute-api.us-east-1.amazonaws.com"})
 
-(<span style="color: #a020f0;">def</span> <span style="color: #0000ff;">client</span> (d/client cfg))
+(def client (d/client cfg))
 ```
 
 
@@ -106,9 +106,9 @@ A lambda entry point can return any of String, ByteBuffer, InputStream, or File;
 
 For example, the following `echo` function simply echos back its invocation:
 
-```
-<pre class="src src-clojure">(<span style="color: #a020f0;">defn</span> <span style="color: #0000ff;">echo</span>
-  [{<span style="color: #008b8b;">:keys</span> [context input]}]
+```clojure
+(defn echo
+  [{:keys [context input]}]
   input)
 ```
 
@@ -180,27 +180,27 @@ You can use the `HttpDirectOpsPending` and `HttpDirectThrottled`[metrics](../ope
 
 The example below is taken from the [ion-starter project](https://github.com/Datomic/ion-starter/blob/master/resources/datomic/ion-config.edn).
 
-```
-<pre class="src src-clojure">{<span style="color: #008b8b;">:allow</span> [<span style="color: #b22222;">;; </span><span style="color: #b22222;">transaction function</span>
+```clojure
+{:allow [;; transaction function
          datomic.ion.starter/create-item
 
-         <span style="color: #b22222;">;; </span><span style="color: #b22222;">query function</span>
+         ;; query function
          datomic.ion.starter/feature-item?]            
 
- <span style="color: #b22222;">;; </span><span style="color: #b22222;">AWS Lambda entry points</span>
- <span style="color: #008b8b;">:lambdas</span> {<span style="color: #008b8b;">:echo</span>
-           {<span style="color: #008b8b;">:fn</span> datomic.ion.starter/echo
-            <span style="color: #008b8b;">:description</span> <span style="color: #8b2252;">"Echos input"</span>}
-           <span style="color: #008b8b;">:get-tutorial-schema</span>
-           {<span style="color: #008b8b;">:fn</span> datomic.ion.starter/get-tutorial-schema
-            <span style="color: #008b8b;">:description</span> <span style="color: #8b2252;">"returns the schema for the Datomic docs tutorial"</span>}
-           <span style="color: #008b8b;">:get-items-by-type</span>
-           {<span style="color: #008b8b;">:fn</span> datomic.ion.starter/get-items-by-type
-            <span style="color: #008b8b;">:description</span> <span style="color: #8b2252;">"Lambda handler that returns items by type"</span>}}
+ ;; AWS Lambda entry points
+ :lambdas {:echo
+           {:fn datomic.ion.starter/echo
+            :description "Echos input"}
+           :get-tutorial-schema
+           {:fn datomic.ion.starter/get-tutorial-schema
+            :description "returns the schema for the Datomic docs tutorial"}
+           :get-items-by-type
+           {:fn datomic.ion.starter/get-items-by-type
+            :description "Lambda handler that returns items by type"}}
 
- <span style="color: #b22222;">;; </span><span style="color: #b22222;">HTTP Direct entry point</span>
- <span style="color: #008b8b;">:http-direct</span> {<span style="color: #008b8b;">:handler-fn</span> datomic.ion.starter/items-by-type}
- <span style="color: #008b8b;">:app-name</span> <span style="color: #8b2252;">"<YOUR-APP-HERE>"</span>}
+ ;; HTTP Direct entry point
+ :http-direct {:handler-fn datomic.ion.starter/items-by-type}
+ :app-name "<YOUR-APP-HERE>"}
 
 ```
 
@@ -384,8 +384,8 @@ Web service and lambda invocations are described below.
 
 Ion web services are exposed at the URL `https://$(IonApiGatewayEndpoint)`, where `IonApiGatewayEndpoint` is in your compute group's [template outputs](../operation/howto.html#template-outputs). You can invoke a web service with any HTTPS client, e.g. curl:
 
-```
-<pre class="src src-sh">curl https://$(<span style="color: #cd00cd;">IonApiGatewayEndpoint</span>)
+```sh
+curl https://$(IonApiGatewayEndpoint)
 ```
 
 
@@ -447,8 +447,8 @@ If you deploy the same ion to different compute groups, your code may want to be
 
 For example, the following excerpt from [deploy-monitor](https://github.com/Datomic/ion-event-example/blob/master/src/datomic/ion/event_example.clj) gets the app-name:
 
-```
-<pre class="src src-clojure">(<span style="color: #a0522d;">get</span> (ion/get-app-info) <span style="color: #008b8b;">:app-name</span>)
+```clojure
+(get (ion/get-app-info) :app-name)
 ```
 
 
@@ -473,8 +473,8 @@ You can then retrieve the environment map at runtime with `get-env`, which takes
 
 For example, the following excerpt from [deploy-monitor](https://github.com/Datomic/ion-event-example/blob/master/src/datomic/ion/event_example.clj) retrieves the deployment environment specified above:
 
-```
-<pre class="src src-clojure">(<span style="color: #a0522d;">get</span> (ion/get-env) <span style="color: #008b8b;">:env</span>)
+```clojure
+(get (ion/get-env) :env)
 ```
 
 
@@ -504,8 +504,8 @@ The `get-params` function is a convenience abstraction over [GetParametersByPath
 
 For example, the call to `get-params` below returns all the parameters under the path `/datomic-shared/prod/deploy-monitor`.
 
-```
-<pre class="src src-clojure">(ion/get-params {<span style="color: #008b8b;">:path</span> <span style="color: #8b2252;">"/datomic-shared/prod/deploy-monitor"</span>})
+```clojure
+(ion/get-params {:path "/datomic-shared/prod/deploy-monitor"})
 ```
 
 
@@ -528,8 +528,8 @@ The `datomic-shared` parameter prefix is readable by all Datomic systems in a pa
 
 The [deploy-monitor](https://github.com/Datomic/ion-event-example) sample application demonstrates using [app-info](#get-app-info), the [environment map](#environment-map), and [parameters](#parameters) together. First, the environment and app-info map are used to create a key prefix following the the naming convention:
 
-```
-<pre class="src src-example">/datomic-shared/(env)/(app-name)/
+```example
+/datomic-shared/(env)/(app-name)/
 ```
 
 
@@ -559,16 +559,16 @@ You could use similar commands to create parameters for additional environments.
 
 At runtime, deploy-monitor uses `get-app-info` and `get-env` to load the information needed to create a Parameter Store path, and then reads all of its parameter values with `get-params`:
 
-```
-<pre class="src src-clojure">(<span style="color: #a020f0;">def</span> <span style="color: #0000ff;">get-params</span>
-  <span style="color: #8b2252;">"Returns the params under /datomic-shared/(env)/(app-name)/, where</span>
+```clojure
+(def get-params
+  "Returns the params under /datomic-shared/(env)/(app-name)/, where
 
-<span style="color: #8b2252;">env       value of get-env :env</span>
-<span style="color: #8b2252;">app-name  value of get-app-info :app-name"</span>
-  (<span style="color: #a0522d;">memoize</span>
-   #(<span style="color: #483d8b;">let</span> [app (<span style="color: #483d8b;">or</span> (<span style="color: #a0522d;">get</span> (ion/get-app-info) <span style="color: #008b8b;">:app-name</span>) (fail <span style="color: #008b8b;">:app-name</span>))
-          env (<span style="color: #483d8b;">or</span> (<span style="color: #a0522d;">get</span> (ion/get-env) <span style="color: #008b8b;">:env</span>) (fail <span style="color: #008b8b;">:env</span>))]
-      (ion/get-params {<span style="color: #008b8b;">:path</span> (<span style="color: #a0522d;">str</span> <span style="color: #8b2252;">"/datomic-shared/"</span> (<span style="color: #a0522d;">name</span> env) <span style="color: #8b2252;">"/"</span> app <span style="color: #8b2252;">"/"</span>)}))))
+env       value of get-env :env
+app-name  value of get-app-info :app-name"
+  (memoize
+   #(let [app (or (get (ion/get-app-info) :app-name) (fail :app-name))
+          env (or (get (ion/get-env) :env) (fail :env))]
+      (ion/get-params {:path (str "/datomic-shared/" (name env) "/" app "/")}))))
 ```
 
 
@@ -633,8 +633,8 @@ Given a var that implements a web entry point, you can create a Lambda proxy ent
 
 The ion-starter sample project [has an example](https://github.com/Datomic/ion-starter/blob/295e69df0850dee9ff75b355c546b68e33207f95/src/datomic/ion/starter/http.clj#L30):
 
-```
-<pre class="src src-clojure">(<span style="color: #a020f0;">def</span> <span style="color: #0000ff;">get-items-by-type-lambda-proxy</span>
+```clojure
+(def get-items-by-type-lambda-proxy
   (apigw/ionize get-items-by-type))
 ```
 

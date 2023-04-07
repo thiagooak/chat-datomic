@@ -32,9 +32,9 @@ Both the new ident and the old ident will refer to the entity. [entid](../javado
 
 This example alters the *:db/ident* of *:person/name* to be *:person/full-name*.
 
-```
-<pre class="src src-clojure">[{<span style="color: #008b8b;">:db/id</span> <span style="color: #008b8b;">:person/name</span>
-  <span style="color: #008b8b;">:db/ident</span> <span style="color: #008b8b;">:person/full-name</span>}]
+```clojure
+[{:db/id :person/name
+  :db/ident :person/full-name}]
 ```
 
 
@@ -63,11 +63,11 @@ After you alter the cardinality of an attribute, entity lookups will return valu
 
 The example below alters the cardinality of *:person/favorite-food* to many and the cardinality of *:person/email* to single.
 
-```
-<pre class="src src-clojure">[{<span style="color: #008b8b;">:db/id</span> <span style="color: #008b8b;">:person/favorite-food</span>
-  <span style="color: #008b8b;">:db/cardinality</span> <span style="color: #008b8b;">:db.cardinality/many</span>}
- {<span style="color: #008b8b;">:db/id</span> <span style="color: #008b8b;">:person/email</span>
-  <span style="color: #008b8b;">:db/cardinality</span> <span style="color: #008b8b;">:db.cardinality/one</span>}]
+```clojure
+[{:db/id :person/favorite-food
+  :db/cardinality :db.cardinality/many}
+ {:db/id :person/email
+  :db/cardinality :db.cardinality/one}]
 ```
 
 
@@ -82,20 +82,20 @@ Altering a component attribute will cause Datomic to start enforcing the semanti
 
 The example below alters *:order/line-items* to be a component, and *:customer/orders* not to be a component.
 
-```
-<pre class="src src-clojure">[{<span style="color: #008b8b;">:db/id</span> <span style="color: #008b8b;">:order/line-items</span>
-  <span style="color: #008b8b;">:db/isComponent</span> true}
- {<span style="color: #008b8b;">:db/id</span> <span style="color: #008b8b;">:customer/orders</span>
-  <span style="color: #008b8b;">:db/isComponent</span> false}]
+```clojure
+[{:db/id :order/line-items
+  :db/isComponent true}
+ {:db/id :customer/orders
+  :db/isComponent false}]
 ```
 
 
 
 You can also revoke component status by retracting the *:db/isComponent* attribute. The example below revokes component status for *:customer/orders* via retraction.
 
-```
-<pre class="src src-clojure">[[<span style="color: #008b8b;">:db/retract</span> <span style="color: #008b8b;">:customer/orders</span> <span style="color: #008b8b;">:db/isComponent</span> true]
- [<span style="color: #008b8b;">:db/add</span> <span style="color: #008b8b;">:db.part/db</span> <span style="color: #008b8b;">:db.alter/attribute</span> <span style="color: #008b8b;">:customer/orders</span>]]
+```clojure
+[[:db/retract :customer/orders :db/isComponent true]
+ [:db/add :db.part/db :db.alter/attribute :customer/orders]]
 ```
 
 
@@ -110,20 +110,20 @@ To start retaining history for an attribute with *:db/noHistory* set to *true*, 
 
 The example below alters *:person/encrypted-password* to stop retaining history forward, and alters *:person/address* to start retaining history.
 
-```
-<pre class="src src-clojure">[{<span style="color: #008b8b;">:db/id</span> <span style="color: #008b8b;">:person/encrypted-password</span>
-  <span style="color: #008b8b;">:db/noHistory</span> true}
- {<span style="color: #008b8b;">:db/id</span> <span style="color: #008b8b;">:person/address</span>
-  <span style="color: #008b8b;">:db/noHistory</span> false}]
+```clojure
+[{:db/id :person/encrypted-password
+  :db/noHistory true}
+ {:db/id :person/address
+  :db/noHistory false}]
 ```
 
 
 
 You can also revoke *:db/noHistory* (when set to *true*) by retracting the *:db/noHistory* attribute from the attribute entity.
 
-```
-<pre class="src src-clojure">[[<span style="color: #008b8b;">:db/retract</span> <span style="color: #008b8b;">:person/encrypted-password</span> <span style="color: #008b8b;">:db/noHistory</span> true]
- [<span style="color: #008b8b;">:db/add</span> <span style="color: #008b8b;">:db.part/db</span> <span style="color: #008b8b;">:db.alter/attribute</span> <span style="color: #008b8b;">:person/encrypted-password</span>]]
+```clojure
+[[:db/retract :person/encrypted-password :db/noHistory true]
+ [:db/add :db.part/db :db.alter/attribute :person/encrypted-password]]
 ```
 
 
@@ -151,10 +151,10 @@ If *:db/index* is false or unset and *:db/unique* is unset, Datomic will not kee
 
 The example below will retract the unique identity constraint and drop the AVET index for *:person/external-id*.
 
-```
-<pre class="src src-clojure">[[<span style="color: #008b8b;">:db/retract</span> <span style="color: #008b8b;">:person/external-id</span> <span style="color: #008b8b;">:db/unique</span> <span style="color: #008b8b;">:db.unique/identity</span>]
- [<span style="color: #008b8b;">:db/retract</span> <span style="color: #008b8b;">:person/external-id</span> <span style="color: #008b8b;">:db/index</span> true]
- [<span style="color: #008b8b;">:db/add</span> <span style="color: #008b8b;">:db.part/db</span> <span style="color: #008b8b;">:db.alter/attribute</span> <span style="color: #008b8b;">:person/external-id</span>]]
+```clojure
+[[:db/retract :person/external-id :db/unique :db.unique/identity]
+ [:db/retract :person/external-id :db/index true]
+ [:db/add :db.part/db :db.alter/attribute :person/external-id]]
 ```
 
 
@@ -170,9 +170,9 @@ If *:db/index* is true or *:db/unique* is set, Datomic will keep an AVET index. 
 
 The example below will keep an AVET index for *:person/external-id*.
 
-```
-<pre class="src src-clojure">[{<span style="color: #008b8b;">:db/id</span> <span style="color: #008b8b;">:person/external-id</span>
-  <span style="color: #008b8b;">:db/index</span> true}]
+```clojure
+[{:db/id :person/external-id
+  :db/index true}]
 ```
 
 
@@ -192,9 +192,9 @@ Adding a unique constraint does not change history, therefore historical databas
 
 The example below will alter the attribute *:person/external-id* to be a unique identity.
 
-```
-<pre class="src src-clojure">[{<span style="color: #008b8b;">:db/id</span> <span style="color: #008b8b;">:person/external-id</span>
-  <span style="color: #008b8b;">:db/unique</span> <span style="color: #008b8b;">:db.unique/identity</span>}]
+```clojure
+[{:db/id :person/external-id
+  :db/unique :db.unique/identity}]
 ```
 
 
@@ -210,9 +210,9 @@ If *db:unique* is unset, Datomic will stop enforcing the uniqueness constraint.
 
 The example below will retract the unique value constraint on *:person/external-id*.
 
-```
-<pre class="src src-clojure">[[<span style="color: #008b8b;">:db/retract</span> <span style="color: #008b8b;">:person/external-id</span> <span style="color: #008b8b;">:db/unique</span> <span style="color: #008b8b;">:db.unique/value</span>]
- [<span style="color: #008b8b;">:db/add</span> <span style="color: #008b8b;">:db.part/db</span> <span style="color: #008b8b;">:db.alter/attribute</span> <span style="color: #008b8b;">:person/external-id</span>]]
+```clojure
+[[:db/retract :person/external-id :db/unique :db.unique/value]
+ [:db/add :db.part/db :db.alter/attribute :person/external-id]]
 ```
 
 
@@ -226,22 +226,22 @@ Explicit :db.install/attribute and :db.alter/attribute
 
 Older versions of Datomic require that you explicitly associate schema entities with the *:db.part/db* entity by including *:db.install/attribute* when installing an attribute, and *:db.alter/attribute* when altering an attribute:
 
-```
-<pre class="src src-clojure">{<span style="color: #008b8b;">:db/ident</span> <span style="color: #008b8b;">:person/name</span>
- <span style="color: #008b8b;">:db/valueType</span> <span style="color: #008b8b;">:db.type/string</span>
- <span style="color: #008b8b;">:db/cardinality</span> <span style="color: #008b8b;">:db.cardinality/one</span>
- <span style="color: #008b8b;">:db/doc</span> <span style="color: #8b2252;">"A person's name"</span>
- <span style="color: #b22222;">;; </span><span style="color: #b22222;">explicit install</span>
- <span style="color: #008b8b;">:db.install/_attribute</span> <span style="color: #008b8b;">:db.part/db</span>}
+```clojure
+{:db/ident :person/name
+ :db/valueType :db.type/string
+ :db/cardinality :db.cardinality/one
+ :db/doc "A person's name"
+ ;; explicit install
+ :db.install/_attribute :db.part/db}
 ```
 
 
 
-```
-<pre class="src src-clojure">{<span style="color: #008b8b;">:db/ident</span> <span style="color: #008b8b;">:person/name</span>
- <span style="color: #008b8b;">:db/cardinality</span> <span style="color: #008b8b;">:db.cardinality/many</span>
- <span style="color: #b22222;">;; </span><span style="color: #b22222;">explicit alter</span>
- <span style="color: #008b8b;">:db.alter/_attribute</span> <span style="color: #008b8b;">:db.part/db</span>}
+```clojure
+{:db/ident :person/name
+ :db/cardinality :db.cardinality/many
+ ;; explicit alter
+ :db.alter/_attribute :db.part/db}
 ```
 
 

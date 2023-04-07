@@ -13,26 +13,26 @@ We can model this directly in Datomic schema without translation:
 
 noslide
 
+```clojure
+(def order-schema
+  [{:db/ident :order/items
+    :db/valueType :db.type/ref
+    :db/cardinality :db.cardinality/many
+    :db/isComponent true}
+   {:db/ident :item/id
+    :db/valueType :db.type/ref
+    :db/cardinality :db.cardinality/one}
+   {:db/ident :item/count
+    :db/valueType :db.type/long
+    :db/cardinality :db.cardinality/one}])
+
+(d/transact conn {:tx-data order-schema})
 ```
-<pre class="src src-clojure">(<span style="color: #a020f0;">def</span> <span style="color: #0000ff;">order-schema</span>
-  [{<span style="color: #008b8b;">:db/ident</span> <span style="color: #008b8b;">:order/items</span>
-    <span style="color: #008b8b;">:db/valueType</span> <span style="color: #008b8b;">:db.type/ref</span>
-    <span style="color: #008b8b;">:db/cardinality</span> <span style="color: #008b8b;">:db.cardinality/many</span>
-    <span style="color: #008b8b;">:db/isComponent</span> true}
-   {<span style="color: #008b8b;">:db/ident</span> <span style="color: #008b8b;">:item/id</span>
-    <span style="color: #008b8b;">:db/valueType</span> <span style="color: #008b8b;">:db.type/ref</span>
-    <span style="color: #008b8b;">:db/cardinality</span> <span style="color: #008b8b;">:db.cardinality/one</span>}
-   {<span style="color: #008b8b;">:db/ident</span> <span style="color: #008b8b;">:item/count</span>
-    <span style="color: #008b8b;">:db/valueType</span> <span style="color: #008b8b;">:db.type/long</span>
-    <span style="color: #008b8b;">:db/cardinality</span> <span style="color: #008b8b;">:db.cardinality/one</span>}])
-
-(d/transact conn {<span style="color: #008b8b;">:tx-data</span> order-schema})
-```
 
 
 
-```
-<pre class="src src-clojure">=> <span style="color: #b22222;">;; </span><span style="color: #b22222;">transaction result map</span>
+```clojure
+=> ;; transaction result map
 ```
 
 
@@ -50,21 +50,21 @@ Now let's add a sample order:
 
 noslide
 
+```clojure
+(def add-order
+  {:order/items
+   [{:item/id [:inv/sku "SKU-25"]
+     :item/count 10}
+    {:item/id [:inv/sku "SKU-26"]
+     :item/count 20}]})
+
+(d/transact conn {:tx-data [add-order]})
 ```
-<pre class="src src-clojure">(<span style="color: #a020f0;">def</span> <span style="color: #0000ff;">add-order</span>
-  {<span style="color: #008b8b;">:order/items</span>
-   [{<span style="color: #008b8b;">:item/id</span> [<span style="color: #008b8b;">:inv/sku</span> <span style="color: #8b2252;">"SKU-25"</span>]
-     <span style="color: #008b8b;">:item/count</span> 10}
-    {<span style="color: #008b8b;">:item/id</span> [<span style="color: #008b8b;">:inv/sku</span> <span style="color: #8b2252;">"SKU-26"</span>]
-     <span style="color: #008b8b;">:item/count</span> 20}]})
-
-(d/transact conn {<span style="color: #008b8b;">:tx-data</span> [add-order]})
-```
 
 
 
-```
-<pre class="src src-clojure">result <span style="color: #b22222;">;; </span><span style="color: #b22222;">tx result map</span>
+```clojure
+result ;; tx result map
 ```
 
 

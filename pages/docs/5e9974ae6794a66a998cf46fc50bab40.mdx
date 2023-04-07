@@ -17,61 +17,61 @@ The following example uses the [aws-api](https://github.com/cognitect-labs/aws-a
 
 `deps.edn`:
 
+```clojure
+{:deps {com.cognitect.aws/api       {:mvn/version "0.8.474"}
+        com.cognitect.aws/endpoints {:mvn/version "1.1.11.842"}
+        com.cognitect.aws/lambda    {:mvn/version "809.2.734.0"}}}
 ```
-<pre class="src src-clojure">{<span style="color: #008b8b;">:deps</span> {com.cognitect.aws/api       {<span style="color: #008b8b;">:mvn/version</span> <span style="color: #8b2252;">"0.8.474"</span>}
-        com.cognitect.aws/endpoints {<span style="color: #008b8b;">:mvn/version</span> <span style="color: #8b2252;">"1.1.11.842"</span>}
-        com.cognitect.aws/lambda    {<span style="color: #008b8b;">:mvn/version</span> <span style="color: #8b2252;">"809.2.734.0"</span>}}}
-```
 
 
 
-```
-<pre class="src src-clojure"><span style="color: #b22222;">;; </span><span style="color: #b22222;">sample code</span>
+```clojure
+;; sample code
 
-(<span style="color: #a0522d;">require</span> [cognitect.aws.client.api <span style="color: #008b8b;">:as</span> aws])
+(require [cognitect.aws.client.api :as aws])
 
-(<span style="color: #a020f0;">defn</span> <span style="color: #0000ff;">aws-invoke!</span>
-  <span style="color: #8b2252;">"Calls aws/invoke on the provided client and arg-map.</span>
-<span style="color: #8b2252;">  Throws if the response map includes an anomaly, returns</span>
-<span style="color: #8b2252;">  the map otherwise."</span>
+(defn aws-invoke!
+  "Calls aws/invoke on the provided client and arg-map.
+  Throws if the response map includes an anomaly, returns
+  the map otherwise."
   [client arg-map]
-  (<span style="color: #483d8b;">let</span> [resp (aws/invoke client arg-map)]
-    (<span style="color: #483d8b;">if</span> (<span style="color: #008b8b;">:cognitect.anomalies/category</span> resp)
-      (<span style="color: #483d8b;">throw</span> (ex-info <span style="color: #8b2252;">"Anomaly returned from aws/invoke"</span> resp))
+  (let [resp (aws/invoke client arg-map)]
+    (if (:cognitect.anomalies/category resp)
+      (throw (ex-info "Anomaly returned from aws/invoke" resp))
       resp)))
 
-(<span style="color: #a020f0;">defn</span> <span style="color: #0000ff;">publish-and-set-concurrency!</span>
-  <span style="color: #8b2252;">"Publishes latest lambda, updates alias, and</span>
-<span style="color: #8b2252;">  sets provisioned concurrency.</span>
-<span style="color: #8b2252;">  Requires the lambda name and an alias name as strings and</span>
-<span style="color: #8b2252;">  the desired provisioned concurrency as an int.</span>
-<span style="color: #8b2252;">  Returns the result map from final call to invoke</span>
-<span style="color: #8b2252;">  operation for :PutProvisionedConcurrencyConfig"</span>
-  [{<span style="color: #008b8b;">:keys</span> [fn-name fn-alias concurrency]}]
-  (<span style="color: #483d8b;">let</span> [lambda-client (aws/client {<span style="color: #008b8b;">:api</span> <span style="color: #008b8b;">:lambda</span>})
-        publish-resp (aws-invoke! lambda-client {<span style="color: #008b8b;">:op</span> <span style="color: #008b8b;">:PublishVersion</span>
-                                                 <span style="color: #008b8b;">:request</span> {<span style="color: #008b8b;">:FunctionName</span> fn-name}})
-        alias-info (aws/invoke lambda-client {<span style="color: #008b8b;">:op</span> <span style="color: #008b8b;">:GetAlias</span>
-                                              <span style="color: #008b8b;">:request</span> {<span style="color: #008b8b;">:FunctionName</span> fn-name
-                                                        <span style="color: #008b8b;">:Name</span> fn-alias}})
-        alias-resp (<span style="color: #483d8b;">if</span> (<span style="color: #a0522d;">=</span> (<span style="color: #008b8b;">:cognitect.anomalies/category</span> alias-info)
-                          <span style="color: #008b8b;">:cognitect.anomalies/not-found</span>)
-                     (aws-invoke! lambda-client {<span style="color: #008b8b;">:op</span> <span style="color: #008b8b;">:CreateAlias</span>
-                                                 <span style="color: #008b8b;">:request</span> {<span style="color: #008b8b;">:FunctionName</span> fn-name
-                                                           <span style="color: #008b8b;">:Name</span> fn-alias
-                                                           <span style="color: #008b8b;">:FunctionVersion</span> (<span style="color: #008b8b;">:Version</span> publish-resp)}})
-                     (aws-invoke! lambda-client {<span style="color: #008b8b;">:op</span> <span style="color: #008b8b;">:UpdateAlias</span>
-                                                 <span style="color: #008b8b;">:request</span> {<span style="color: #008b8b;">:FunctionName</span> fn-name
-                                                           <span style="color: #008b8b;">:Name</span> fn-alias
-                                                           <span style="color: #008b8b;">:FunctionVersion</span> (<span style="color: #008b8b;">:Version</span> publish-resp)}}))]
-    (aws-invoke! lambda-client {<span style="color: #008b8b;">:op</span> <span style="color: #008b8b;">:PutProvisionedConcurrencyConfig</span>
-                                <span style="color: #008b8b;">:request</span> {<span style="color: #008b8b;">:FunctionName</span> fn-name
-                                          <span style="color: #008b8b;">:Qualifier</span> fn-alias
-                                          <span style="color: #008b8b;">:ProvisionedConcurrentExecutions</span> concurrency}})))
+(defn publish-and-set-concurrency!
+  "Publishes latest lambda, updates alias, and
+  sets provisioned concurrency.
+  Requires the lambda name and an alias name as strings and
+  the desired provisioned concurrency as an int.
+  Returns the result map from final call to invoke
+  operation for :PutProvisionedConcurrencyConfig"
+  [{:keys [fn-name fn-alias concurrency]}]
+  (let [lambda-client (aws/client {:api :lambda})
+        publish-resp (aws-invoke! lambda-client {:op :PublishVersion
+                                                 :request {:FunctionName fn-name}})
+        alias-info (aws/invoke lambda-client {:op :GetAlias
+                                              :request {:FunctionName fn-name
+                                                        :Name fn-alias}})
+        alias-resp (if (= (:cognitect.anomalies/category alias-info)
+                          :cognitect.anomalies/not-found)
+                     (aws-invoke! lambda-client {:op :CreateAlias
+                                                 :request {:FunctionName fn-name
+                                                           :Name fn-alias
+                                                           :FunctionVersion (:Version publish-resp)}})
+                     (aws-invoke! lambda-client {:op :UpdateAlias
+                                                 :request {:FunctionName fn-name
+                                                           :Name fn-alias
+                                                           :FunctionVersion (:Version publish-resp)}}))]
+    (aws-invoke! lambda-client {:op :PutProvisionedConcurrencyConfig
+                                :request {:FunctionName fn-name
+                                          :Qualifier fn-alias
+                                          :ProvisionedConcurrentExecutions concurrency}})))
 
-<span style="color: #b22222;">; </span><span style="color: #b22222;">Usage: (publish-and-set-concurrency! {:fn-name "my-lambda-name"</span>
-<span style="color: #b22222;">;                                       </span><span style="color: #b22222;">:fn-alias "my-alias"</span>
-<span style="color: #b22222;">;                                       </span><span style="color: #b22222;">:concurrency 1})</span>
+; Usage: (publish-and-set-concurrency! {:fn-name "my-lambda-name"
+;                                       :fn-alias "my-alias"
+;                                       :concurrency 1})
 ```
 
 

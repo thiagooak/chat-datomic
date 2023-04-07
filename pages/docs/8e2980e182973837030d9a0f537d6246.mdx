@@ -26,23 +26,23 @@ For this tutorial, the entry points are [already specified](https://github.com/D
 
 By default, *push* requires a clean git repository, and uses the git SHA to name the application revision in AWS. Such a push is *reproducible*. To prepare for a reproducible commit, you should `gitadd` files that are part of your application, git ignore any extraneous files, and `git commit`. If you are precisely following the tutorial, you have only changed resource files to set your application name and configure a client.
 
-```
-<pre class="src src-sh">git add resources
-git commit -m <span style="color: #8b2252;">'application name and client config'</span>
+```sh
+git add resources
+git commit -m 'application name and client config'
 ```
 
 
 
 To double check that you have a clean commit, you can run `git status`:
 
-```
-<pre class="src src-sh">git status
+```sh
+git status
 ```
 
 
 
-```
-<pre class="src src-sh">=> ... details elided ...
+```sh
+=> ... details elided ...
 nothing to commit, working tree clean
 ```
 
@@ -56,8 +56,8 @@ nothing to commit, working tree clean
 
 Now you are ready to push an application revision. The [push command](../ions/ions-reference.html#push) looks like:
 
-```
-<pre class="src src-sh">clojure -A:ion-dev <span style="color: #8b2252;">'{:op :push}'</span>
+```sh
+clojure -A:ion-dev '{:op :push}'
 ```
 
 
@@ -89,8 +89,8 @@ Let's deploy the revision you just pushed. The output of a successful push will 
 
 The [format for a deploy command](../ions/ions-reference.html#deploy) is:
 
-```
-<pre class="src src-sh">clojure -A:ion-dev <span style="color: #8b2252;">'{:op :deploy :rev $(</span><span style="color: #cd00cd;">REV</span><span style="color: #8b2252;">) :group $(</span><span style="color: #cd00cd;">GROUP</span><span style="color: #8b2252;">)}'</span>
+```sh
+clojure -A:ion-dev '{:op :deploy :rev $(REV) :group $(GROUP)}'
 ```
 
 
@@ -116,8 +116,8 @@ The output of an Ion deploy includes the `:status-command` to monitor your deplo
 
 The format to monitor [deploy-status](../ions/ions-reference.html#deploy-status):
 
-```
-<pre class="src src-sh">clojure -A:ion-dev <span style="color: #8b2252;">'{:op :deploy-status :execution-arn $(</span><span style="color: #cd00cd;">EXECUTION_ARN</span><span style="color: #8b2252;">)}'</span>
+```sh
+clojure -A:ion-dev '{:op :deploy-status :execution-arn $(EXECUTION_ARN)}'
 ```
 
 
@@ -126,8 +126,8 @@ The format to monitor [deploy-status](../ions/ions-reference.html#deploy-status)
 
 Deploy Status returns the [the Step Functions reference](https://docs.aws.amazon.com/step-functions/latest/apireference/API_DescribeExecution.html#StepFunctions-DescribeExecution-response-status)of the overall ion deploy and of the code deploy as a map.
 
-```
-<pre class="src src-clojure">{<span style="color: #008b8b;">:deploy-status</span> <span style="color: #8b2252;">"SUCCEEDED"</span>, <span style="color: #008b8b;">:code-deploy-status</span> <span style="color: #8b2252;">"SUCCEEDED"</span>}
+```clojure
+{:deploy-status "SUCCEEDED", :code-deploy-status "SUCCEEDED"}
 ```
 
 

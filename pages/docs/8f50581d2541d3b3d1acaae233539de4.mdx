@@ -17,8 +17,8 @@ The results below are also written with edn, and they use an ellipsis `...` wher
 
 The examples in this document use the [mbrainz 1968-1973 sample](https://s3.amazonaws.com/mbrainz/datomic-mbrainz-1968-1973-backup-2014-10-15.tar) set. Download and untar this file:
 
-```
-<pre class="src src-example">wget https://s3.amazonaws.com/mbrainz/datomic-mbrainz-1968-1973-backup-2014-10-15.tar -O mbrainz.tar
+```example
+wget https://s3.amazonaws.com/mbrainz/datomic-mbrainz-1968-1973-backup-2014-10-15.tar -O mbrainz.tar
 tar -xvf mbrainz.tar
 bin/datomic restore-db file:///path/to/mbrainz-backup datomic:dev://localhost:4334/mbrainz-1968-1973
 ```
@@ -42,24 +42,24 @@ The pull API takes three arguments
 
 and returns a map of data about an entity as specified by the pattern. In object-oriented languages, the database argument will be the method target. In Java:
 
-```
-<pre class="src src-java">db.pull(<span style="color: #8b2252;">"[*]"</span>, <span style="color: #228b22;">ledZeppelin</span>);
+```java
+db.pull("[*]", ledZeppelin);
 ```
 
 
 
 In Clojure:
 
-```
-<pre class="src src-clojure">(pull db '[*] led-zeppelin)
+```clojure
+(pull db '[*] led-zeppelin)
 ```
 
 
 
 The [pullMany API](../javadoc/datomic/Database.html#pullMany-java.lang.Object-java.util.List-)is similar, except that it takes a collection of entity identifiers, and returns a collection of maps. For example, in Clojure:
 
-```
-<pre class="src src-clojure">(pull-many db '[*] [led-zeppelin jimi-hendrix janis-joplin])
+```clojure
+(pull-many db '[*] [led-zeppelin jimi-hendrix janis-joplin])
 ```
 
 
@@ -170,14 +170,14 @@ An attribute spec names an attribute, with an optional leading underscore on the
 
 The following pattern uses two attribute names to return an `:artist/name`and `:artist/startYear`, pulling on *ledZeppelin*:
 
-```
-<pre class="src src-clojure">[<span style="color: #008b8b;">:artist/name</span> <span style="color: #008b8b;">:artist/gid</span>]
+```clojure
+[:artist/name :artist/gid]
 ```
 
 
 
-```
-<pre class="src src-clojure">=> {<span style="color: #008b8b;">:artist/gid</span> #uuid <span style="color: #8b2252;">"678d88b2-87b0-403b-b63d-5da7465aecc3"</span>, <span style="color: #008b8b;">:artist/name</span> <span style="color: #8b2252;">"Led Zeppelin"</span>}
+```clojure
+=> {:artist/gid #uuid "678d88b2-87b0-403b-b63d-5da7465aecc3", :artist/name "Led Zeppelin"}
 ```
 
 
@@ -200,14 +200,14 @@ An underscore prefix (`\_`) on the local name component of an attribute name cau
 
 You navigate backwards from `:country/GB` to British artists by pulling `:artist/country`:
 
-```
-<pre class="src src-clojure">[<span style="color: #008b8b;">:artist/_country</span>]
+```clojure
+[:artist/_country]
 ```
 
 
 
-```
-<pre class="src src-clojure">=> {<span style="color: #008b8b;">:artist/_country</span> [{<span style="color: #008b8b;">:db/id</span> 17592186045751} {<span style="color: #008b8b;">:db/id</span> 17592186045755} ...]}
+```clojure
+=> {:artist/_country [{:db/id 17592186045751} {:db/id 17592186045755} ...]}
 ```
 
 
@@ -236,17 +236,17 @@ You can explicitly specify the handling of referenced entities by using a map in
 
 The `:track/artists` attribute appears in a map spec, causing the `:db/id` and `:artist/name` to be sub-pulled for each artist on the track *ghostRiders*:
 
-```
-<pre class="src src-clojure">[<span style="color: #008b8b;">:track/name</span> {<span style="color: #008b8b;">:track/artists</span> [<span style="color: #008b8b;">:db/id</span> <span style="color: #008b8b;">:artist/name</span>]}]
+```clojure
+[:track/name {:track/artists [:db/id :artist/name]}]
 ```
 
 
 
-```
-<pre class="src src-clojure">=>
-{<span style="color: #008b8b;">:track/artists</span> [{<span style="color: #008b8b;">:db/id</span> 17592186048186, <span style="color: #008b8b;">:artist/name</span> <span style="color: #8b2252;">"Bob Dylan"</span>}
-                 {<span style="color: #008b8b;">:db/id</span> 17592186049854, <span style="color: #008b8b;">:artist/name</span> <span style="color: #8b2252;">"George Harrison"</span>}],
- <span style="color: #008b8b;">:track/name</span> <span style="color: #8b2252;">"Ghost Riders in the Sky"</span>}
+```clojure
+=>
+{:track/artists [{:db/id 17592186048186, :artist/name "Bob Dylan"}
+                 {:db/id 17592186049854, :artist/name "George Harrison"}],
+ :track/name "Ghost Riders in the Sky"}
 ```
 
 
@@ -259,31 +259,31 @@ The `:track/artists` attribute appears in a map spec, causing the `:db/id` and `
 
 Map specs can nest arbitrarily. The pattern below pulls `concertForBanglaDesh`'s media's tracks' titles and artists' names:
 
-```
-<pre class="src src-clojure">[{<span style="color: #008b8b;">:release/media</span>
-    [{<span style="color: #008b8b;">:medium/tracks</span>
-        [<span style="color: #008b8b;">:track/name</span> {<span style="color: #008b8b;">:track/artists</span> [<span style="color: #008b8b;">:artist/name</span>]}]}]}]
+```clojure
+[{:release/media
+    [{:medium/tracks
+        [:track/name {:track/artists [:artist/name]}]}]}]
 ```
 
 
 
-```
-<pre class="src src-clojure">=>
-[{<span style="color: #008b8b;">:medium/tracks</span>
- [{<span style="color: #008b8b;">:track/artists</span>
-     [{<span style="color: #008b8b;">:artist/name</span> <span style="color: #8b2252;">"Ravi Shankar"</span>} {<span style="color: #008b8b;">:artist/name</span> <span style="color: #8b2252;">"George Harrison"</span>}],
-     <span style="color: #008b8b;">:track/name</span> <span style="color: #8b2252;">"George Harrison / Ravi Shankar Introduction"</span>}
- {<span style="color: #008b8b;">:track/artists</span> [{<span style="color: #008b8b;">:artist/name</span> <span style="color: #8b2252;">"Ravi Shankar"</span>}],
-     <span style="color: #008b8b;">:track/name</span> <span style="color: #8b2252;">"Bangla Dhun"</span>}]}
-  <span style="color: #008b8b;">:medium/tracks</span>
-    [{<span style="color: #008b8b;">:track/artists</span> [{<span style="color: #008b8b;">:artist/name</span> <span style="color: #8b2252;">"George Harrison"</span>}],
-        <span style="color: #008b8b;">:track/name</span> <span style="color: #8b2252;">"Wah-Wah"</span>}
-    {<span style="color: #008b8b;">:track/artists</span> [{<span style="color: #008b8b;">:artist/name</span> <span style="color: #8b2252;">"George Harrison"</span>}],
-        <span style="color: #008b8b;">:track/name</span> <span style="color: #8b2252;">"My Sweet Lord"</span>}
-    {<span style="color: #008b8b;">:track/artists</span> [{<span style="color: #008b8b;">:artist/name</span> <span style="color: #8b2252;">"George Harrison"</span>}],
-        <span style="color: #008b8b;">:track/name</span> <span style="color: #8b2252;">"Awaiting on You All"</span>}
-    {<span style="color: #008b8b;">:track/artists</span> [{<span style="color: #008b8b;">:artist/name</span> <span style="color: #8b2252;">"Billy Preston"</span>}],
-        <span style="color: #008b8b;">:track/name</span> <span style="color: #8b2252;">"That's the Way God Planned It"</span>}]
+```clojure
+=>
+[{:medium/tracks
+ [{:track/artists
+     [{:artist/name "Ravi Shankar"} {:artist/name "George Harrison"}],
+     :track/name "George Harrison / Ravi Shankar Introduction"}
+ {:track/artists [{:artist/name "Ravi Shankar"}],
+     :track/name "Bangla Dhun"}]}
+  :medium/tracks
+    [{:track/artists [{:artist/name "George Harrison"}],
+        :track/name "Wah-Wah"}
+    {:track/artists [{:artist/name "George Harrison"}],
+        :track/name "My Sweet Lord"}
+    {:track/artists [{:artist/name "George Harrison"}],
+        :track/name "Awaiting on You All"}
+    {:track/artists [{:artist/name "Billy Preston"}],
+        :track/name "That's the Way God Planned It"}]
             ...}    
 ```
 
@@ -298,8 +298,8 @@ Map specs can nest arbitrarily. The pattern below pulls `concertForBanglaDesh`'s
 Attribute Spec
 --------------
 
-```
-<pre class="src src-clojure">attr-spec           = attr-name | wildcard | map-spec | attr-expr
+```clojure
+attr-spec           = attr-name | wildcard | map-spec | attr-expr
 attr-expr           = [attr-name attr-option+] | legacy-attr-expr
 attr-option         = as-expr | limit-expr | default-expr
 ```
@@ -317,8 +317,8 @@ Note that the pattern appears in a seq. This necessitates that the whole clause 
 :as Option
 ----------
 
-```
-<pre class="src src-clojure">[attr-name <span style="color: #008b8b;">:as</span> any-value]
+```clojure
+[attr-name :as any-value]
 ```
 
 
@@ -331,14 +331,14 @@ The `:as` option allows replacement of the key for an attribute result map with 
 
 The following pattern uses an :as option to pull an `:artist/name`, replacing the key in the result map with the string "Band Name", pulling on *ledZeppelin*:
 
-```
-<pre class="src src-clojure">[<span style="color: #008b8b;">:artist/name</span> <span style="color: #008b8b;">:as</span> <span style="color: #8b2252;">"Band Name"</span>]
+```clojure
+[:artist/name :as "Band Name"]
 ```
 
 
 
-```
-<pre class="src src-clojure">=> {<span style="color: #8b2252;">"Band Name"</span> <span style="color: #8b2252;">"Led Zeppelin"</span>}
+```clojure
+=> {"Band Name" "Led Zeppelin"}
 ```
 
 
@@ -352,8 +352,8 @@ The following pattern uses an :as option to pull an `:artist/name`, replacing th
 :limit Option
 -------------
 
-```
-<pre class="src src-clojure">[attr-name <span style="color: #008b8b;">:limit</span> (positive-number | nil)]
+```clojure
+[attr-name :limit (positive-number | nil)]
 ```
 
 
@@ -368,26 +368,26 @@ In the absence of an explicit limit, pull will return the first 1000 values for 
 
 To return only 10 of *ledZeppelin*'s tracks:
 
-```
-<pre class="src src-clojure">[<span style="color: #008b8b;">:artist/name</span> (<span style="color: #008b8b;">:track/_artists</span> <span style="color: #008b8b;">:limit</span> 10)]
+```clojure
+[:artist/name (:track/_artists :limit 10)]
 ```
 
 
 
-```
-<pre class="src src-clojure">=>
-{<span style="color: #008b8b;">:artist/name</span> <span style="color: #8b2252;">"Led Zeppelin"</span>,
- <span style="color: #008b8b;">:track/_artists</span>
- [{<span style="color: #008b8b;">:db/id</span> 17592186057344}
-  {<span style="color: #008b8b;">:db/id</span> 17592186057345}
-  {<span style="color: #008b8b;">:db/id</span> 17592186057346}
-  {<span style="color: #008b8b;">:db/id</span> 17592186057347}
-  {<span style="color: #008b8b;">:db/id</span> 17592186057348}
-  {<span style="color: #008b8b;">:db/id</span> 17592186057349}
-  {<span style="color: #008b8b;">:db/id</span> 17592186057350}
-  {<span style="color: #008b8b;">:db/id</span> 17592186057351}
-  {<span style="color: #008b8b;">:db/id</span> 17592186057352}
-  {<span style="color: #008b8b;">:db/id</span> 17592186057355}]}
+```clojure
+=>
+{:artist/name "Led Zeppelin",
+ :track/_artists
+ [{:db/id 17592186057344}
+  {:db/id 17592186057345}
+  {:db/id 17592186057346}
+  {:db/id 17592186057347}
+  {:db/id 17592186057348}
+  {:db/id 17592186057349}
+  {:db/id 17592186057350}
+  {:db/id 17592186057351}
+  {:db/id 17592186057352}
+  {:db/id 17592186057355}]}
 ```
 
 
@@ -400,25 +400,25 @@ To return only 10 of *ledZeppelin*'s tracks:
 
 Pulling from *ledZeppelin*', you can get a limited set of nested track names with:
 
-```
-<pre class="src src-clojure">[{(<span style="color: #008b8b;">:track/_artists</span> <span style="color: #008b8b;">:limit</span> 10) [<span style="color: #008b8b;">:track/name</span>]}]
+```clojure
+[{(:track/_artists :limit 10) [:track/name]}]
 ```
 
 
 
-```
-<pre class="src src-clojure">=>
-{<span style="color: #008b8b;">:track/_artists</span>
- [{<span style="color: #008b8b;">:track/name</span> <span style="color: #8b2252;">"Whole Lotta Love"</span>}
-  {<span style="color: #008b8b;">:track/name</span> <span style="color: #8b2252;">"What Is and What Should Never Be"</span>}
-  {<span style="color: #008b8b;">:track/name</span> <span style="color: #8b2252;">"The Lemon Song"</span>}
-  {<span style="color: #008b8b;">:track/name</span> <span style="color: #8b2252;">"Thank You"</span>}
-  {<span style="color: #008b8b;">:track/name</span> <span style="color: #8b2252;">"Heartbreaker"</span>}
-  {<span style="color: #008b8b;">:track/name</span> <span style="color: #8b2252;">"Living Loving Maid (She's Just a Woman)"</span>}
-  {<span style="color: #008b8b;">:track/name</span> <span style="color: #8b2252;">"Ramble On"</span>}
-  {<span style="color: #008b8b;">:track/name</span> <span style="color: #8b2252;">"Moby Dick"</span>}
-  {<span style="color: #008b8b;">:track/name</span> <span style="color: #8b2252;">"Bring It on Home"</span>}
-  {<span style="color: #008b8b;">:track/name</span> <span style="color: #8b2252;">"Whole Lotta Love"</span>}]}
+```clojure
+=>
+{:track/_artists
+ [{:track/name "Whole Lotta Love"}
+  {:track/name "What Is and What Should Never Be"}
+  {:track/name "The Lemon Song"}
+  {:track/name "Thank You"}
+  {:track/name "Heartbreaker"}
+  {:track/name "Living Loving Maid (She's Just a Woman)"}
+  {:track/name "Ramble On"}
+  {:track/name "Moby Dick"}
+  {:track/name "Bring It on Home"}
+  {:track/name "Whole Lotta Love"}]}
 ```
 
 
@@ -431,37 +431,37 @@ Pulling from *ledZeppelin*', you can get a limited set of nested track names wit
 
 Ths pattern below returns all of Led Zeppelin's tracks, without limit:
 
-```
-<pre class="src src-clojure">[<span style="color: #008b8b;">:artist/name</span> (<span style="color: #008b8b;">:track/_artists</span> <span style="color: #008b8b;">:limit</span> nil)]
+```clojure
+[:artist/name (:track/_artists :limit nil)]
 ```
 
 
 
-```
-<pre class="src src-clojure">=>
-{<span style="color: #008b8b;">:artist/name</span> <span style="color: #8b2252;">"Led Zeppelin"</span>,
- <span style="color: #008b8b;">:track/_artists</span>
- [{<span style="color: #008b8b;">:db/id</span> 17592186057344}
-  {<span style="color: #008b8b;">:db/id</span> 17592186057345}
-  {<span style="color: #008b8b;">:db/id</span> 17592186057346}
-  {<span style="color: #008b8b;">:db/id</span> 17592186057347}
-  {<span style="color: #008b8b;">:db/id</span> 17592186057348}
-  {<span style="color: #008b8b;">:db/id</span> 17592186057349}
-  {<span style="color: #008b8b;">:db/id</span> 17592186057350}
-  {<span style="color: #008b8b;">:db/id</span> 17592186057351}
-  {<span style="color: #008b8b;">:db/id</span> 17592186057352}
-  {<span style="color: #008b8b;">:db/id</span> 17592186057355}
-  {<span style="color: #008b8b;">:db/id</span> 17592186057356}
-  {<span style="color: #008b8b;">:db/id</span> 17592186057357}
-  {<span style="color: #008b8b;">:db/id</span> 17592186057358}
-  {<span style="color: #008b8b;">:db/id</span> 17592186057359}
-  {<span style="color: #008b8b;">:db/id</span> 17592186057360}
-  {<span style="color: #008b8b;">:db/id</span> 17592186057361}
-  {<span style="color: #008b8b;">:db/id</span> 17592186057362}
-  {<span style="color: #008b8b;">:db/id</span> 17592186057363}
-  {<span style="color: #008b8b;">:db/id</span> 17592186057366}
-  {<span style="color: #008b8b;">:db/id</span> 17592186057367}
-  ...]} <span style="color: #b22222;">;; </span><span style="color: #b22222;">lots more</span>
+```clojure
+=>
+{:artist/name "Led Zeppelin",
+ :track/_artists
+ [{:db/id 17592186057344}
+  {:db/id 17592186057345}
+  {:db/id 17592186057346}
+  {:db/id 17592186057347}
+  {:db/id 17592186057348}
+  {:db/id 17592186057349}
+  {:db/id 17592186057350}
+  {:db/id 17592186057351}
+  {:db/id 17592186057352}
+  {:db/id 17592186057355}
+  {:db/id 17592186057356}
+  {:db/id 17592186057357}
+  {:db/id 17592186057358}
+  {:db/id 17592186057359}
+  {:db/id 17592186057360}
+  {:db/id 17592186057361}
+  {:db/id 17592186057362}
+  {:db/id 17592186057363}
+  {:db/id 17592186057366}
+  {:db/id 17592186057367}
+  ...]} ;; lots more
 ```
 
 
@@ -475,8 +475,8 @@ Ths pattern below returns all of Led Zeppelin's tracks, without limit:
 :default Option
 ---------------
 
-```
-<pre class="src src-clojure">[attr-name <span style="color: #008b8b;">:default</span> any-value]
+```clojure
+[attr-name :default any-value]
 ```
 
 
@@ -489,28 +489,28 @@ The :default option specifies a value to use if an attribute is not present for 
 
 The following select reports a zero :artist/endYear for Paul McCartney, who is still active:
 
-```
-<pre class="src src-clojure">[<span style="color: #008b8b;">:artist/name</span> (<span style="color: #008b8b;">:artist/endYear</span> <span style="color: #008b8b;">:default</span> 0)] 
+```clojure
+[:artist/name (:artist/endYear :default 0)] 
 ```
 
 
 
-```
-<pre class="src src-clojure">=> {<span style="color: #008b8b;">:artist/endYear</span> 0, <span style="color: #008b8b;">:artist/name</span> <span style="color: #8b2252;">"Paul McCartney"</span>}
+```clojure
+=> {:artist/endYear 0, :artist/name "Paul McCartney"}
 ```
 
 
 
 The default need not be of the same type as the attribute's values:
 
-```
-<pre class="src src-clojure">[<span style="color: #008b8b;">:artist/name</span> (<span style="color: #008b8b;">:artist/endYear</span> <span style="color: #008b8b;">:default</span> <span style="color: #8b2252;">"N/A"</span>)] 
+```clojure
+[:artist/name (:artist/endYear :default "N/A")] 
 ```
 
 
 
-```
-<pre class="src src-clojure">=> {<span style="color: #008b8b;">:artist/endYear</span> <span style="color: #8b2252;">"N/A"</span>, <span style="color: #008b8b;">:artist/name</span> <span style="color: #8b2252;">"Paul McCartney"</span>}
+```clojure
+=> {:artist/endYear "N/A", :artist/name "Paul McCartney"}
 ```
 
 
@@ -524,8 +524,8 @@ The default need not be of the same type as the attribute's values:
 :xform Option
 -------------
 
-```
-<pre class="src src-clojure">[attr-name <span style="color: #008b8b;">:xform</span> symbol]
+```clojure
+[attr-name :xform symbol]
 ```
 
 
@@ -553,14 +553,14 @@ The `fn` takes the value returned from the pull expression and returns a value t
 
 The following example uses the unqualified symbol `str` (from the default functions) to transform the result of pulling the `:artist/endYear` for led-zeppelin from an integer to a string:
 
-```
-<pre class="src src-clojure">[[<span style="color: #008b8b;">:artist/endYear</span> <span style="color: #008b8b;">:xform</span> str]]
+```clojure
+[[:artist/endYear :xform str]]
 ```
 
 
 
-```
-<pre class="src src-clojure">=> {<span style="color: #008b8b;">:artist/endYear</span> <span style="color: #8b2252;">"1980"</span>}
+```clojure
+=> {:artist/endYear "1980"}
 ```
 
 
@@ -587,40 +587,40 @@ The wildcard specification `*` pulls all attributes of an entity, and recursivel
 
 The wildcard pulls all the direct attributes of the release. It also recursively pulls `:release/media` because it is a component attribute. It does not recursively pull `:release/artists` or `:release/country`, because those are *not* component attributes.
 
-```
-<pre class="src src-clojure">[*]
+```clojure
+[*]
 ```
 
 
 
-```
-<pre class="src src-clojure">=>
-{<span style="color: #008b8b;">:release/name</span> <span style="color: #8b2252;">"The Concert for Bangla Desh"</span>,
- <span style="color: #008b8b;">:release/artists</span> [{<span style="color: #008b8b;">:db/id</span> 17592186049854}],
- <span style="color: #008b8b;">:release/country</span> {<span style="color: #008b8b;">:db/id</span> 17592186045504},
- <span style="color: #008b8b;">:release/gid</span> #uuid <span style="color: #8b2252;">"f3bdff34-9a85-4adc-a014-922eef9cdaa5"</span>,
- <span style="color: #008b8b;">:release/day</span> 20,
- <span style="color: #008b8b;">:release/status</span> <span style="color: #8b2252;">"Official"</span>,
- <span style="color: #008b8b;">:release/month</span> 12,
- <span style="color: #008b8b;">:release/artistCredit</span> <span style="color: #8b2252;">"George Harrison"</span>,
- <span style="color: #008b8b;">:db/id</span> 17592186072003,
- <span style="color: #008b8b;">:release/year</span> 1971,
- <span style="color: #008b8b;">:release/media</span>
- [{<span style="color: #008b8b;">:db/id</span> 17592186072004,
-   <span style="color: #008b8b;">:medium/format</span> {<span style="color: #008b8b;">:db/id</span> 17592186045741},
-   <span style="color: #008b8b;">:medium/position</span> 1,
-   <span style="color: #008b8b;">:medium/trackCount</span> 2,
-   <span style="color: #008b8b;">:medium/tracks</span>
-   [{<span style="color: #008b8b;">:db/id</span> 17592186072005,
-     <span style="color: #008b8b;">:track/duration</span> 376000,
-     <span style="color: #008b8b;">:track/name</span> <span style="color: #8b2252;">"George Harrison / Ravi Shankar Introduction"</span>,
-     <span style="color: #008b8b;">:track/position</span> 1,
-     <span style="color: #008b8b;">:track/artists</span> [{<span style="color: #008b8b;">:db/id</span> 17592186048829} {<span style="color: #008b8b;">:db/id</span> 17592186049854}]}
-    {<span style="color: #008b8b;">:db/id</span> 17592186072006,
-     <span style="color: #008b8b;">:track/duration</span> 979000,
-     <span style="color: #008b8b;">:track/name</span> <span style="color: #8b2252;">"Bangla Dhun"</span>,
-     <span style="color: #008b8b;">:track/position</span> 2,
-     <span style="color: #008b8b;">:track/artists</span> [{<span style="color: #008b8b;">:db/id</span> 17592186048829}]}]}
+```clojure
+=>
+{:release/name "The Concert for Bangla Desh",
+ :release/artists [{:db/id 17592186049854}],
+ :release/country {:db/id 17592186045504},
+ :release/gid #uuid "f3bdff34-9a85-4adc-a014-922eef9cdaa5",
+ :release/day 20,
+ :release/status "Official",
+ :release/month 12,
+ :release/artistCredit "George Harrison",
+ :db/id 17592186072003,
+ :release/year 1971,
+ :release/media
+ [{:db/id 17592186072004,
+   :medium/format {:db/id 17592186045741},
+   :medium/position 1,
+   :medium/trackCount 2,
+   :medium/tracks
+   [{:db/id 17592186072005,
+     :track/duration 376000,
+     :track/name "George Harrison / Ravi Shankar Introduction",
+     :track/position 1,
+     :track/artists [{:db/id 17592186048829} {:db/id 17592186049854}]}
+    {:db/id 17592186072006,
+     :track/duration 979000,
+     :track/name "Bangla Dhun",
+     :track/position 2,
+     :track/artists [{:db/id 17592186048829}]}]}
   ...
   ]}
 ```
@@ -641,20 +641,20 @@ A map specification can be used in conjunction with the wildcard to provide subp
 
 The wildcard pulls all attributes of the *ghostRiders* track, and an explicit map overrides the handling of `:track/artists` to pull `:artist/name`.
 
-```
-<pre class="src src-clojure">[<span style="color: #8b2252;">"*"</span> {<span style="color: #008b8b;">:track/artists</span> [<span style="color: #008b8b;">:artist/name</span>]}]
+```clojure
+["*" {:track/artists [:artist/name]}]
 ```
 
 
 
-```
-<pre class="src src-clojure">=>
-{<span style="color: #008b8b;">:db/id</span> 17592186063810,
- <span style="color: #008b8b;">:track/duration</span> 218506,
- <span style="color: #008b8b;">:track/name</span> <span style="color: #8b2252;">"Ghost Riders in the Sky"</span>,
- <span style="color: #008b8b;">:track/position</span> 11,
- <span style="color: #008b8b;">:track/artists</span>
- [{<span style="color: #008b8b;">:artist/name</span> <span style="color: #8b2252;">"Bob Dylan"</span>} {<span style="color: #008b8b;">:artist/name</span> <span style="color: #8b2252;">"George Harrison"</span>}]}
+```clojure
+=>
+{:db/id 17592186063810,
+ :track/duration 218506,
+ :track/name "Ghost Riders in the Sky",
+ :track/position 11,
+ :track/artists
+ [{:artist/name "Bob Dylan"} {:artist/name "George Harrison"}]}
 ```
 
 
@@ -686,8 +686,8 @@ If a recursive subselect encounters an entity that it has already seen, it will 
 
 The following (non-mbrainz) specification will pull the first and last names of friends-of-friends up to six degrees of separation from the original entity.
 
-```
-<pre class="src src-clojure">[<span style="color: #008b8b;">:person/firstName</span> <span style="color: #008b8b;">:person/lastName</span> {<span style="color: #008b8b;">:person/friends</span> 6}]
+```clojure
+[:person/firstName :person/lastName {:person/friends 6}]
 ```
 
 
@@ -700,8 +700,8 @@ The following (non-mbrainz) specification will pull the first and last names of 
 
 The following specification will find all reachable friends, which might be most of the friends in the entire database.
 
-```
-<pre class="src src-clojure">[<span style="color: #008b8b;">:person/firstName</span> <span style="color: #008b8b;">:person/lastName</span> {<span style="color: #008b8b;">:person/friends</span> ...}]
+```clojure
+[:person/firstName :person/lastName {:person/friends ...}]
 ```
 
 
@@ -714,37 +714,37 @@ The following specification will find all reachable friends, which might be most
 
 If there is no match between a pattern and an entity, then `pull` will return nil (not an empty map):
 
-```
-<pre class="src src-clojure"><span style="color: #b22222;">;; </span><span style="color: #b22222;">pattern</span>
-[<span style="color: #008b8b;">:penguins</span>]
-<span style="color: #b22222;">;; </span><span style="color: #b22222;">entity</span>
+```clojure
+;; pattern
+[:penguins]
+;; entity
 led-zeppelin
 ```
 
 
 
-```
-<pre class="src src-clojure">=> nil
+```clojure
+=> nil
 ```
 
 
 
 Non-matching results will be removed entirely from collections. Even though *ghost-riders* has artists, none of those artists have `:penguins`:
 
-```
-<pre class="src src-clojure"><span style="color: #b22222;">;; </span><span style="color: #b22222;">pattern</span>
-[{<span style="color: #008b8b;">:track/artists</span> [<span style="color: #008b8b;">:penguins</span>]}]
+```clojure
+;; pattern
+[{:track/artists [:penguins]}]
 
-<span style="color: #b22222;">;; </span><span style="color: #b22222;">entity</span>
+;; entity
 ghost-riders
 ```
 
 
 
-```
-<pre class="src src-clojure">
-<span style="color: #b22222;">;; </span><span style="color: #b22222;">result</span>
-=> {<span style="color: #008b8b;">:track/artists</span> []}
+```clojure
+
+;; result
+=> {:track/artists []}
 ```
 
 
@@ -770,35 +770,35 @@ If a pull `attr-name` names a reference attribute, `pull` will return a map for 
 
 `:medium/tracks` is a component attribute, so pulling `:release/media` will also pull related tracks. The example below pulls from *darkSideOfTheMoon*.
 
-```
-<pre class="src src-clojure">[<span style="color: #008b8b;">:release/media</span>]
+```clojure
+[:release/media]
 ```
 
 
 
-```
-<pre class="src src-clojure">=>
-{<span style="color: #008b8b;">:release/media</span>
- [{<span style="color: #008b8b;">:db/id</span> 17592186121277,
-   <span style="color: #008b8b;">:medium/format</span> {<span style="color: #008b8b;">:db/id</span> 17592186045741},
-   <span style="color: #008b8b;">:medium/position</span> 1,
-   <span style="color: #008b8b;">:medium/trackCount</span> 10,
-   <span style="color: #008b8b;">:medium/tracks</span>
-   [{<span style="color: #008b8b;">:db/id</span> 17592186121278,
-     <span style="color: #008b8b;">:track/duration</span> 68346,
-     <span style="color: #008b8b;">:track/name</span> <span style="color: #8b2252;">"Speak to Me"</span>,
-     <span style="color: #008b8b;">:track/position</span> 1,
-     <span style="color: #008b8b;">:track/artists</span> [{<span style="color: #008b8b;">:db/id</span> 17592186046909}]}
-    {<span style="color: #008b8b;">:db/id</span> 17592186121279,
-     <span style="color: #008b8b;">:track/duration</span> 168720,
-     <span style="color: #008b8b;">:track/name</span> <span style="color: #8b2252;">"Breathe"</span>,
-     <span style="color: #008b8b;">:track/position</span> 2,
-     <span style="color: #008b8b;">:track/artists</span> [{<span style="color: #008b8b;">:db/id</span> 17592186046909}]}
-    {<span style="color: #008b8b;">:db/id</span> 17592186121280,
-     <span style="color: #008b8b;">:track/duration</span> 230600,
-     <span style="color: #008b8b;">:track/name</span> <span style="color: #8b2252;">"On the Run"</span>,
-     <span style="color: #008b8b;">:track/position</span> 3,
-     <span style="color: #008b8b;">:track/artists</span> [{<span style="color: #008b8b;">:db/id</span> 17592186046909}]}
+```clojure
+=>
+{:release/media
+ [{:db/id 17592186121277,
+   :medium/format {:db/id 17592186045741},
+   :medium/position 1,
+   :medium/trackCount 10,
+   :medium/tracks
+   [{:db/id 17592186121278,
+     :track/duration 68346,
+     :track/name "Speak to Me",
+     :track/position 1,
+     :track/artists [{:db/id 17592186046909}]}
+    {:db/id 17592186121279,
+     :track/duration 168720,
+     :track/name "Breathe",
+     :track/position 2,
+     :track/artists [{:db/id 17592186046909}]}
+    {:db/id 17592186121280,
+     :track/duration 230600,
+     :track/name "On the Run",
+     :track/position 3,
+     :track/artists [{:db/id 17592186046909}]}
     ...]}]}
 ```
 
@@ -820,14 +820,14 @@ If a reference is to a non-component attribute, the default is to pull only the 
 
 Pulling `:artist/_{country}` of `:country/GB` returns only the entity ids for the artists from Great Britain:
 
-```
-<pre class="src src-clojure">[<span style="color: #008b8b;">:artist/_country</span>]
+```clojure
+[:artist/_country]
 ```
 
 
 
-```
-<pre class="src src-clojure">=> {<span style="color: #008b8b;">:artist/_country</span> [{<span style="color: #008b8b;">:db/id</span> 17592186045751} {<span style="color: #008b8b;">:db/id</span> 17592186045755} ...]}
+```clojure
+=> {:artist/_country [{:db/id 17592186045751} {:db/id 17592186045755} ...]}
 ```
 
 
@@ -851,14 +851,14 @@ If navigating an attribute might lead to more than one value, the pull result wi
 
 Pulling `:artist/_{country}` of `:country/GB` returns a list of the entity ids for the artists from Great Britain:
 
-```
-<pre class="src src-clojure">[<span style="color: #008b8b;">:artist/_country</span>]
+```clojure
+[:artist/_country]
 ```
 
 
 
-```
-<pre class="src src-clojure">=> {<span style="color: #008b8b;">:artist/_country</span> [{<span style="color: #008b8b;">:db/id</span> 17592186045751} {<span style="color: #008b8b;">:db/id</span> 17592186045755} ...]}
+```clojure
+=> {:artist/_country [{:db/id 17592186045751} {:db/id 17592186045755} ...]}
 ```
 
 
@@ -879,14 +879,14 @@ In the absence of a default, attribute specifications that do not match an entit
 
 Paul McCartney has an `:artist/name` but not a `died-in-1966`, so only the former appears in a pull result:
 
-```
-<pre class="src src-clojure">[<span style="color: #008b8b;">:artist/name</span> <span style="color: #008b8b;">:died-in-1966?</span>]
+```clojure
+[:artist/name :died-in-1966?]
 ```
 
 
 
-```
-<pre class="src src-clojure">=> {<span style="color: #008b8b;">:artist/name</span> <span style="color: #8b2252;">"Paul McCartney"</span>}
+```clojure
+=> {:artist/name "Paul McCartney"}
 ```
 
 

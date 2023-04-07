@@ -14,9 +14,9 @@ Changing a `:db/ident`
 
 This example changes the `:db/ident` of `:person/name` to be `:person/full-name`.
 
-```
-<pre class="src src-clojure">[{<span style="color: #008b8b;">:db/id</span> <span style="color: #008b8b;">:person/name</span>
-  <span style="color: #008b8b;">:db/ident</span> <span style="color: #008b8b;">:person/full-name</span>}]
+```clojure
+[{:db/id :person/name
+  :db/ident :person/full-name}]
 ```
 
 
@@ -38,11 +38,11 @@ Changing a `:db/cardinality` Attribute
 
 The example below changes the cardinality of `:person/favorite-food` to many and the cardinality of `:person/email` to single.
 
-```
-<pre class="src src-clojure">[{<span style="color: #008b8b;">:db/id</span> <span style="color: #008b8b;">:person/favorite-food</span>
-  <span style="color: #008b8b;">:db/cardinality</span> <span style="color: #008b8b;">:db.cardinality/many</span>}
- {<span style="color: #008b8b;">:db/id</span> <span style="color: #008b8b;">:person/email</span>
-  <span style="color: #008b8b;">:db/cardinality</span> <span style="color: #008b8b;">:db.cardinality/one</span>]
+```clojure
+[{:db/id :person/favorite-food
+  :db/cardinality :db.cardinality/many}
+ {:db/id :person/email
+  :db/cardinality :db.cardinality/one]
 ```
 
 
@@ -60,11 +60,11 @@ Changing a `:db/isComponent` Attribute
 
 The example below changes `:order/line-items` to be a component, and `:customer/orders` to not be a component.
 
-```
-<pre class="src src-clojure">[{<span style="color: #008b8b;">:db/id</span> <span style="color: #008b8b;">:order/line-items</span>
-  <span style="color: #008b8b;">:db/isComponent</span> true}]
-[{<span style="color: #008b8b;">:db/id</span> <span style="color: #008b8b;">:customer/orders</span>
-  <span style="color: #008b8b;">:db/isComponent</span> false}]
+```clojure
+[{:db/id :order/line-items
+  :db/isComponent true}]
+[{:db/id :customer/orders
+  :db/isComponent false}]
 ```
 
 
@@ -80,11 +80,11 @@ Changing a `:db/noHistory` Attribute
 
 The example below changes `:person/encrypted-password` to stop retaining history going forward, and changes `:person/address` to start retaining history going forward.
 
-```
-<pre class="src src-clojure">[{<span style="color: #008b8b;">:db/id</span> <span style="color: #008b8b;">:person/encrypted-password</span>
-  <span style="color: #008b8b;">:db/noHistory</span> true}]
-[{<span style="color: #008b8b;">:db/id</span> <span style="color: #008b8b;">:person/address</span>
-  <span style="color: #008b8b;">:db/noHistory</span> false}]
+```clojure
+[{:db/id :person/encrypted-password
+  :db/noHistory true}]
+[{:db/id :person/address
+  :db/noHistory false}]
 ```
 
 
@@ -100,9 +100,9 @@ Changing a `:db/unique` Attribute
 
 This example changes the attribute `:person/external-id` to be a unique identity:
 
-```
-<pre class="src src-clojure">[{<span style="color: #008b8b;">:db/id</span> <span style="color: #008b8b;">:person/external-id</span>
-  <span style="color: #008b8b;">:db/unique</span> <span style="color: #008b8b;">:db.unique/identity</span>}] 
+```clojure
+[{:db/id :person/external-id
+  :db/unique :db.unique/identity}] 
 ```
 
 
@@ -116,8 +116,8 @@ Adding a unique constraint does not change history, therefore historical databas
 
 This example retracts the unique identity constraint on `:person/external-id` going forward:
 
-```
-<pre class="src src-clojure">[[<span style="color: #008b8b;">:db/retract</span> <span style="color: #008b8b;">:person/external-id</span> <span style="color: #008b8b;">:db/unique</span> <span style="color: #008b8b;">:db.unique/identity</span>]]
+```clojure
+[[:db/retract :person/external-id :db/unique :db.unique/identity]]
 ```
 
 

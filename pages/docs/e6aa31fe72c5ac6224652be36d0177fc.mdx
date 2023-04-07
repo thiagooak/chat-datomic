@@ -124,17 +124,17 @@ datomic system describe-groups <system>
 
 A json array of compute group information is returned:
 
-```
-<pre class="src src-js">[{<span style="color: #8b2252;">"name"</span>: <span style="color: #8b2252;">"<group-name>"</span>,
-  <span style="color: #8b2252;">"type"</span>: <span style="color: #8b2252;">"<group-type>"</span>,
-  <span style="color: #8b2252;">"endpoints"</span>:
-  [{<span style="color: #8b2252;">"type"</span>: <span style="color: #8b2252;">"<endpoint-type>"</span>,
-    <span style="color: #8b2252;">"api-gateway-endpoint"</span>: <span style="color: #8b2252;">"<endpoint-address>"</span>,
-    <span style="color: #8b2252;">"api-gateway-id"</span>:<span style="color: #8b2252;">" <gateway-id>"</span>,
-    <span style="color: #8b2252;">"api-gateway-name"</span>: <span style="color: #8b2252;">"<gateway-name>"</span>},
+```js
+[{"name": "<group-name>",
+  "type": "<group-type>",
+  "endpoints":
+  [{"type": "<endpoint-type>",
+    "api-gateway-endpoint": "<endpoint-address>",
+    "api-gateway-id":" <gateway-id>",
+    "api-gateway-name": "<gateway-name>"},
    ...],
-  <span style="color: #8b2252;">"cft-version"</span>: <span style="color: #8b2252;">"<cloudformation-version>"</span>,
-  <span style="color: #8b2252;">"cloud-version"</span>: <span style="color: #8b2252;">"<cloud-version>"</span>},
+  "cft-version": "<cloudformation-version>",
+  "cloud-version": "<cloud-version>"},
  ...]
 ```
 

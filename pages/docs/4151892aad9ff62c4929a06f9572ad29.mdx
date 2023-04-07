@@ -107,10 +107,10 @@ A tuple is a collection of 2-8 scalar values, represented in memory as a Clojure
 
 The following types are considered scalar types suitable for use in a tuple:
 
-```
-<pre class="src src-clojure"><span style="color: #008b8b;">:db.type/bigdec</span> <span style="color: #008b8b;">:db.type/bigint</span> <span style="color: #008b8b;">:db.type/boolean</span> <span style="color: #008b8b;">:db.type/double</span> 
-<span style="color: #008b8b;">:db.type/instant</span> <span style="color: #008b8b;">:db.type/keyword</span> <span style="color: #008b8b;">:db.type/long</span> <span style="color: #008b8b;">:db.type/ref</span> <span style="color: #008b8b;">:db.type/string</span> 
-<span style="color: #008b8b;">:db.type/symbol</span> <span style="color: #008b8b;">:db.type/uri</span> <span style="color: #008b8b;">:db.type/uuid</span> 
+```clojure
+:db.type/bigdec :db.type/bigint :db.type/boolean :db.type/double 
+:db.type/instant :db.type/keyword :db.type/long :db.type/ref :db.type/string 
+:db.type/symbol :db.type/uri :db.type/uuid 
 ```
 
 
@@ -138,63 +138,63 @@ For example, consider the domain of course registrations, modelled with the foll
 - semesters represent a period in time when a course is run, e.g. "Fall 2019"
 - students can take courses in particular semesters
 
-```
-<pre class="src src-clojure">[{<span style="color: #008b8b;">:db/ident</span> <span style="color: #008b8b;">:student/first</span>
-  <span style="color: #008b8b;">:db/valueType</span> <span style="color: #008b8b;">:db.type/string</span>
-  <span style="color: #008b8b;">:db/cardinality</span> <span style="color: #008b8b;">:db.cardinality/one</span>}
- {<span style="color: #008b8b;">:db/ident</span> <span style="color: #008b8b;">:student/last</span>
-  <span style="color: #008b8b;">:db/valueType</span> <span style="color: #008b8b;">:db.type/string</span>
-  <span style="color: #008b8b;">:db/cardinality</span> <span style="color: #008b8b;">:db.cardinality/one</span>}
- {<span style="color: #008b8b;">:db/ident</span> <span style="color: #008b8b;">:student/email</span>
-  <span style="color: #008b8b;">:db/valueType</span> <span style="color: #008b8b;">:db.type/string</span>
-  <span style="color: #008b8b;">:db/cardinality</span> <span style="color: #008b8b;">:db.cardinality/one</span>
-  <span style="color: #008b8b;">:db/unique</span> <span style="color: #008b8b;">:db.unique/identity</span>}
- {<span style="color: #008b8b;">:db/ident</span> <span style="color: #008b8b;">:semester/year</span>
-  <span style="color: #008b8b;">:db/valueType</span> <span style="color: #008b8b;">:db.type/long</span>
-  <span style="color: #008b8b;">:db/cardinality</span> <span style="color: #008b8b;">:db.cardinality/one</span>}
- {<span style="color: #008b8b;">:db/ident</span> <span style="color: #008b8b;">:semester/season</span>
-  <span style="color: #008b8b;">:db/valueType</span> <span style="color: #008b8b;">:db.type/keyword</span>
-  <span style="color: #008b8b;">:db/cardinality</span> <span style="color: #008b8b;">:db.cardinality/one</span>}
- {<span style="color: #008b8b;">:db/ident</span> <span style="color: #008b8b;">:semester/year+season</span>
-  <span style="color: #008b8b;">:db/valueType</span> <span style="color: #008b8b;">:db.type/tuple</span>
-  <span style="color: #008b8b;">:db/tupleAttrs</span> [<span style="color: #008b8b;">:semester/year</span> <span style="color: #008b8b;">:semester/season</span>]
-  <span style="color: #008b8b;">:db/cardinality</span> <span style="color: #008b8b;">:db.cardinality/one</span>
-  <span style="color: #008b8b;">:db/unique</span> <span style="color: #008b8b;">:db.unique/identity</span>}
- {<span style="color: #008b8b;">:db/ident</span> <span style="color: #008b8b;">:course/id</span>
-  <span style="color: #008b8b;">:db/valueType</span> <span style="color: #008b8b;">:db.type/string</span>
-  <span style="color: #008b8b;">:db/unique</span> <span style="color: #008b8b;">:db.unique/identity</span>
-  <span style="color: #008b8b;">:db/cardinality</span> <span style="color: #008b8b;">:db.cardinality/one</span>}
- {<span style="color: #008b8b;">:db/ident</span> <span style="color: #008b8b;">:course/name</span>
-  <span style="color: #008b8b;">:db/valueType</span> <span style="color: #008b8b;">:db.type/string</span>
-  <span style="color: #008b8b;">:db/cardinality</span> <span style="color: #008b8b;">:db.cardinality/one</span>}]
+```clojure
+[{:db/ident :student/first
+  :db/valueType :db.type/string
+  :db/cardinality :db.cardinality/one}
+ {:db/ident :student/last
+  :db/valueType :db.type/string
+  :db/cardinality :db.cardinality/one}
+ {:db/ident :student/email
+  :db/valueType :db.type/string
+  :db/cardinality :db.cardinality/one
+  :db/unique :db.unique/identity}
+ {:db/ident :semester/year
+  :db/valueType :db.type/long
+  :db/cardinality :db.cardinality/one}
+ {:db/ident :semester/season
+  :db/valueType :db.type/keyword
+  :db/cardinality :db.cardinality/one}
+ {:db/ident :semester/year+season
+  :db/valueType :db.type/tuple
+  :db/tupleAttrs [:semester/year :semester/season]
+  :db/cardinality :db.cardinality/one
+  :db/unique :db.unique/identity}
+ {:db/ident :course/id
+  :db/valueType :db.type/string
+  :db/unique :db.unique/identity
+  :db/cardinality :db.cardinality/one}
+ {:db/ident :course/name
+  :db/valueType :db.type/string
+  :db/cardinality :db.cardinality/one}]
 ```
 
 
 
 A *registration* entity is a unique combination of a student, semester, and course. In Datomic schema:
 
-```
-<pre class="src src-clojure">{<span style="color: #008b8b;">:db/ident</span> <span style="color: #008b8b;">:reg/course</span>
- <span style="color: #008b8b;">:db/valueType</span> <span style="color: #008b8b;">:db.type/ref</span>
- <span style="color: #008b8b;">:db/cardinality</span> <span style="color: #008b8b;">:db.cardinality/one</span>}
-{<span style="color: #008b8b;">:db/ident</span> <span style="color: #008b8b;">:reg/semester</span>
- <span style="color: #008b8b;">:db/valueType</span> <span style="color: #008b8b;">:db.type/ref</span>
- <span style="color: #008b8b;">:db/cardinality</span> <span style="color: #008b8b;">:db.cardinality/one</span>}
-{<span style="color: #008b8b;">:db/ident</span> <span style="color: #008b8b;">:reg/student</span>
- <span style="color: #008b8b;">:db/valueType</span> <span style="color: #008b8b;">:db.type/ref</span>
- <span style="color: #008b8b;">:db/cardinality</span> <span style="color: #008b8b;">:db.cardinality/one</span>}
+```clojure
+{:db/ident :reg/course
+ :db/valueType :db.type/ref
+ :db/cardinality :db.cardinality/one}
+{:db/ident :reg/semester
+ :db/valueType :db.type/ref
+ :db/cardinality :db.cardinality/one}
+{:db/ident :reg/student
+ :db/valueType :db.type/ref
+ :db/cardinality :db.cardinality/one}
 ```
 
 
 
 A given course/semester/student combination is unique in the database. To model this, you can create a composite tuple whose `:db/tupleAttrs` are
 
-```
-<pre class="src src-clojure">{<span style="color: #008b8b;">:db/ident</span> <span style="color: #008b8b;">:reg/semester+course+student</span>
- <span style="color: #008b8b;">:db/valueType</span> <span style="color: #008b8b;">:db.type/tuple</span>
- <span style="color: #008b8b;">:db/tupleAttrs</span> [<span style="color: #008b8b;">:reg/course</span> <span style="color: #008b8b;">:reg/semester</span> <span style="color: #008b8b;">:reg/student</span>]
- <span style="color: #008b8b;">:db/cardinality</span> <span style="color: #008b8b;">:db.cardinality/one</span>
- <span style="color: #008b8b;">:db/unique</span> <span style="color: #008b8b;">:db.unique/identity</span>}
+```clojure
+{:db/ident :reg/semester+course+student
+ :db/valueType :db.type/tuple
+ :db/tupleAttrs [:reg/course :reg/semester :reg/student]
+ :db/cardinality :db.cardinality/one
+ :db/unique :db.unique/identity}
 ```
 
 
@@ -205,31 +205,31 @@ Composite attributes are entirely managed by Datomic–you never assert or retra
 
 Given a database with the courses and semesters schema, add some seed data:
 
-```
-<pre class="src src-clojure">[{<span style="color: #008b8b;">:semester/year</span> 2018
-  <span style="color: #008b8b;">:semester/season</span> <span style="color: #008b8b;">:fall</span>}
- {<span style="color: #008b8b;">:course/id</span> <span style="color: #8b2252;">"BIO-101"</span>}
- {<span style="color: #008b8b;">:student/first</span> <span style="color: #8b2252;">"John"</span>
-  <span style="color: #008b8b;">:student/last</span> <span style="color: #8b2252;">"Doe"</span>
-  <span style="color: #008b8b;">:student/email</span> <span style="color: #8b2252;">"johndoe@university.edu"</span>}]
+```clojure
+[{:semester/year 2018
+  :semester/season :fall}
+ {:course/id "BIO-101"}
+ {:student/first "John"
+  :student/last "Doe"
+  :student/email "johndoe@university.edu"}]
 ```
 
 
 
 Now if you register John for Bio 101 in the fall of 2018 by transacting:
 
-```
-<pre class="src src-clojure">[{<span style="color: #008b8b;">:reg/course</span> [<span style="color: #008b8b;">:course/id</span> <span style="color: #8b2252;">"BIO-101"</span>]
-  <span style="color: #008b8b;">:reg/semester</span> [<span style="color: #008b8b;">:semester/year+season</span> [2018 <span style="color: #008b8b;">:fall</span>]]
-  <span style="color: #008b8b;">:reg/student</span> [<span style="color: #008b8b;">:student/email</span> <span style="color: #8b2252;">"johndoe@university.edu"</span>]}] 
+```clojure
+[{:reg/course [:course/id "BIO-101"]
+  :reg/semester [:semester/year+season [2018 :fall]]
+  :reg/student [:student/email "johndoe@university.edu"]}] 
 ```
 
 
 
 Datomic will also add the composite tuple datom:
 
-```
-<pre class="src src-clojure">#datom[20736789299855447 83 [6324390882967637 44112406506373204 64110323992363094] 13194139533320 true]]
+```clojure
+#datom[20736789299855447 83 [6324390882967637 44112406506373204 64110323992363094] 13194139533320 true]]
 ```
 
 
@@ -238,8 +238,8 @@ Note that your entity IDs will differ from those in the example above
 
 If the current value of an entity does not include all attributes of a composite, the missing attributes will be nil. For example, given a composite 4-tuple :reg/semester+course+student+grade that also includes a student’s grade, the assertions above would cause Datomic to populate:
 
-```
-<pre class="src src-clojure">#datom[20736789299855447 83 [6324390882967637 44112406506373204 64110323992363094 nil] 13194139533320 true]]
+```clojure
+#datom[20736789299855447 83 [6324390882967637 44112406506373204 64110323992363094 nil] 13194139533320 true]]
 ```
 
 
@@ -248,18 +248,18 @@ Note that nil sorts lower than all other values, so tuples with trailing nils ca
 
 If you retract all constituents of a composite, Datomic will retract the composite. For example, transacting:
 
-```
-<pre class="src src-clojure">[[<span style="color: #008b8b;">:db/retract</span> 20736789299855447 <span style="color: #008b8b;">:reg/course</span> [<span style="color: #008b8b;">:course/id</span> <span style="color: #8b2252;">"BIO-101"</span>]]
- [<span style="color: #008b8b;">:db/retract</span> 20736789299855447 <span style="color: #008b8b;">:reg/semester</span> [<span style="color: #008b8b;">:semester/year+season</span> [2018 <span style="color: #008b8b;">:fall</span>]]]
- [<span style="color: #008b8b;">:db/retract</span> 20736789299855447 <span style="color: #008b8b;">:reg/student</span> [<span style="color: #008b8b;">:student/email</span> <span style="color: #8b2252;">"johndoe@university.edu"</span>]]]
+```clojure
+[[:db/retract 20736789299855447 :reg/course [:course/id "BIO-101"]]
+ [:db/retract 20736789299855447 :reg/semester [:semester/year+season [2018 :fall]]]
+ [:db/retract 20736789299855447 :reg/student [:student/email "johndoe@university.edu"]]]
 ```
 
 
 
 will cause Datomic to retract the composite:
 
-```
-<pre class="src src-clojure">#datom[20736789299855447 83 [6324390882967637 44112406506373204 64110323992363094] 13194139533321 false]]
+```clojure
+#datom[20736789299855447 83 [6324390882967637 44112406506373204 64110323992363094] 13194139533321 false]]
 ```
 
 
@@ -284,20 +284,20 @@ Heterogenous tuples have a `:db/tupleTypes` attribute, with a value specified as
 
 For example, you could model a location in a 2D game with the following tuple attribute:
 
-```
-<pre class="src src-clojure">{<span style="color: #008b8b;">:db/ident</span> <span style="color: #008b8b;">:player/location</span>
- <span style="color: #008b8b;">:db/valueType</span> <span style="color: #008b8b;">:db.type/tuple</span>
- <span style="color: #008b8b;">:db/tupleTypes</span> [<span style="color: #008b8b;">:db.type/long</span> <span style="color: #008b8b;">:db.type/long</span>]
- <span style="color: #008b8b;">:db/cardinality</span> <span style="color: #008b8b;">:db.cardinality/one</span>}
+```clojure
+{:db/ident :player/location
+ :db/valueType :db.type/tuple
+ :db/tupleTypes [:db.type/long :db.type/long]
+ :db/cardinality :db.cardinality/one}
 ```
 
 
 
 You can then explicitly assert a player's location with a vector of the appropriate tuple types:
 
-```
-<pre class="src src-clojure">(<span style="color: #a020f0;">def</span> <span style="color: #0000ff;">data</span> [{<span style="color: #008b8b;">:player/handle</span> <span style="color: #8b2252;">"Argent Adept"</span>
-            <span style="color: #008b8b;">:player/location</span> [100 0]}])
+```clojure
+(def data [{:player/handle "Argent Adept"
+            :player/location [100 0]}])
 ```
 
 
@@ -312,16 +312,16 @@ Homogeneous tuples provide variable length composites of a single attribute type
 
 Datomic itself includes a good example of homogeneous tuples in the definitions of the other tuple types. Both `:db/tupleTypes` and `:db/tupleAttrs` are declared as homogeneous tuples of `:db/tupleType``:db.type/keyword`:
 
-```
-<pre class="src src-clojure"><span style="color: #b22222;">;; </span><span style="color: #b22222;">built in to Datomic</span>
-[{<span style="color: #008b8b;">:db/ident</span> <span style="color: #008b8b;">:db/tupleAttrs</span>
-  <span style="color: #008b8b;">:db/valueType</span> <span style="color: #008b8b;">:db.type/tuple</span>
-  <span style="color: #008b8b;">:db/tupleType</span> <span style="color: #008b8b;">:db.type/keyword</span>
-  <span style="color: #008b8b;">:db/cardinality</span> <span style="color: #008b8b;">:db.cardinality/one</span>}
- {<span style="color: #008b8b;">:db/ident</span> <span style="color: #008b8b;">:db/tupleTypes</span>
-  <span style="color: #008b8b;">:db/valueType</span> <span style="color: #008b8b;">:db.type/tuple</span>
-  <span style="color: #008b8b;">:db/tupleType</span> <span style="color: #008b8b;">:db.type/keyword</span>
-  <span style="color: #008b8b;">:db/cardinality</span> <span style="color: #008b8b;">:db.cardinality/one</span>}]
+```clojure
+;; built in to Datomic
+[{:db/ident :db/tupleAttrs
+  :db/valueType :db.type/tuple
+  :db/tupleType :db.type/keyword
+  :db/cardinality :db.cardinality/one}
+ {:db/ident :db/tupleTypes
+  :db/valueType :db.type/tuple
+  :db/tupleType :db.type/keyword
+  :db/cardinality :db.cardinality/one}]
 ```
 
 
@@ -397,11 +397,11 @@ External keys must be single attributes, multi-attribute keys are not supported.
 
 Attribute definitions are represented as data structures (see [Data Structures](../overview/data-structure-literals.html)) that can be submitted to a database as part of a transaction. It is idiomatic to use the [transaction map](../transactions/transactions.html#transaction-structure) data structure, as shown in the following example. It defines an attribute named *:person/name* of type *:db.type/string* with *:db.cardinality/one* that is intended to capture a person's name.
 
-```
-<pre class="src src-clojure">{<span style="color: #008b8b;">:db/ident</span> <span style="color: #008b8b;">:person/name</span>
- <span style="color: #008b8b;">:db/valueType</span> <span style="color: #008b8b;">:db.type/string</span>
- <span style="color: #008b8b;">:db/cardinality</span> <span style="color: #008b8b;">:db.cardinality/one</span>
- <span style="color: #008b8b;">:db/doc</span> <span style="color: #8b2252;">"A person's name"</span>}
+```clojure
+{:db/ident :person/name
+ :db/valueType :db.type/string
+ :db/cardinality :db.cardinality/one
+ :db/doc "A person's name"}
 ```
 
 
@@ -431,23 +431,23 @@ Inside transactions, Datomic will call all attribute predicates on all assertion
 
 For example, the following function validates that a `user-name` has a particular length:
 
-```
-<pre class="src src-clojure">(<span style="color: #483d8b;">ns</span> datomic.samples.attr-preds)
+```clojure
+(ns datomic.samples.attr-preds)
 
-(<span style="color: #a020f0;">defn</span> <span style="color: #0000ff;">user-name?</span>
+(defn user-name?
   [s]
-  (<span style="color: #a0522d;"><=</span> 3 (<span style="color: #a0522d;">count</span> s) 15))
+  (<= 3 (count s) 15))
 ```
 
 
 
 To install the `user-name?` predicate, add a `db.attr/preds`value to an attribute, e.g.
 
-```
-<pre class="src src-clojure">{<span style="color: #008b8b;">:db/ident</span> <span style="color: #008b8b;">:user/name</span>,
- <span style="color: #008b8b;">:db/valueType</span> <span style="color: #008b8b;">:db.type/string</span>,
- <span style="color: #008b8b;">:db/cardinality</span> <span style="color: #008b8b;">:db.cardinality/one</span>,
- <span style="color: #008b8b;">:db.attr/preds</span> 'datomic.samples.attr-preds/user-name?}
+```clojure
+{:db/ident :user/name,
+ :db/valueType :db.type/string,
+ :db/cardinality :db.cardinality/one,
+ :db.attr/preds 'datomic.samples.attr-preds/user-name?}
 ```
 
 
@@ -462,13 +462,13 @@ A transaction that includes an invalid `user-name` will result in an [anomaly](h
 
 For example, the string "This-name-is-too-long" is not a valid `user-name?` and will cause an anomaly like:
 
-```
-<pre class="src src-clojure">{<span style="color: #008b8b;">:cognitect.anomalies/category</span>
- <span style="color: #008b8b;">:cognitect.anomalies/incorrect</span>, 
- <span style="color: #008b8b;">:cognitect.anomalies/message</span>
- <span style="color: #8b2252;">"Entity 42 attribute :user/name value This-name-is-too-long</span>
-<span style="color: #8b2252;">failed pred datomic.samples.attr-preds/user-name?"</span>
- <span style="color: #008b8b;">:db.error/pred-return</span> false}
+```clojure
+{:cognitect.anomalies/category
+ :cognitect.anomalies/incorrect, 
+ :cognitect.anomalies/message
+ "Entity 42 attribute :user/name value This-name-is-too-long
+failed pred datomic.samples.attr-preds/user-name?"
+ :db.error/pred-return false}
 ```
 
 
@@ -502,10 +502,10 @@ An *entity spec* is a Datomic entity having one or more of
 
 You can then ensure an entity spec by asserting the `:db/ensure`attribute for an entity. For example, the following transaction data ensures entity "new-account-1" with entity spec `:new-account`
 
-```
-<pre class="src src-clojure">{<span style="color: #008b8b;">:db/id</span> <span style="color: #8b2252;">"new-account-1"</span>
- <span style="color: #008b8b;">:db/ensure</span> <span style="color: #008b8b;">:new-account</span>
- <span style="color: #b22222;">;; </span><span style="color: #b22222;">other data that must be a valid :new-account</span>
+```clojure
+{:db/id "new-account-1"
+ :db/ensure :new-account
+ ;; other data that must be a valid :new-account
  }
 ```
 
@@ -531,29 +531,29 @@ The `:db.entity/attrs` attribute is a multi-valued attribute of keywords, where 
 
 For example, the following transaction data creates a spec that requires a `:user/name` and `:user/email`:
 
-```
-<pre class="src src-clojure">{<span style="color: #008b8b;">:db/ident</span> <span style="color: #008b8b;">:user/validate</span>
- <span style="color: #008b8b;">:db.entity/attrs</span> [<span style="color: #008b8b;">:user/name</span> <span style="color: #008b8b;">:user/email</span>]}
+```clojure
+{:db/ident :user/validate
+ :db.entity/attrs [:user/name :user/email]}
 ```
 
 
 
 The `:user/validate` entity can then be used in later transaction to ensure that all required attribute are present. For example, the following transcation would fail
 
-```
-<pre class="src src-clojure">{<span style="color: #008b8b;">:user/name</span> <span style="color: #8b2252;">"John Doe"</span>
- <span style="color: #008b8b;">:db/ensure</span> <span style="color: #008b8b;">:user/validate</span>}
+```clojure
+{:user/name "John Doe"
+ :db/ensure :user/validate}
 ```
 
 
 
 When a required attribute is missing, Datomic will throw an anomaly whose `ex-data` includes the failing entity and the name of the spec, e.g.:
 
-```
-<pre class="src src-clojure">{<span style="color: #008b8b;">:cognitect.anomalies/category</span>
- <span style="color: #008b8b;">:cognitect.anomalies/incorrect</span>, 
- <span style="color: #008b8b;">:cognitect.anomalies/message</span>
- <span style="color: #8b2252;">"Entity 42 missing attributes [:user/email] of by :user/validate"</span>}
+```clojure
+{:cognitect.anomalies/category
+ :cognitect.anomalies/incorrect, 
+ :cognitect.anomalies/message
+ "Entity 42 missing attributes [:user/email] of by :user/validate"}
 ```
 
 
@@ -570,46 +570,46 @@ Entity predicates must be on the classpath of a process that is performing a tra
 
 For example, given the following predicate:
 
-```
-<pre class="src src-clojure">(<span style="color: #483d8b;">ns</span> datomic.samples.entity-preds
-  (<span style="color: #008b8b;">:require</span> [datomic.api <span style="color: #008b8b;">:as</span> d]))
+```clojure
+(ns datomic.samples.entity-preds
+  (:require [datomic.api :as d]))
 
-(<span style="color: #a020f0;">defn</span> <span style="color: #0000ff;">scores-are-ordered?</span>
+(defn scores-are-ordered?
   [db eid]
-  (<span style="color: #483d8b;">let</span> [m (d/pull db [<span style="color: #008b8b;">:score/low</span> <span style="color: #008b8b;">:score/high</span>] eid)]
-    (<span style="color: #a0522d;"><=</span> (<span style="color: #008b8b;">:score/low</span> m) (<span style="color: #008b8b;">:score/high</span> m))))
+  (let [m (d/pull db [:score/low :score/high] eid)]
+    (<= (:score/low m) (:score/high m))))
 ```
 
 
 
 You could install the predicate on a guard entity:
 
-```
-<pre class="src src-clojure">{<span style="color: #008b8b;">:db/ident</span> <span style="color: #008b8b;">:score/guard</span>
- <span style="color: #008b8b;">:db.entity/attrs</span> [<span style="color: #008b8b;">:score/low</span> <span style="color: #008b8b;">:score/high</span>] <span style="color: #b22222;">;; </span><span style="color: #b22222;">entity spec</span>
- <span style="color: #008b8b;">:db.entity/preds</span> 'datomic.samples.entity-preds/scores-are-ordered?} <span style="color: #b22222;">;; </span><span style="color: #b22222;">entity predicate</span>
+```clojure
+{:db/ident :score/guard
+ :db.entity/attrs [:score/low :score/high] ;; entity spec
+ :db.entity/preds 'datomic.samples.entity-preds/scores-are-ordered?} ;; entity predicate
 ```
 
 
 
 Given an invalid entity that requests the `:score/guard`:
 
-```
-<pre class="src src-clojure">{<span style="color: #008b8b;">:score/low</span> 100
- <span style="color: #008b8b;">:score/high</span> 20
- <span style="color: #008b8b;">:db/ensure</span> <span style="color: #008b8b;">:score/guard</span>}
+```clojure
+{:score/low 100
+ :score/high 20
+ :db/ensure :score/guard}
 ```
 
 
 
 Datomic will throw an anomaly whose `ex-data` names the failing predicate:
 
-```
-<pre class="src src-clojure">{<span style="color: #008b8b;">:cognitect.anomalies/category</span> 
- <span style="color: #008b8b;">:cognitect.anomalies/incorrect</span>,
- <span style="color: #008b8b;">:cognitect.anomalies/message</span>
- <span style="color: #8b2252;">"Entity 42 failed pred datomic.samples.entity-preds/scores-are-ordered? of spec :score/guard"</span>
- <span style="color: #008b8b;">:db.error/pred-return</span> false}
+```clojure
+{:cognitect.anomalies/category 
+ :cognitect.anomalies/incorrect,
+ :cognitect.anomalies/message
+ "Entity 42 failed pred datomic.samples.entity-preds/scores-are-ordered? of spec :score/guard"
+ :db.error/pred-return false}
 ```
 
 
@@ -645,8 +645,8 @@ Your schema can create one or more partitions appropriate for your application.
 
 A partition is represented by an entity with a *:db/ident* attribute, as shown below. A partition can be referred to by either its [entity id or ident](../schema/identity.html#idents).
 
-```
-<pre class="src src-clojure">{<span style="color: #008b8b;">:db/ident</span> <span style="color: #008b8b;">:communities</span>}
+```clojure
+{:db/ident :communities}
 ```
 
 
@@ -655,8 +655,8 @@ As with attribute definitions, there are two steps to installing a new partition
 
 Here is a complete transaction for installing the *:communities*partition. It includes the map that defines the partition, followed by the statement adding it as a value of *:db.part/db*'s *:db.install/partition* attribute.
 
-```
-<pre class="src src-clojure">[{<span style="color: #008b8b;">:db/id</span> <span style="color: #8b2252;">"communities"</span>
-  <span style="color: #008b8b;">:db/ident</span> <span style="color: #008b8b;">:communities</span>}
- [<span style="color: #008b8b;">:db/add</span> <span style="color: #008b8b;">:db.part/db</span> <span style="color: #008b8b;">:db.install/partition</span> <span style="color: #8b2252;">"communities"</span>]]
+```clojure
+[{:db/id "communities"
+  :db/ident :communities}
+ [:db/add :db.part/db :db.install/partition "communities"]]
 ```

@@ -6,8 +6,8 @@ Running the Transactor
 
 A Datomic transactor performs ACID transactions for a set of databases. You can launch a transactor for one or more databases with the bin/transactor script in the datomic directory:
 
-```
-<pre class="src src-bash">bin/transactor path/to/transactor-template.properties
+```bash
+bin/transactor path/to/transactor-template.properties
 ```
 
 
@@ -28,8 +28,8 @@ A web endpoint for health check is **not** needed for the Datomic transactor. Th
 
 However, some tools have a checklist requirement that all processes provide a health check endpoint. If you need one, Datomic Pro lets you set a health check host and port in the transactor properties file:
 
-```
-<pre class="src src-sh">ping-host=localhost
+```sh
+ping-host=localhost
 ping-port=9999
 ```
 
@@ -37,22 +37,22 @@ ping-port=9999
 
 Or on the command line:
 
-```
-<pre class="src src-sh">bin/transactor -Ddatomic.pingHost=localhost -Ddatomic.pingPort=9999 {etc.}
+```sh
+bin/transactor -Ddatomic.pingHost=localhost -Ddatomic.pingPort=9999 {etc.}
 ```
 
 
 
 When the health check is enabled, Datomic will respond with a 2xx status code to HTTP requests for {host}:{port}/health, e.g.
 
-```
-<pre class="src src-sh">wget localhost:9999/health
+```sh
+wget localhost:9999/health
 ```
 
 
 
-```
-<pre class="src src-sh">=> HTTP request sent, awaiting response... 200 OK
+```sh
+=> HTTP request sent, awaiting response... 200 OK
 ```
 
 
@@ -68,8 +68,8 @@ Stopping the Transactor
 
 The transactor does not perform any kind of cleanup, and can therefore be stopped any way you like. You can kill a Datomic transactor with a termination signal, e.g. `SIGTERM`, `SIGINT`, or `SIGKILL`. For example:
 
-```
-<pre class="src src-sh"><span style="color: #483d8b;">kill</span> $(DATOMIC_PROCESS_ID)
+```sh
+kill $(DATOMIC_PROCESS_ID)
 ```
 
 

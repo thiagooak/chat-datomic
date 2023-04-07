@@ -19,26 +19,26 @@ These steps will setup an ****unauthenticated**** identity pool. Implementing [a
 - *Allow*
 - Save the Identity Pool ID
 
-```
-<pre class="src src-javascript">{
-    <span style="color: #8b2252;">"Version"</span>: <span style="color: #8b2252;">"2012-10-17"</span>,
-    <span style="color: #8b2252;">"Statement"</span>: [
+```javascript
+{
+    "Version": "2012-10-17",
+    "Statement": [
         {
-            <span style="color: #8b2252;">"Effect"</span>: <span style="color: #8b2252;">"Allow"</span>,
-            <span style="color: #8b2252;">"Action"</span>: [
-                <span style="color: #8b2252;">"mobileanalytics:PutEvents"</span>,
-                <span style="color: #8b2252;">"cognito-sync:*"</span>
+            "Effect": "Allow",
+            "Action": [
+                "mobileanalytics:PutEvents",
+                "cognito-sync:*"
             ],@
-            <span style="color: #8b2252;">"Resource"</span>: <span style="color: #8b2252;">"*"</span>
+            "Resource": "*"
         },
         {
-            <span style="color: #8b2252;">"Effect"</span>: <span style="color: #8b2252;">"Allow"</span>,
-            <span style="color: #8b2252;">"Action"</span>: [
-                <span style="color: #8b2252;">"lambda:InvokeFunction"</span>,
-                <span style="color: #8b2252;">"lambda:InvokeAsync"</span>
+            "Effect": "Allow",
+            "Action": [
+                "lambda:InvokeFunction",
+                "lambda:InvokeAsync"
             ],
-            <span style="color: #8b2252;">"Resource"</span>: [
-                <span style="color: #8b2252;">"arn:my-arns-here"</span>
+            "Resource": [
+                "arn:my-arns-here"
             ]
         }
     ]
@@ -65,9 +65,7 @@ Supply your Cognito Identity Pool ID, region and press submit. The returned payl
  Payload:  
    
  ```
-<pre style="border: 1px solid grey !important; width: 100%;height: auto;margin-top: 30px;margin-bottom: 40px; padding: 15px;">```
-Lambda Results displayed here
-```
+<pre style="border: 1px solid grey !important; width: 100%;height: auto;margin-top: 30px;margin-bottom: 40px; padding: 15px;">Lambda Results displayed here
 ```
 
 <![CDATA[
@@ -116,34 +114,34 @@ The [AWS SDK](https://aws.amazon.com/getting-started/tools-sdks/) is officially 
 
 A simple non-parameterized example:
 
-```
-<pre class="src src-html"><<span style="color: #0000ff;">script</span> <span style="color: #a0522d;">src</span>=<span style="color: #8b2252;">"https://sdk.amazonaws.com/js/aws-sdk-2.854.0.min.js"</span>></<span style="color: #0000ff;">script</span>>
+```html
+<script src="https://sdk.amazonaws.com/js/aws-sdk-2.854.0.min.js"></script>
 ```
 
 
 
-```
-<pre class="src src-javascript"><span style="color: #a020f0;">function</span> <span style="color: #0000ff;">invoke_lambda</span> () {
-    AWS.config.region = <span style="color: #8b2252;">'region'</span>
-    AWS.config.credentials = <span style="color: #a020f0;">new</span> <span style="color: #228b22;">AWS.CognitoIdentityCredentials</span>({
-        IdentityPoolId: <span style="color: #8b2252;">"identity-pool-value"</span>,
+```javascript
+function invoke_lambda () {
+    AWS.config.region = 'region'
+    AWS.config.credentials = new AWS.CognitoIdentityCredentials({
+        IdentityPoolId: "identity-pool-value",
     });
-    lambda = <span style="color: #a020f0;">new</span> <span style="color: #228b22;">AWS.Lambda</span>({
-        region: <span style="color: #8b2252;">"region"</span>,
-        apiVersion: <span style="color: #8b2252;">'2015-03-31'</span>
+    lambda = new AWS.Lambda({
+        region: "region",
+        apiVersion: '2015-03-31'
     });
-    <span style="color: #a020f0;">var</span> <span style="color: #a0522d;">pullParams</span> = {
-        FunctionName: <span style="color: #8b2252;">"function-name"</span>,
-        InvocationType: <span style="color: #8b2252;">'RequestResponse'</span>,
-        LogType: <span style="color: #8b2252;">'None'</span>,
-        Payload: <span style="color: #8b2252;">"payload"</span>
+    var pullParams = {
+        FunctionName: "function-name",
+        InvocationType: 'RequestResponse',
+        LogType: 'None',
+        Payload: "payload"
     };
-    lambda.invoke(pullParams, <span style="color: #a020f0;">function</span>(<span style="color: #a0522d;">err</span>, <span style="color: #a0522d;">data</span>) {
+    lambda.invoke(pullParams, function(err, data) {
         {
-            <span style="color: #a020f0;">if</span> (err) {
-              <span style="color: #b22222;">// </span><span style="color: #b22222;">handle error</span>
-            } <span style="color: #a020f0;">else</span> {
-              <span style="color: #b22222;">// </span><span style="color: #b22222;">handle data.Payload </span>
+            if (err) {
+              // handle error
+            } else {
+              // handle data.Payload 
             }
         }
     })

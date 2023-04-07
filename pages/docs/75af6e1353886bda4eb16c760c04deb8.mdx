@@ -22,8 +22,8 @@ Setup
 
 Datomic dev-local is part of Cognitect dev-tools. [Get the latest version](https://cognitect.com/dev-tools) of dev-tools and unzip it. Then install dev-local in your local maven repo:
 
-```
-<pre class="src src-example">./install
+```example
+./install
 ```
 
 
@@ -34,8 +34,8 @@ Datomic dev-local is part of Cognitect dev-tools. [Get the latest version](https
 
 By default, dev-local stores all databases under a common storage directory. To specify this directory, create a `.datomic/dev-local.edn` file in your home directory, containing a map with `:storage-dir` and an absolute path:
 
-```
-<pre class="src src-clojure">{<span style="color: #008b8b;">:storage-dir</span> <span style="color: #8b2252;">"/full/path/to/where/you/want/data"</span>}
+```clojure
+{:storage-dir "/full/path/to/where/you/want/data"}
 ```
 
 
@@ -61,9 +61,9 @@ There are two steps to use dev-local: add the dev-local library to your classpat
 
 To add dev-local to your classpath, add a `com.datomic/dev-local`entry to your [deps.edn file](https://clojure.org/guides/deps_and_cli).
 
-```
-<pre class="src src-clojure">{com.datomic/dev-local
- {<span style="color: #008b8b;">:mvn/version</span> <span style="color: #8b2252;">"1.0.243"</span>}}
+```clojure
+{com.datomic/dev-local
+ {:mvn/version "1.0.243"}}
 ```
 
 
@@ -80,25 +80,25 @@ To explicitly request a local client, pass a map to `d/client` with
 - `:server-type :dev-local`
 - a `:system` name,
 
-```
-<pre class="src src-clojure">(<span style="color: #a0522d;">require</span> '[datomic.client.api <span style="color: #008b8b;">:as</span> d])
-(<span style="color: #a020f0;">def</span> <span style="color: #0000ff;">client</span> (d/client {<span style="color: #008b8b;">:server-type</span> <span style="color: #008b8b;">:dev-local</span>
-                       <span style="color: #008b8b;">:system</span> <span style="color: #8b2252;">"dev"</span>}))
+```clojure
+(require '[datomic.client.api :as d])
+(def client (d/client {:server-type :dev-local
+                       :system "dev"}))
 ```
 
 
 
 If you are using dev-local to develop and test a Datomic Cloud application, [add the client-cloud dependency](client/client-api.html#deps) to your project. Then, to divert an existing Datomic Cloud system to dev-local, call [divert-system](#divert-system):
 
-```
-<pre class="src src-clojure">(<span style="color: #a0522d;">require</span> '[datomic.dev-local <span style="color: #008b8b;">:as</span> dl])
-(dl/divert-system {<span style="color: #008b8b;">:system</span> <span style="color: #8b2252;">"production"</span>})
+```clojure
+(require '[datomic.dev-local :as dl])
+(dl/divert-system {:system "production"})
 
-<span style="color: #b22222;">;; </span><span style="color: #b22222;">existing requests for Cloud system will be served locally!</span>
-(<span style="color: #a020f0;">def</span> <span style="color: #0000ff;">client</span> (d/client {<span style="color: #008b8b;">:system</span> <span style="color: #8b2252;">"production"</span>
-                       <span style="color: #008b8b;">:server-type</span> <span style="color: #008b8b;">:ion</span>
-                       <span style="color: #008b8b;">:region</span> <span style="color: #8b2252;">"us-east-1"</span>
-                       <span style="color: #008b8b;">:endpoint</span> <span style="color: #8b2252;">"https://ljfrt3pr18.execute-api.us-east-1.amazonaws.com"</span>}))
+;; existing requests for Cloud system will be served locally!
+(def client (d/client {:system "production"
+                       :server-type :ion
+                       :region "us-east-1"
+                       :endpoint "https://ljfrt3pr18.execute-api.us-east-1.amazonaws.com"}))
 ```
 
 
@@ -119,12 +119,12 @@ If you are new to Datomic, you can now work through the [tutorial](tutorial/tuto
 
 You can connect and use them by setting your dev-local system name to "datomic-samples":
 
-```
-<pre class="src src-clojure">(<span style="color: #a0522d;">require</span> '[datomic.client.api <span style="color: #008b8b;">:as</span> d])
-(<span style="color: #a020f0;">def</span> <span style="color: #0000ff;">client</span> (d/client {<span style="color: #008b8b;">:server-type</span> <span style="color: #008b8b;">:dev-local</span>
-                       <span style="color: #008b8b;">:system</span> <span style="color: #8b2252;">"datomic-samples"</span>}))
+```clojure
+(require '[datomic.client.api :as d])
+(def client (d/client {:server-type :dev-local
+                       :system "datomic-samples"}))
 (d/list-databases client {})
-=> [<span style="color: #8b2252;">"mbrainz-subset"</span> <span style="color: #8b2252;">"solar-system"</span> <span style="color: #8b2252;">"social-news"</span> <span style="color: #8b2252;">"movies"</span> ...]
+=> ["mbrainz-subset" "solar-system" "social-news" "movies" ...]
 ```
 
 
@@ -153,10 +153,10 @@ Sometimes durable storage is unnecessary and/or inconvenient. For example, a CI 
 
 You can force dev-local to use a memory-only database by passing `:storage-dir :mem`to the map you pass when creating a client, as shown in the example below:
 
-```
-<pre class="src src-clojure">(<span style="color: #a020f0;">def</span> <span style="color: #0000ff;">client</span> (d/client {<span style="color: #008b8b;">:server-type</span> <span style="color: #008b8b;">:dev-local</span>
-                       <span style="color: #008b8b;">:storage-dir</span> <span style="color: #008b8b;">:mem</span>
-                       <span style="color: #008b8b;">:system</span> <span style="color: #8b2252;">"ci"</span>}))
+```clojure
+(def client (d/client {:server-type :dev-local
+                       :storage-dir :mem
+                       :system "ci"}))
 ```
 
 
@@ -176,8 +176,8 @@ Most usage of dev-local should be via portable Client API calls. Capabilities th
 
 All dev-local API calls take a single arg-map argument.
 
-```
-<pre class="src src-clojure">(import-cloud arg-map)
+```clojure
+(import-cloud arg-map)
 (divert-system arg-map)
 (release-db arg-map)
 ```
@@ -225,20 +225,20 @@ The following example imports a customer database, including
 - all history of customers (except their secrets!)
 - orders since May 2020
 
-```
-<pre class="src src-clojure">(dl/import-cloud
- {<span style="color: #008b8b;">:source</span> {<span style="color: #008b8b;">:system</span> <span style="color: #8b2252;">"customers"</span>
-           <span style="color: #008b8b;">:db-name</span> <span style="color: #8b2252;">"customers"</span>
-           <span style="color: #008b8b;">:server-type</span> <span style="color: #008b8b;">:ion</span>
-           <span style="color: #008b8b;">:region</span> <span style="color: #8b2252;">"us-east-1"</span>
-           <span style="color: #008b8b;">:endpoint</span> <span style="color: #8b2252;">"https://ljfrt3pr18.execute-api.us-east-1.amazonaws.com"</span>}
-  <span style="color: #008b8b;">:dest</span> {<span style="color: #008b8b;">:system</span> <span style="color: #8b2252;">"production-imports"</span>
-         <span style="color: #008b8b;">:server-type</span> <span style="color: #008b8b;">:dev-local</span>
-         <span style="color: #008b8b;">:db-name</span> <span style="color: #8b2252;">"customers-and-recent-orders"</span>}
-  <span style="color: #008b8b;">:filter</span> {<span style="color: #008b8b;">:include-attrs</span>
-           {<span style="color: #008b8b;">:customer/*</span> {}
-            <span style="color: #008b8b;">:order/*</span> {<span style="color: #008b8b;">:since</span> #inst \"2020-05\"}}
-           <span style="color: #008b8b;">:exclude-attrs</span> [<span style="color: #008b8b;">:customer/secret</span>]}})
+```clojure
+(dl/import-cloud
+ {:source {:system "customers"
+           :db-name "customers"
+           :server-type :ion
+           :region "us-east-1"
+           :endpoint "https://ljfrt3pr18.execute-api.us-east-1.amazonaws.com"}
+  :dest {:system "production-imports"
+         :server-type :dev-local
+         :db-name "customers-and-recent-orders"}
+  :filter {:include-attrs
+           {:customer/* {}
+            :order/* {:since #inst \"2020-05\"}}
+           :exclude-attrs [:customer/secret]}})
 ```
 
 

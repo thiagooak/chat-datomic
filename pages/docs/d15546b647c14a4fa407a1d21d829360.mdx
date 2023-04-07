@@ -44,27 +44,27 @@ Installation
 
 Get the [latest version of Cognitect dev-tools](https://cognitect.com/dev-tools/) and unzip it. From the unzip directory, install the dev-tools with the install script:
 
-```
-<pre class="src src-sh">bash ./install
+```sh
+bash ./install
 ```
 
 
 
 Add the following to `/.clojure/deps.edn` to define an alias to use in all projects, or to a project's local `deps.edn`
 
-```
-<pre class="src src-clojure">{<span style="color: #008b8b;">:aliases</span>
- {<span style="color: #008b8b;">:rebl</span>        <span style="color: #b22222;">;; </span><span style="color: #b22222;">for JDK 11+</span>
-  {<span style="color: #008b8b;">:extra-deps</span> {com.cognitect/rebl          {<span style="color: #008b8b;">:mvn/version</span> <span style="color: #8b2252;">"0.9.245"</span>}
-                org.openjfx/javafx-fxml     {<span style="color: #008b8b;">:mvn/version</span> <span style="color: #8b2252;">"15-ea+6"</span>}
-                org.openjfx/javafx-controls {<span style="color: #008b8b;">:mvn/version</span> <span style="color: #8b2252;">"15-ea+6"</span>}
-                org.openjfx/javafx-swing    {<span style="color: #008b8b;">:mvn/version</span> <span style="color: #8b2252;">"15-ea+6"</span>}
-                org.openjfx/javafx-base     {<span style="color: #008b8b;">:mvn/version</span> <span style="color: #8b2252;">"15-ea+6"</span>}
-                org.openjfx/javafx-web      {<span style="color: #008b8b;">:mvn/version</span> <span style="color: #8b2252;">"15-ea+6"</span>}}
-   <span style="color: #008b8b;">:main-opts</span> [<span style="color: #8b2252;">"-m"</span> <span style="color: #8b2252;">"cognitect.rebl"</span>]}
-  <span style="color: #008b8b;">:rebl-jdk8</span>   <span style="color: #b22222;">;; </span><span style="color: #b22222;">for JDK 8</span>
-  {<span style="color: #008b8b;">:extra-deps</span> {com.cognitect/rebl {<span style="color: #008b8b;">:mvn/version</span> <span style="color: #8b2252;">"0.9.245"</span>}}
-   <span style="color: #008b8b;">:main-opts</span> [<span style="color: #8b2252;">"-m"</span> <span style="color: #8b2252;">"cognitect.rebl"</span>]}}}
+```clojure
+{:aliases
+ {:rebl        ;; for JDK 11+
+  {:extra-deps {com.cognitect/rebl          {:mvn/version "0.9.245"}
+                org.openjfx/javafx-fxml     {:mvn/version "15-ea+6"}
+                org.openjfx/javafx-controls {:mvn/version "15-ea+6"}
+                org.openjfx/javafx-swing    {:mvn/version "15-ea+6"}
+                org.openjfx/javafx-base     {:mvn/version "15-ea+6"}
+                org.openjfx/javafx-web      {:mvn/version "15-ea+6"}}
+   :main-opts ["-m" "cognitect.rebl"]}
+  :rebl-jdk8   ;; for JDK 8
+  {:extra-deps {com.cognitect/rebl {:mvn/version "0.9.245"}}
+   :main-opts ["-m" "cognitect.rebl"]}}}
 ```
 
 

@@ -8,15 +8,15 @@ Many databases need to represent a set of enumerated values. In Datomic, it is i
 
 For example, the transaction below defines an `:artist/country`attribute, and two initial enumerated values, `:country/CA` and `:country/JP`, ISO alpha-2 country codes for Canada and Japan.
 
-```
-<pre class="src src-clojure">[{<span style="color: #008b8b;">:db/ident</span> <span style="color: #008b8b;">:artist/country</span>
- <span style="color: #008b8b;">:db/valueType</span> <span style="color: #008b8b;">:db.type/ref</span>
- <span style="color: #008b8b;">:db/cardinality</span> <span style="color: #008b8b;">:db.cardinality/one</span>
- <span style="color: #008b8b;">:db/doc</span> <span style="color: #8b2252;">"An artist's country of residence"</span>}
+```clojure
+[{:db/ident :artist/country
+ :db/valueType :db.type/ref
+ :db/cardinality :db.cardinality/one
+ :db/doc "An artist's country of residence"}
 
-{<span style="color: #008b8b;">:db/ident</span> <span style="color: #008b8b;">:country/CA</span>}
+{:db/ident :country/CA}
 
-{<span style="color: #008b8b;">:db/ident</span> <span style="color: #008b8b;">:country/JP</span>}]
+{:db/ident :country/JP}]
 ```
 
 
@@ -25,9 +25,9 @@ The use of `:db/ident` on the enumerated value entities makes it possible to ref
 
 The transaction below creates an artist named *Leonard Cohen* with the country `:country/CA`.
 
-```
-<pre class="src src-clojure">[{<span style="color: #008b8b;">:artist/name</span> <span style="color: #8b2252;">"Leonard Cohen"</span>
- <span style="color: #008b8b;">:artist/country</span> <span style="color: #008b8b;">:country/CA</span>}]
+```clojure
+[{:artist/name "Leonard Cohen"
+ :artist/country :country/CA}]
 ```
 
 

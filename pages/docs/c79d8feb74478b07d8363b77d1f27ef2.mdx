@@ -14,12 +14,12 @@ It is important to note that Peer Servers do not own databases. As such, the Pee
 
 You can launch a Peer Server for one or more databases with the peer-server command:
 
-```
-<pre class="src src-sh">bin/run -m datomic.peer-server<span style="color: #8b2252;">\</span>
-        -h host<span style="color: #8b2252;">\</span>
-        -p port<span style="color: #8b2252;">\ </span>
-        -a access-key,secret<span style="color: #8b2252;">\</span>
-        -d dbname,URI<span style="color: #8b2252;">\</span>
+```sh
+bin/run -m datomic.peer-server\
+        -h host\
+        -p port\ 
+        -a access-key,secret\
+        -d dbname,URI\
 ```
 
 
@@ -30,8 +30,8 @@ A `dbname` can consist of alphanumeric characters plus the hyphen '-'.
 
 The database URI is described in the [documentation for connect](../javadoc/datomic/Peer.html#connect-java.lang.Object-), e.g.
 
-```
-<pre class="src src-sh">datomic:ddb://us-east-1/my-datomic-table/my-db
+```sh
+datomic:ddb://us-east-1/my-datomic-table/my-db
 ```
 
 
@@ -55,19 +55,19 @@ To connect to a Peer Server, call [connect](https://docs.datomic.com/client-api/
 
 with the other connect arguments hard-coded as shown in the example below:
 
-```
-<pre class="src src-clojure">(<span style="color: #a0522d;">require</span>
- '[datomic.client.api <span style="color: #008b8b;">:as</span> d])
+```clojure
+(require
+ '[datomic.client.api :as d])
 
-(<span style="color: #a020f0;">def</span> <span style="color: #0000ff;">client</span>
+(def client
   (d/client
-   {<span style="color: #008b8b;">:server-type</span> <span style="color: #008b8b;">:peer-server</span>
-    <span style="color: #008b8b;">:endpoint</span> <span style="color: #8b2252;">"localhost:8998"</span>
-    <span style="color: #008b8b;">:secret</span> <span style="color: #8b2252;">"my-secret"</span>
-    <span style="color: #008b8b;">:access-key</span> <span style="color: #8b2252;">"my-access-key"</span>
-    <span style="color: #008b8b;">:validate-hostnames</span> false}))
+   {:server-type :peer-server
+    :endpoint "localhost:8998"
+    :secret "my-secret"
+    :access-key "my-access-key"
+    :validate-hostnames false}))
 
-(<span style="color: #a020f0;">def</span> <span style="color: #0000ff;">conn</span> (d/connect client {<span style="color: #008b8b;">:db-name</span> <span style="color: #8b2252;">"my-db"</span>}))
+(def conn (d/connect client {:db-name "my-db"}))
 ```
 
 
@@ -80,24 +80,24 @@ with the other connect arguments hard-coded as shown in the example below:
 
 The peer server exposes /health as a health check endpoint, and will respond with a 2xx status code to HTTPS requests for {host}:{port}/health. Given a peer server runnnig with
 
-```
-<pre class="src src-sh">bin/run -m datomic.peer-server -a k,s -d test,datomic:mem://test
+```sh
+bin/run -m datomic.peer-server -a k,s -d test,datomic:mem://test
 ```
 
 
 
 The health check will respond:
 
-```
-<pre class="src src-sh">curl -v -k https://localhost:8998/health
+```sh
+curl -v -k https://localhost:8998/health
 ```
 
 
 
-```
-<pre class="src src-sh">=>
+```sh
+=>
 > Trying 127.0.0.1...
-> Connected to localhost (127.0.0.1) port 8998 (<span style="color: #b22222;">#</span><span style="color: #b22222;">0)</span>
+> Connected to localhost (127.0.0.1) port 8998 (#0)
 > TLS 1.2 connection using TLS_ECDHE_RSA_WITH_AES_256_CBC_SHA384
 > Server certificate: Unknown
 > GET /health HTTP/1.1

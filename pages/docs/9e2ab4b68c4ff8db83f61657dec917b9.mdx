@@ -19,18 +19,18 @@ You define new attributes by submitting a data structure to Datomic as part of a
 
 It is idiomatic to use the [transaction map](../transactions/transaction-data-reference.html#map-form) data structure to define attributes. The example below defines an attribute named `:person/name` of type `:db.type/string` with `:db.cardinality/one`that is intended to capture a person's name.
 
-```
-<pre class="src src-clojure">(<span style="color: #a020f0;">def</span> <span style="color: #0000ff;">name-schema</span>
-  [{<span style="color: #008b8b;">:db/ident</span> <span style="color: #008b8b;">:person/name</span>
-    <span style="color: #008b8b;">:db/valueType</span> <span style="color: #008b8b;">:db.type/string</span>
-    <span style="color: #008b8b;">:db/cardinality</span> <span style="color: #008b8b;">:db.cardinality/one</span>
-    <span style="color: #008b8b;">:db/doc</span> <span style="color: #8b2252;">"A person's name"</span>}])
+```clojure
+(def name-schema
+  [{:db/ident :person/name
+    :db/valueType :db.type/string
+    :db/cardinality :db.cardinality/one
+    :db/doc "A person's name"}])
 
-<span style="color: #b22222;">;; </span><span style="color: #b22222;">using a connection named conn:</span>
-(d/transact conn {<span style="color: #008b8b;">:tx-data</span> name-schema})
+;; using a connection named conn:
+(d/transact conn {:tx-data name-schema})
 
-<span style="color: #b22222;">;; </span><span style="color: #b22222;">now you can transact names</span>
-(d/transact conn {<span style="color: #008b8b;">:tx-data</span> [{<span style="color: #008b8b;">:person/name</span> <span style="color: #8b2252;">"Grace Hopper"</span>}]})
+;; now you can transact names
+(d/transact conn {:tx-data [{:person/name "Grace Hopper"}]})
 ```
 
 

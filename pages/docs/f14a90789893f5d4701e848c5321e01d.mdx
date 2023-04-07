@@ -14,8 +14,8 @@ Transactor configuration happens at the command line and in the `transactor.prop
 
 The Datomic distribution comes with a sample configuration for `dev` storage. Copy `config/samples/dev-transactor-templates.properties` to another location. This guide will use the `config` directory in your datomic-pro distribution directory:
 
-```
-<pre class="src src-sh">cp config/samples/dev-transactor-template.properties config/dev-transactor-template.properties
+```sh
+cp config/samples/dev-transactor-template.properties config/dev-transactor-template.properties
 ```
 
 
@@ -26,17 +26,17 @@ Edit `config/dev-transactor-template.properties` with the text editor of your ch
 
 You can start a local transactor with dev storage from your system shell as follows:
 
-```
-<pre class="src src-sh">bin/transactor -Ddatomic.printConnectionInfo=true config/dev-transactor-template.properties
+```sh
+bin/transactor -Ddatomic.printConnectionInfo=true config/dev-transactor-template.properties
 ```
 
 
 
-```
-<pre class="src src-sh">=>
+```sh
+=>
 Launching with Java options -server -Xms1g -Xmx1g  -Ddatomic.printConnectionInfo=true
-Starting datomic:dev://localhost:4334/<DB-NAME>, storing data<span style="color: #a020f0;"> in</span>: data ...
-System started datomic:dev://localhost:4334/<DB-NAME>, storing data<span style="color: #a020f0;"> in</span>: data  
+Starting datomic:dev://localhost:4334/<DB-NAME>, storing data in: data ...
+System started datomic:dev://localhost:4334/<DB-NAME>, storing data in: data  
 ```
 
 
@@ -45,8 +45,8 @@ System started datomic:dev://localhost:4334/<DB-NAME>, storing data<span style="
 
 Replace `<DB-NAME>` in the returned connection string with the database name of your choice, for example "hello":
 
-```
-<pre class="src src-sh">datomic:dev://localhost:4334/hello
+```sh
+datomic:dev://localhost:4334/hello
 ```
 
 

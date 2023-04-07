@@ -12,12 +12,12 @@ After a transaction data structure is built, you must submit it to the transacto
 
 Once a transaction data structure is built, you submit it to the transactor by calling the *datomic.Connection.transact* or *transactAsync* method. Both methods return a *Future&lt;Map&gt;*. Its *get* method returns a map with information about transaction if the transaction commits and throws an exception if the transaction aborts. In Clojure, you can also use the *deref* method or *@* to get a transaction's result.
 
-```
-<pre class="src src-java">txResult = conn.transact(tx).get();
+```java
+txResult = conn.transact(tx).get();
 
 future = conn.transactAsync(tx);
 
-... <span style="color: #b22222;">// </span><span style="color: #b22222;">do other work</span>
+... // do other work
 
 txResult = future.get();
 ```
@@ -48,10 +48,10 @@ Once your code gets the transaction report queue, reports will be added to it. I
 
 This example shows how to connect to the notification queue, and retrieve a transaction report from it.
 
-```
-<pre class="src src-java">queue = conn.txReportQueue();
+```java
+queue = conn.txReportQueue();
 
-report = (<span style="color: #228b22;">Map</span>) queue.poll();
+report = (Map) queue.poll();
 ```
 
 
@@ -60,12 +60,12 @@ The report map contains the following keys, which are static members of the *dat
 
 keyusageDB\_BEFOREdatabase value before the transactionDB\_AFTERdatabase value after the transactionTX\_DATAdatoms produced by the transactionTEMPIDSused to resolve temporary idsThe *TX\_DATA* member of a transaction report contains the set of datoms created by a transaction (both assertions and retractions). The *TX\_DATA* can be used as an input source for a query. The query below uses the transaction data and the database value after the transaction was applied to show each datom of the transaction.
 
-```
-<pre class="src src-clojure">[<span style="color: #008b8b;">:find</span> ?e ?aname ?v ?added
- <span style="color: #008b8b;">:in</span> $ [[?e ?a ?v _ ?added]]
- <span style="color: #008b8b;">:where</span>
+```clojure
+[:find ?e ?aname ?v ?added
+ :in $ [[?e ?a ?v _ ?added]]
+ :where
  [?e ?a ?v _ ?added]
- [?a <span style="color: #008b8b;">:db/ident</span> ?aname]]
+ [?a :db/ident ?aname]]
 ```
 
 
@@ -88,11 +88,11 @@ To annotate the current transaction, simply include an add statement (either map
 
 Here is an example that annotates a transaction using a *:data/src*attribute to indicate where the data came from.
 
-```
-<pre class="src src-java">tx = Util.list(
-       Util.map(<span style="color: #8b2252;">":db/id"</span>, <span style="color: #8b2252;">"datomic.tx"</span>,
-                <span style="color: #8b2252;">":data/src"</span>, <span style="color: #8b2252;">"catalog-2_29_2012.xml"</span>),
-       Util.map(<span style="color: #8b2252;">":product/name"</span>, <span style="color: #8b2252;">"Marbles"</span>));
+```java
+tx = Util.list(
+       Util.map(":db/id", "datomic.tx",
+                ":data/src", "catalog-2_29_2012.xml"),
+       Util.map(":product/name", "Marbles"));
 
 txResult = conn.transact(tx).get(); 
 ```

@@ -10,8 +10,8 @@ The *db* API returns the latest database value from a connection.
 
 noslide
 
-```
-<pre class="src src-clojure">(<span style="color: #a020f0;">def</span> <span style="color: #0000ff;">db</span> (d/db conn))
+```clojure
+(def db (d/db conn))
 ```
 
 
@@ -29,28 +29,28 @@ If you know an entity id, you can use the pull API to return information about t
 
 noslide
 
-```
-<pre class="src src-clojure">[<span style="color: #008b8b;">:inv/sku</span> <span style="color: #8b2252;">"SKU-42"</span>]
+```clojure
+[:inv/sku "SKU-42"]
 ```
 
 
 
 The following call pulls the color, type, and size for *SKU-42*.
 
-```
-<pre class="src src-clojure">(d/pull db
-        [{<span style="color: #008b8b;">:inv/color</span> [<span style="color: #008b8b;">:db/ident</span>]}
-         {<span style="color: #008b8b;">:inv/size</span> [<span style="color: #008b8b;">:db/ident</span>]}
-         {<span style="color: #008b8b;">:inv/type</span> [<span style="color: #008b8b;">:db/ident</span>]}]
-        [<span style="color: #008b8b;">:inv/sku</span> <span style="color: #8b2252;">"SKU-42"</span>])
+```clojure
+(d/pull db
+        [{:inv/color [:db/ident]}
+         {:inv/size [:db/ident]}
+         {:inv/type [:db/ident]}]
+        [:inv/sku "SKU-42"])
 ```
 
 
 
-```
-<pre class="src src-clojure">=> #<span style="color: #008b8b;">:inv</span>{<span style="color: #008b8b;">:color</span> #<span style="color: #008b8b;">:db</span>{<span style="color: #008b8b;">:ident</span> <span style="color: #008b8b;">:blue</span>}, 
-         <span style="color: #008b8b;">:size</span> #<span style="color: #008b8b;">:db</span>{<span style="color: #008b8b;">:ident</span> <span style="color: #008b8b;">:large</span>}, 
-         <span style="color: #008b8b;">:type</span> #<span style="color: #008b8b;">:db</span>{<span style="color: #008b8b;">:ident</span> <span style="color: #008b8b;">:dress</span>}}
+```clojure
+=> #:inv{:color #:db{:ident :blue}, 
+         :size #:db{:ident :large}, 
+         :type #:db{:ident :dress}}
 ```
 
 
@@ -70,21 +70,21 @@ The following query finds the skus of all products that share a color with *SKU-
 
 noslide
 
-```
-<pre class="src src-clojure">(d/q '[<span style="color: #008b8b;">:find</span> ?sku
-       <span style="color: #008b8b;">:where</span> [?e <span style="color: #008b8b;">:inv/sku</span> <span style="color: #8b2252;">"SKU-42"</span>]
-              [?e <span style="color: #008b8b;">:inv/color</span> ?color]
-              [?e2 <span style="color: #008b8b;">:inv/color</span> ?color]
-              [?e2 <span style="color: #008b8b;">:inv/sku</span> ?sku]]
+```clojure
+(d/q '[:find ?sku
+       :where [?e :inv/sku "SKU-42"]
+              [?e :inv/color ?color]
+              [?e2 :inv/color ?color]
+              [?e2 :inv/sku ?sku]]
      db)
 ```
 
 
 
-```
-<pre class="src src-clojure">=>
-[[<span style="color: #8b2252;">"SKU-42"</span>] 
- [<span style="color: #8b2252;">"SKU-32"</span>] 
+```clojure
+=>
+[["SKU-42"] 
+ ["SKU-32"] 
   ...]
 ```
 

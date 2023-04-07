@@ -59,8 +59,8 @@ Excising Specific Entities
 
 To excise a specific entity, manufacture a new entity with a *:db/excise* attribute pointing to that entity's id. For example, if user 42 requests that his personal data be removed from the system, the transaction data would be:
 
-```
-<pre class="src src-clojure">[{<span style="color: #008b8b;">:db/excise</span> 42}]
+```clojure
+[{:db/excise 42}]
 ```
 
 
@@ -76,9 +76,9 @@ Excising Specific Attributes of an Entity
 
 To excise only specific attributes of an entity, create a transaction as in the previous step, but also specify a collection of *:db.excise/attrs*. For example, you might excise attributes that contain personally identifying information, such as usernames and email addresses, while leaving untouched other attributes that might be valuable for aggregate queries.
 
-```
-<pre class="src src-clojure">[{<span style="color: #008b8b;">:db/excise</span> 42
-  <span style="color: #008b8b;">:db.excise/attrs</span> [<span style="color: #008b8b;">:person/name</span> <span style="color: #008b8b;">:person/email</span>]}]
+```clojure
+[{:db/excise 42
+  :db.excise/attrs [:person/name :person/email]}]
 ```
 
 
@@ -92,26 +92,26 @@ Excising Old Values of an Attribute
 
 To excise old values of a particular attribute, you can create an excision for the attribute you want to eliminate, and then limit the excision using either *before* or *beforeT*. Imagine tracking application events that have users, categories, and details. Each attribute requires its own excise request. There are lots of events, and you don't need them after a certain time window, so you can get rid of all the pre-2012 events:
 
-```
-<pre class="src src-clojure">[{<span style="color: #008b8b;">:db/excise</span> <span style="color: #008b8b;">:event/user</span>
-  <span style="color: #008b8b;">:db.excise/before</span> #inst <span style="color: #8b2252;">"2012"</span>}
- {<span style="color: #008b8b;">:db/excise</span> <span style="color: #008b8b;">:event/category</span>
-  <span style="color: #008b8b;">:db.excise/before</span> #inst <span style="color: #8b2252;">"2012"</span>}
- {<span style="color: #008b8b;">:db/excise</span> <span style="color: #008b8b;">:event/description</span>
-  <span style="color: #008b8b;">:db.excise/before</span> #inst <span style="color: #8b2252;">"2012"</span>}]
+```clojure
+[{:db/excise :event/user
+  :db.excise/before #inst "2012"}
+ {:db/excise :event/category
+  :db.excise/before #inst "2012"}
+ {:db/excise :event/description
+  :db.excise/before #inst "2012"}]
 ```
 
 
 
 The use of *beforeT* is similar, but specifies the excision boundary in terms of database t. The example below will excise all event-related datoms before t 1100:
 
-```
-<pre class="src src-clojure">[{<span style="color: #008b8b;">:db/excise</span> <span style="color: #008b8b;">:event/user</span>
-  <span style="color: #008b8b;">:db.excise/beforeT</span> 1100}
- {<span style="color: #008b8b;">:db/excise</span> <span style="color: #008b8b;">:event/category</span>
-  <span style="color: #008b8b;">:db.excise/beforeT</span> 1100}
- {<span style="color: #008b8b;">:db/excise</span> <span style="color: #008b8b;">:event/description</span>
-  <span style="color: #008b8b;">:db.excise/beforeT</span> 1100}]
+```clojure
+[{:db/excise :event/user
+  :db.excise/beforeT 1100}
+ {:db/excise :event/category
+  :db.excise/beforeT 1100}
+ {:db/excise :event/description
+  :db.excise/beforeT 1100}]
 ```
 
 
@@ -125,10 +125,10 @@ Excising All Values of An Attribute
 
 **Excising by attribute is very dangerous**. If you leave out the *before* limitations from the previous two sections, then you will remove **all** values of the various *:event* attributes, effectively removing events from the database entirely:
 
-```
-<pre class="src src-clojure">[{<span style="color: #008b8b;">:db/excise</span> <span style="color: #008b8b;">:event/user</span>}
- {<span style="color: #008b8b;">:db/excise</span> <span style="color: #008b8b;">:event/category</span>}
- {<span style="color: #008b8b;">:db/excise</span> <span style="color: #008b8b;">:event/description</span>}]
+```clojure
+[{:db/excise :event/user}
+ {:db/excise :event/category}
+ {:db/excise :event/description}]
 ```
 
 
@@ -155,10 +155,10 @@ Excision is lossy. Given a datom, you cannot ask "was this datom in the database
 
 However, you can query the *predicates* used for excision, which makes it possible to answer e.g. the more limited question "has an excision occurred that might have affected this entity?" For example, to see if entity 42 has had any data removed by excision, you can query with:
 
-```
-<pre class="src src-java">Peer.query(<span style="color: #ff0000; font-weight: bold;">"</span><span style="color: #8b2252;">[:find ?e</span>
+```java
+Peer.query("[:find ?e
     :in \$ ?e
-    :where [_ :db/excise ?e]<span style="color: #ff0000; font-weight: bold;">"</span><span style="color: #8b2252;">,</span>
+    :where [_ :db/excise ?e]",
   db,
   42)
 ```

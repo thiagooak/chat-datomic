@@ -31,8 +31,8 @@ The symbols `keyword`, `string`, `boolean`, `instant`, `uuid`, `long`, `bigint`,
 ### Grammar
 
 ```
-<pre class="example" id="orgb4ccb8b" linkedtable="true"><span><a href="#tx-data">tx-data</a><span>      = [list-form | map-form]+</span><br></br><a href="#list-form">list-form</a><span>    = ([op n-identifier identifier value] | 
-               [tx-fn tx-fn-arg*])</span><br></br><a href="#map-form">map-form</a><span>     = {keyword (value | map-form | [map-form])}</span><br></br><a href="#op">op</a><span>           = (':db/add' | ':db/retract')</span><br></br><a href="#entity-identifiers">n-identifier</a><span> = (identifier | tempid)</span><br></br><a href="#tempids">tempid</a><span>       = string</span><br></br><a href="#identifier">identifier</a><span>   = eid | lookup-ref | ident</span><br></br><a href="#eid">eid</a><span>          = nat-int</span><br></br><a href="#lookup-ref">lookup-ref</a><span>   = [identifier value]</span><br></br><a href="#ident">ident</a><span>        = keyword</span><br></br><a href="#value">value</a><span>        = (string | keyword | boolean | ref | instant | uuid | number)</span><br></br><a href="#entity-identifiers">ref</a><span>          = n-identifier</span><br></br><span>number</span><span>       = (long | bigint | float | double | bigdec)</span><br></br><a href="#Transaction%20Functions">db-fn</a><span>        = identifier</span><br></br><a href="#Transaction%20Functions">classpath-fn</a><span> = qualified symbol</span><br></br><a href="#Transaction%20Functions">tx-fn-arg</a><span>    = (value | [value] | {value value})</span><br></br><a href="#Transaction%20Functions">tx-fn</a><span>        = db-fn | classpath-fn</span><br></br></span>
+<pre class="example" id="orgb4ccb8b" linkedtable="true">tx-data      = [list-form | map-form]+list-form    = ([op n-identifier identifier value] | 
+               [tx-fn tx-fn-arg*])map-form     = {keyword (value | map-form | [map-form])}op           = (':db/add' | ':db/retract')n-identifier = (identifier | tempid)tempid       = stringidentifier   = eid | lookup-ref | identeid          = nat-intlookup-ref   = [identifier value]ident        = keywordvalue        = (string | keyword | boolean | ref | instant | uuid | number)ref          = n-identifiernumber       = (long | bigint | float | double | bigdec)db-fn        = identifierclasspath-fn = qualified symboltx-fn-arg    = (value | [value] | {value value})tx-fn        = db-fn | classpath-fn
 ```
 
 
@@ -74,10 +74,10 @@ Each list in a transaction represents one of
 
 ### Example List Forms
 
-```
-<pre class="src src-clojure">[<span style="color: #008b8b;">:db/add</span> <span style="color: #8b2252;">"John"</span> <span style="color: #008b8b;">:user/last-name</span> <span style="color: #8b2252;">"Doe"</span>]
-[<span style="color: #008b8b;">:db/retract</span> <span style="color: #8b2252;">"John"</span> <span style="color: #008b8b;">:user/last-name</span> <span style="color: #8b2252;">"Doe"</span>]
-[<span style="color: #008b8b;">:db/cas</span> <span style="color: #8b2252;">"my-account"</span> <span style="color: #008b8b;">:account/balance</span> + 10]
+```clojure
+[:db/add "John" :user/last-name "Doe"]
+[:db/retract "John" :user/last-name "Doe"]
+[:db/cas "my-account" :account/balance + 10]
 ```
 
 
@@ -104,20 +104,20 @@ The map form provides a compact representation for multiple assertions about a s
 
 For example, the following map form:
 
-```
-<pre class="src src-clojure">{<span style="color: #008b8b;">:order/id</span> <span style="color: #8b2252;">"X-001"</span>
- <span style="color: #008b8b;">:order/line-items</span> [{<span style="color: #008b8b;">:item/sku</span> <span style="color: #8b2252;">"SKU-7"</span> <span style="color: #008b8b;">:item/count</span> 2}]
+```clojure
+{:order/id "X-001"
+ :order/line-items [{:item/sku "SKU-7" :item/count 2}]
 ```
 
 
 
 is equivalent to the following list forms:
 
-```
-<pre class="src src-clojure">[<span style="color: #008b8b;">:db/add</span> <span style="color: #8b2252;">"-42"</span> <span style="color: #008b8b;">:order/id</span> <span style="color: #8b2252;">"X-001"</span>]
-[<span style="color: #008b8b;">:db/add</span> <span style="color: #8b2252;">"-42"</span> <span style="color: #008b8b;">:order/line-items</span> <span style="color: #8b2252;">"-43"</span>]
-[<span style="color: #008b8b;">:db/add</span> <span style="color: #8b2252;">"-43"</span> <span style="color: #008b8b;">:item/sku</span> <span style="color: #8b2252;">"SKU-7"</span>]
-[<span style="color: #008b8b;">:db/add</span> <span style="color: #8b2252;">"-43"</span> <span style="color: #008b8b;">:item/count</span> 2] 
+```clojure
+[:db/add "-42" :order/id "X-001"]
+[:db/add "-42" :order/line-items "-43"]
+[:db/add "-43" :item/sku "SKU-7"]
+[:db/add "-43" :item/count 2] 
 ```
 
 
@@ -146,12 +146,12 @@ The op is the first item of a list form, and it specifies whether the datoms is 
 
 The following two transactions first assert that entity 42 likes pizza, then retracts this fact.
 
-```
-<pre class="src src-clojure"><span style="color: #b22222;">;; </span><span style="color: #b22222;">tx 1</span>
-[[<span style="color: #008b8b;">:db/add</span> 42 <span style="color: #008b8b;">:likes</span> <span style="color: #8b2252;">"pizza"</span>]]
+```clojure
+;; tx 1
+[[:db/add 42 :likes "pizza"]]
 
-<span style="color: #b22222;">;; </span><span style="color: #b22222;">tx 2</span>
-[[<span style="color: #008b8b;">:db/retract</span> 42 <span style="color: #008b8b;">:likes</span> <span style="color: #8b2252;">"pizza"</span>]]
+;; tx 2
+[[:db/retract 42 :likes "pizza"]]
 ```
 
 
@@ -207,18 +207,18 @@ A temporary id is simply a string. The content of the string does not matter to 
 
 The following list forms use the tempid "foo" twice to indicate that two datoms are about the same entity.
 
-```
-<pre class="src src-clojure">[<span style="color: #008b8b;">:db/add</span> <span style="color: #8b2252;">"foo"</span> <span style="color: #008b8b;">:item/sku</span> <span style="color: #8b2252;">"sku-42"</span>]
-[<span style="color: #008b8b;">:db/add</span> <span style="color: #8b2252;">"foo"</span> <span style="color: #008b8b;">:item/description</span> <span style="color: #8b2252;">"Chandrian Repellant"</span>]
+```clojure
+[:db/add "foo" :item/sku "sku-42"]
+[:db/add "foo" :item/description "Chandrian Repellant"]
 ```
 
 
 
 Datomic does not care what name you use for a tempid, but it is often convenient to use a string that uniquely identifies the entity within the domain. So the previous example might also be stated as:
 
-```
-<pre class="src src-clojure">[<span style="color: #008b8b;">:db/add</span> <span style="color: #8b2252;">"sku-42"</span> <span style="color: #008b8b;">:item/sku</span> <span style="color: #8b2252;">"sku-42"</span>]
-[<span style="color: #008b8b;">:db/add</span> <span style="color: #8b2252;">"sku-42"</span> <span style="color: #008b8b;">:item/description</span> <span style="color: #8b2252;">"Chandrian Repellant"</span>]
+```clojure
+[:db/add "sku-42" :item/sku "sku-42"]
+[:db/add "sku-42" :item/description "Chandrian Repellant"]
 ```
 
 
@@ -241,14 +241,14 @@ For new entities, you only need to explicitly specify a temporary id if:
 - <a id="implicit-tempid-example"></a>Implicit Tempid Example  
     In the following example, "sku-42" is explicit so that the item and its occurrence in inventory can be linked. The "sku-43" entity occurs only once, so no explicit tempid is needed.
     
-    ```
-    <pre class="src src-clojure">{<span style="color: #008b8b;">:db/id</span> <span style="color: #8b2252;">"sku-42"</span>
-     <span style="color: #008b8b;">:item/sku</span> <span style="color: #8b2252;">"sku-42"</span>
-     <span style="color: #008b8b;">:item/description</span> <span style="color: #8b2252;">"Chandrian Repellant"</span>}
-    {<span style="color: #008b8b;">:item/sku</span> <span style="color: #8b2252;">"sku-43"</span>
-     <span style="color: #008b8b;">:item/description</span> <span style="color: #8b2252;">"Iron Wheel"</span>}
-    {<span style="color: #008b8b;">:inventory/item</span> <span style="color: #8b2252;">"sku-42"</span>
-     <span style="color: #008b8b;">:inventory/count</span> 10}
+    ```clojure
+{:db/id "sku-42"
+     :item/sku "sku-42"
+     :item/description "Chandrian Repellant"}
+    {:item/sku "sku-43"
+     :item/description "Iron Wheel"}
+    {:inventory/item "sku-42"
+     :inventory/count 10}
     ```
 
 
@@ -293,8 +293,8 @@ lookup-ref                 = [identifier value]
 
 A *lookup-ref* allows you to specify entities by their domain-unique identities. Inside a lookup-ref, the *identifier* names a [unique attribute](../schema/schema-reference.html#db-unique) in the database, and the value is a valid value for that attribute. For example, this lookup ref:
 
-```
-<pre class="src src-clojure">[<span style="color: #008b8b;">:person/email</span> <span style="color: #8b2252;">"joe@example.com"</span>]
+```clojure
+[:person/email "joe@example.com"]
 ```
 
 
@@ -312,20 +312,20 @@ Idents are programmatic names that associate a keyword with an entity id. All id
 
 To create an ident, add a `:db/ident` value for an entity. The transaction data below upserts four idents: `:red`, `:green`, `:blue`, and `:yellow`
 
-```
-<pre class="src src-clojure">[{<span style="color: #008b8b;">:db/ident</span> <span style="color: #008b8b;">:red</span>}
- {<span style="color: #008b8b;">:db/ident</span> <span style="color: #008b8b;">:green</span>}
- {<span style="color: #008b8b;">:db/ident</span> <span style="color: #008b8b;">:blue</span>}
- {<span style="color: #008b8b;">:db/ident</span> <span style="color: #008b8b;">:yellow</span>}]
+```clojure
+[{:db/ident :red}
+ {:db/ident :green}
+ {:db/ident :blue}
+ {:db/ident :yellow}]
 ```
 
 
 
 In a subsequent transaction, you can the use an ident instead of referring to an entity by name. The example below uses the `:yellow`instead of an entity id.
 
-```
-<pre class="src src-clojure">{<span style="color: #008b8b;">:db/doc</span> <span style="color: #8b2252;">"The submarine where we live"</span>
- <span style="color: #008b8b;">:color</span> <span style="color: #008b8b;">:yellow</span>}
+```clojure
+{:db/doc "The submarine where we live"
+ :color :yellow}
 ```
 
 

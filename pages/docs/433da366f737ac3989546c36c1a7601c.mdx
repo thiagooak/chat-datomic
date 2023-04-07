@@ -12,8 +12,8 @@ The first transactor to communicate with storage will become active, and the sec
 
 If you are using the Datomic transactor appliance, you can run two transactors in a single stack by setting a property in your CloudFormation template:
 
-```
-<pre class="src src-example">aws-autoscaling-group-size=2
+```example
+aws-autoscaling-group-size=2
 ```
 
 
@@ -34,8 +34,8 @@ The time for a peer to recover from a transactor failure consists of two compone
 
 The standby transactor will take over if it sees the active transactor miss two consecutive heartbeats, and the peers will poll for a new transactor once per second, so the total number of seconds for a peer to recover should be at worst
 
-```
-<pre class="src src-example">2 * (heartbeat-interval-msec / 1000) + 1
+```example
+2 * (heartbeat-interval-msec / 1000) + 1
 ```
 
 

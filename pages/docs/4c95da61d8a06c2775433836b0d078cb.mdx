@@ -51,20 +51,20 @@ Transaction Logging
 
 Datomic logs an io-stats map for every transaction. In Datomic on-prem, io-stats are logged under the :tx/process :event, as shown below:
 
-```
-<pre class="src src-clojure">2022-03-29 23:16:26.567 INFO  default    datomic.transaction - {<span style="color: #008b8b;">:tid</span> 115,
-<span style="color: #008b8b;">:txid</span> #uuid <span style="color: #8b2252;">"6243cb8a-2b3c-4031-a4cd-8c7df49e3981"</span>,
-<span style="color: #008b8b;">:datom-count</span> 1, <span style="color: #008b8b;">:apply-msec</span> 4.71, <span style="color: #008b8b;">:pid</span> 76957,
-<span style="color: #008b8b;">:io-stats</span> {<span style="color: #008b8b;">:api</span> <span style="color: #008b8b;">:tx</span>, <span style="color: #008b8b;">:api-ms</span> 5 <span style="color: #008b8b;">:reads</span> {<span style="color: #008b8b;">:ocache</span> 2}},
-<span style="color: #008b8b;">:event</span> <span style="color: #008b8b;">:tx/process</span>, <span style="color: #008b8b;">:msec</span> 16.0, <span style="color: #008b8b;">:t</span> 1008}
+```clojure
+2022-03-29 23:16:26.567 INFO  default    datomic.transaction - {:tid 115,
+:txid #uuid "6243cb8a-2b3c-4031-a4cd-8c7df49e3981",
+:datom-count 1, :apply-msec 4.71, :pid 76957,
+:io-stats {:api :tx, :api-ms 5 :reads {:ocache 2}},
+:event :tx/process, :msec 16.0, :t 1008}
 ```
 
 
 
 In Cloud, io-stats are logged under the “TxSucceeded” message, with all keys converted to CloudWatch JSON Pascal case conventions, e.g.:
 
-```
-<pre class="src src-json">{
+```json
+{
     "Msg": "TxSucceeded",
     "DbId": "5644c1a8-aedc-44c6-9e70-1b9a3b035326",
     "T": 6,
@@ -101,14 +101,14 @@ Transaction API io-stats
 
 You can request that io-stats be included in the map returned from transact by adding `:io-context` as a trailing arg to transact:
 
-```
-<pre class="src src-clojure">@(d/transact conn tx-data <span style="color: #008b8b;">:io-context</span> <span style="color: #008b8b;">:tx/example</span>)
+```clojure
+@(d/transact conn tx-data :io-context :tx/example)
 ```
 
 
 
-```
-<pre class="src src-clojure">=> <span style="color: #b22222;">;; </span><span style="color: #b22222;">tx result will include :io-stats key</span>
+```clojure
+=> ;; tx result will include :io-stats key
 ```
 
 
@@ -124,21 +124,21 @@ The query, qseq, pull, and pull-many APIs all include arities that allow you to 
 
 For example, the following query includes `:io-context`:
 
-```
-<pre class="src src-clojure">(d/query {<span style="color: #008b8b;">:query</span> '[<span style="color: #008b8b;">:find</span> (<span style="color: #a0522d;">count</span> ?a)
-                   <span style="color: #008b8b;">:in</span> $ ?aname
-                   <span style="color: #008b8b;">:where</span> [?a <span style="color: #008b8b;">:artist/name</span> ?aname]]
-          <span style="color: #008b8b;">:args</span> [db <span style="color: #8b2252;">"The Beatles"</span>]
-          <span style="color: #008b8b;">:io-context</span> <span style="color: #008b8b;">:artist/by-name</span>})
+```clojure
+(d/query {:query '[:find (count ?a)
+                   :in $ ?aname
+                   :where [?a :artist/name ?aname]]
+          :args [db "The Beatles"]
+          :io-context :artist/by-name})
 ```
 
 
 
-```
-<pre class="src src-clojure">=> {<span style="color: #008b8b;">:ret</span> [[1]],
-    <span style="color: #008b8b;">:io-stats</span> {<span style="color: #008b8b;">:api</span> <span style="color: #008b8b;">:query</span>, <span style="color: #008b8b;">:api-ms</span> 2.2,
-               <span style="color: #008b8b;">:io-context</span> <span style="color: #008b8b;">:artist/by-name</span>
-               <span style="color: #008b8b;">:reads</span> {<span style="color: #008b8b;">:avet</span> 3, <span style="color: #008b8b;">:ocache</span> 3}}}
+```clojure
+=> {:ret [[1]],
+    :io-stats {:api :query, :api-ms 2.2,
+               :io-context :artist/by-name
+               :reads {:avet 3, :ocache 3}}}
 ```
 
 
@@ -154,14 +154,14 @@ The io-stats for a top-level API include the total I/O for all nested calls. Oft
 
 When nested API calls have an `:io-context`, the io-stats for nested calls are aggregated by `:io-context` under the :nested key. For example, imagine that a transaction with `:io-context` of `:transfer/funds` calls a query with `:io-context` of `:transfer/check-balance` twice and a query with `:transfer/check-auth` once. The transaction will return (and log) an io-stats map with the following shape:
 
-```
-<pre class="src src-clojure">{<span style="color: #008b8b;">:io-context</span> <span style="color: #008b8b;">:transfer/funds</span>
- <span style="color: #008b8b;">:reads</span> <span style="color: #b22222;">;; </span><span style="color: #b22222;">totals for entire tx</span>
- <span style="color: #008b8b;">:nested</span>
- {<span style="color: #008b8b;">:transfer/check-balance</span>
-  <span style="color: #b22222;">;; </span><span style="color: #b22222;">io-stats map that sums across 2 calls to check-balance</span>
-  <span style="color: #008b8b;">:transfer/check-auth</span>
-  <span style="color: #b22222;">;; </span><span style="color: #b22222;">io-stats map of the one call to check-auth</span>
+```clojure
+{:io-context :transfer/funds
+ :reads ;; totals for entire tx
+ :nested
+ {:transfer/check-balance
+  ;; io-stats map that sums across 2 calls to check-balance
+  :transfer/check-auth
+  ;; io-stats map of the one call to check-auth
   }}
 ```
 
@@ -215,30 +215,30 @@ To get the most benefit from io-stats, you should look at them under realistic l
 
 Datomic dynamically updates caches as data is used, bringing frequently needed segments into closer, lower latency cache tiers. The most trivial example of this is that running the same query twice on an unloaded system can produce very different io-stats. Observe the difference in two back-to-back calls finding the average artist name length in [mbrainz](https://github.com/Datomic/mbrainz-sample):
 
-```
-<pre class="src src-clojure">(<span style="color: #a020f0;">def</span> <span style="color: #0000ff;">avg-name-q</span> '[<span style="color: #008b8b;">:find</span> (avg ?aname-len)
-                  <span style="color: #008b8b;">:with</span> ?a
-                  <span style="color: #008b8b;">:where</span> [?a <span style="color: #008b8b;">:artist/name</span> ?aname]
-                  [(<span style="color: #a0522d;">count</span> ?aname) ?aname-len]])
-(d/query {<span style="color: #008b8b;">:query</span> avg-name-q
-          <span style="color: #008b8b;">:args</span> [db]
-          <span style="color: #008b8b;">:io-context</span> <span style="color: #008b8b;">:artist/avg-name-length</span>})
+```clojure
+(def avg-name-q '[:find (avg ?aname-len)
+                  :with ?a
+                  :where [?a :artist/name ?aname]
+                  [(count ?aname) ?aname-len]])
+(d/query {:query avg-name-q
+          :args [db]
+          :io-context :artist/avg-name-length})
 ```
 
 
 
-```
-<pre class="src src-clojure"><span style="color: #b22222;">;; </span><span style="color: #b22222;">first call</span>
-=> {<span style="color: #008b8b;">:ret</span> [[13.08504033265786]],
-    <span style="color: #008b8b;">:io-stats</span> {<span style="color: #008b8b;">:api</span> <span style="color: #008b8b;">:query</span>, <span style="color: #008b8b;">:api-ms</span> 1096.2,
-               <span style="color: #008b8b;">:io-context</span> <span style="color: #008b8b;">:artist/avg-name-length</span>
-               <span style="color: #008b8b;">:reads</span> {<span style="color: #008b8b;">:aevt</span> 607, <span style="color: #008b8b;">:aevt-load</span> 414, <span style="color: #008b8b;">:ocache</span> 607,
-                       <span style="color: #008b8b;">:dev</span> 212, <span style="color: #008b8b;">:dev-ms</span> 304.1}}}
-<span style="color: #b22222;">;; </span><span style="color: #b22222;">second call</span>
-=> {<span style="color: #008b8b;">:ret</span> [[13.08504033265786]],
-    <span style="color: #008b8b;">:io-stats</span> {<span style="color: #008b8b;">:api</span> <span style="color: #008b8b;">:query</span>, <span style="color: #008b8b;">:api-ms</span> 938.9,
-               <span style="color: #008b8b;">:io-context</span> <span style="color: #008b8b;">:artist/avg-name-length</span>
-               <span style="color: #008b8b;">:reads</span> {<span style="color: #008b8b;">:aevt</span> 405, <span style="color: #008b8b;">:ocache</span> 405}}}
+```clojure
+;; first call
+=> {:ret [[13.08504033265786]],
+    :io-stats {:api :query, :api-ms 1096.2,
+               :io-context :artist/avg-name-length
+               :reads {:aevt 607, :aevt-load 414, :ocache 607,
+                       :dev 212, :dev-ms 304.1}}}
+;; second call
+=> {:ret [[13.08504033265786]],
+    :io-stats {:api :query, :api-ms 938.9,
+               :io-context :artist/avg-name-length
+               :reads {:aevt 405, :ocache 405}}}
 ```
 
 

@@ -66,11 +66,11 @@ It is often convenient to consider a point-in-time view as only a three-tuple wi
 
 EAV42:user/first-name"John"42:user/last-name"Doe"42:user/favorite-color:greenThis three-tuple view is very similar to a programming language object where the *E* is analogous to *this* or *self*. The *map view* of an entity at a particular point in time captures this information more compactly, using the reserved pseudo-attribute name `:db/id` for *E*:
 
-```
-<pre class="src src-clojure">{<span style="color: #008b8b;">:db/id</span> 42
- <span style="color: #008b8b;">:user/favorite-color</span> <span style="color: #008b8b;">:green</span>
- <span style="color: #008b8b;">:user/first-name</span> <span style="color: #8b2252;">"John"</span>
- <span style="color: #008b8b;">:user/last-name</span> <span style="color: #8b2252;">"Doe"</span>}
+```clojure
+{:db/id 42
+ :user/favorite-color :green
+ :user/first-name "John"
+ :user/last-name "Doe"}
 ```
 
 
@@ -176,8 +176,8 @@ Lookup Refs
 
 In many databases, entities have unique identifiers in the problem domain like an email address or an order number. Applications often need to find entities based on these external keys. You can do this with query, but it's easier to use a *lookup ref*. A lookup ref is a pair containing an attribute identifier and a value. It identifies the entity with the given unique attribute value. For example, this lookup ref:
 
-```
-<pre class="src src-clojure">[<span style="color: #008b8b;">:person/email</span> <span style="color: #8b2252;">"joe@example.com"</span>]
+```clojure
+[:person/email "joe@example.com"]
 ```
 
 
@@ -188,9 +188,9 @@ You can use lookup refs to retrieve entities using the *pull* API and to retriev
 
 You can also use lookup refs to refer to existing entities in transactions, avoiding extra lookup code:
 
-```
-<pre class="src src-clojure">{<span style="color: #008b8b;">:db/id</span> [<span style="color: #008b8b;">:person/email</span> <span style="color: #8b2252;">"joe@example.com"</span>]
- <span style="color: #008b8b;">:person/loves</span> <span style="color: #008b8b;">:pizza</span>}
+```clojure
+{:db/id [:person/email "joe@example.com"]
+ :person/loves :pizza}
 ```
 
 

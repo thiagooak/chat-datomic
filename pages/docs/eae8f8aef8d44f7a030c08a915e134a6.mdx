@@ -78,8 +78,8 @@ Query EDN Example
 
 Below is an example of a query shown in EDN. This query finds the IDs of all entities with a `:community/name` attribute whose value is "belltown".
 
-```
-<pre class="src src-clojure">[<span style="color: #008b8b;">:find</span> ?c <span style="color: #008b8b;">:where</span> [?c <span style="color: #008b8b;">:community/name</span> <span style="color: #8b2252;">"belltown"</span>]]
+```clojure
+[:find ?c :where [?c :community/name "belltown"]]
 ```
 
 
@@ -103,8 +103,8 @@ Transaction EDN Example
 
 Below is an example of a transaction written in EDN notation. This transaction creates a new entity with two attributes: `:person/name` and `:person/email`.
 
-```
-<pre class="src src-clojure">[{<span style="color: #008b8b;">:person/name</span> <span style="color: #8b2252;">"Anna"</span> <span style="color: #008b8b;">:person/email</span> <span style="color: #8b2252;">"anna@example.com"</span>}]
+```clojure
+[{:person/name "Anna" :person/email "anna@example.com"}]
 ```
 
 

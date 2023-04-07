@@ -81,18 +81,18 @@ Datoms API
 
 The [datoms API](https://docs.datomic.com/client-api/datomic.client.api.html#var-datoms) lets you specify a Datomic index, plus a vector of values in the same order as the index. The [example](https://github.com/cognitect-labs/day-of-datomic-cloud/blob/master/doc-examples/raw_index_access.repl) excerpted below searches the `:avet` index for datoms whose `a` component is `:inv/sku`
 
-```
-<pre class="src src-clojure">(<span style="color: #483d8b;">->></span> (d/datoms db
-               {<span style="color: #008b8b;">:index</span> <span style="color: #008b8b;">:avet</span>
-                <span style="color: #008b8b;">:components</span> [<span style="color: #008b8b;">:inv/sku</span>]})
-     (<span style="color: #a0522d;">take</span> 3)
-     (<span style="color: #a0522d;">map</span> <span style="color: #008b8b;">:v</span>))
+```clojure
+(->> (d/datoms db
+               {:index :avet
+                :components [:inv/sku]})
+     (take 3)
+     (map :v))
 ```
 
 
 
-```
-<pre class="src src-clojure">=> (<span style="color: #8b2252;">"SKU-0"</span> <span style="color: #8b2252;">"SKU-1"</span> <span style="color: #8b2252;">"SKU-10"</span>)
+```clojure
+=> ("SKU-0" "SKU-1" "SKU-10")
 ```
 
 
@@ -106,17 +106,17 @@ Index-range API
 
 The [index-range API](https://docs.datomic.com/client-api/datomic.client.api.html#var-index-range) lets you specify an attribute, and returns all datoms sorted by that attribute, optionally limited by start and end values. The [example](https://github.com/cognitect-labs/day-of-datomic-cloud/blob/master/doc-examples/raw_index_access.repl) excerpted below returns all the SKUs between "SKU-42" inclusive and "SKU-44" exclusive.
 
-```
-<pre class="src src-clojure">(<span style="color: #483d8b;">->></span> (d/index-range
+```clojure
+(->> (d/index-range
       db
-      {<span style="color: #008b8b;">:attrid</span> <span style="color: #008b8b;">:inv/sku</span>
-       <span style="color: #008b8b;">:start</span> <span style="color: #8b2252;">"SKU-42"</span>
-       <span style="color: #008b8b;">:end</span> <span style="color: #8b2252;">"SKU-44"</span>})
-     (<span style="color: #a0522d;">map</span> <span style="color: #008b8b;">:v</span>))
+      {:attrid :inv/sku
+       :start "SKU-42"
+       :end "SKU-44"})
+     (map :v))
 ```
 
 
 
-```
-<pre class="src src-clojure">=> (<span style="color: #8b2252;">"SKU-42"</span> <span style="color: #8b2252;">"SKU-43"</span>)
+```clojure
+=> ("SKU-42" "SKU-43")
 ```

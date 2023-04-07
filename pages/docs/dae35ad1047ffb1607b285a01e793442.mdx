@@ -30,10 +30,10 @@ The Solution
 
 With the above change, requests will now be passed to your application which will be responsible for adding the desired CORS headers. A maximally permissive set of headers is provided here as a reference. You may adjust based on your specific needs:
 
-```
-<pre class="src src-clojure">(<span style="color: #a020f0;">def</span> <span style="color: #0000ff;">cors-headers</span> {<span style="color: #8b2252;">"Access-Control-Allow-Origin"</span> <span style="color: #8b2252;">"*"</span>
-                   <span style="color: #8b2252;">"Access-Control-Allow-Methods"</span> <span style="color: #8b2252;">"GET, PUT, PATCH, POST, DELETE, OPTIONS"</span>
-                   <span style="color: #8b2252;">"Access-Control-Allow-Headers"</span> <span style="color: #8b2252;">"Authorization, Content-Type"</span>})
+```clojure
+(def cors-headers {"Access-Control-Allow-Origin" "*"
+                   "Access-Control-Allow-Methods" "GET, PUT, PATCH, POST, DELETE, OPTIONS"
+                   "Access-Control-Allow-Headers" "Authorization, Content-Type"})
 ```
 
 
@@ -71,8 +71,8 @@ Add an unauthenticated lambda proxy OPTIONS method to your API Gateway. Then add
 
 With the above change, requests will now be passed to your application which will be responsible for adding the desired CORS headers. A maximally permissive set of headers is provided here as a reference. You may adjust based on your specific needs:
 
-```
-<pre class="src src-clojure">(<span style="color: #a020f0;">def</span> <span style="color: #0000ff;">cors-headers</span> {<span style="color: #8b2252;">"Access-Control-Allow-Origin"</span> <span style="color: #8b2252;">"*"</span>
-                   <span style="color: #8b2252;">"Access-Control-Allow-Methods"</span> <span style="color: #8b2252;">"GET, PUT, PATCH, POST, DELETE, OPTIONS"</span>
-                   <span style="color: #8b2252;">"Access-Control-Allow-Headers"</span> <span style="color: #8b2252;">"Authorization, Content-Type"</span>})
+```clojure
+(def cors-headers {"Access-Control-Allow-Origin" "*"
+                   "Access-Control-Allow-Methods" "GET, PUT, PATCH, POST, DELETE, OPTIONS"
+                   "Access-Control-Allow-Headers" "Authorization, Content-Type"})
 ```

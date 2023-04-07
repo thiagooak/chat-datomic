@@ -193,8 +193,8 @@ If a peer connects to the transactor and runs for some time and the connection t
 - Look at peer and transactor memory use - ActiveMQ failures can be caused by memory pressure.
 - Be suspicious of GC pauses on both the transactor and the peers. As peers run application code, they're more likely to experience GC pauses. We recommend troubleshootinhg suspected GC pauses by collecting logs using these JVM args:
 
-```
-<pre class="src src-sh">-Xloggc:{file} -XX:+PrintGCDetails -XX:+PrintTenuringDistribution -XX:+PrintGCCause
+```sh
+-Xloggc:{file} -XX:+PrintGCDetails -XX:+PrintTenuringDistribution -XX:+PrintGCCause
 -XX:+PrintGCApplicationStoppedTime -XX:+PrintGCApplicationConcurrentTime -XX:+PrintGCDateStamps
 ```
 
@@ -328,9 +328,9 @@ Existing databases do **not** automatically incorporate enhancements to the base
 
 FeatureMinimum Datomic VersionReleasedtuples0.9.5927June 27, 2019attribute predicates0.9.5927June 27, 2019entity specs0.9.5927June 27, 2019db.type/symbol0.9.5927June 27, 2019Once you have upgraded all transactors and peers, you can upgrade an existing database to use the latest base schema by passing the `:upgrade-schema`action and a database URI to `administer-system`. For example:
 
-```
-<pre class="src src-clojure">(d/administer-system {<span style="color: #008b8b;">:uri</span> <span style="color: #8b2252;">"datomic:dev://localhost:4334/my-db"</span>
-                      <span style="color: #008b8b;">:action</span> <span style="color: #008b8b;">:upgrade-schema</span>})
+```clojure
+(d/administer-system {:uri "datomic:dev://localhost:4334/my-db"
+                      :action :upgrade-schema})
 ```
 
 

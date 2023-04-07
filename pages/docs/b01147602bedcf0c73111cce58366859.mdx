@@ -6,36 +6,36 @@ Pre-requisite
 
 Update your database to add some inventory:
 
-```
-<pre class="src src-clojure">(<span style="color: #a020f0;">def</span> <span style="color: #0000ff;">inventory-counts</span>
-  [{<span style="color: #008b8b;">:db/ident</span> <span style="color: #008b8b;">:inv/count</span>
-    <span style="color: #008b8b;">:db/valueType</span> <span style="color: #008b8b;">:db.type/long</span>
-    <span style="color: #008b8b;">:db/cardinality</span> <span style="color: #008b8b;">:db.cardinality/one</span>}])
+```clojure
+(def inventory-counts
+  [{:db/ident :inv/count
+    :db/valueType :db.type/long
+    :db/cardinality :db.cardinality/one}])
 
-(d/transact conn {<span style="color: #008b8b;">:tx-data</span> inventory-counts})
+(d/transact conn {:tx-data inventory-counts})
 
-(<span style="color: #a020f0;">def</span> <span style="color: #0000ff;">inventory-update</span>
-  [[<span style="color: #008b8b;">:db/add</span> [<span style="color: #008b8b;">:inv/sku</span> <span style="color: #8b2252;">"SKU-21"</span>] <span style="color: #008b8b;">:inv/count</span> 7]
-   [<span style="color: #008b8b;">:db/add</span> [<span style="color: #008b8b;">:inv/sku</span> <span style="color: #8b2252;">"SKU-22"</span>] <span style="color: #008b8b;">:inv/count</span> 7]
-   [<span style="color: #008b8b;">:db/add</span> [<span style="color: #008b8b;">:inv/sku</span> <span style="color: #8b2252;">"SKU-42"</span>] <span style="color: #008b8b;">:inv/count</span> 100]])
+(def inventory-update
+  [[:db/add [:inv/sku "SKU-21"] :inv/count 7]
+   [:db/add [:inv/sku "SKU-22"] :inv/count 7]
+   [:db/add [:inv/sku "SKU-42"] :inv/count 100]])
 
-(d/transact conn {<span style="color: #008b8b;">:tx-data</span> inventory-update})
+(d/transact conn {:tx-data inventory-update})
 ```
 
 
 
 Make some corrections to the data:
 
-```
-<pre class="src src-clojure">(d/transact
+```clojure
+(d/transact
  conn
- {<span style="color: #008b8b;">:tx-data</span> [[<span style="color: #008b8b;">:db/retract</span> [<span style="color: #008b8b;">:inv/sku</span> <span style="color: #8b2252;">"SKU-22"</span>] <span style="color: #008b8b;">:inv/count</span> 7]
-            [<span style="color: #008b8b;">:db/add</span> <span style="color: #8b2252;">"datomic.tx"</span> <span style="color: #008b8b;">:db/doc</span> <span style="color: #8b2252;">"Retract incorrect assertion"</span>]]})
+ {:tx-data [[:db/retract [:inv/sku "SKU-22"] :inv/count 7]
+            [:db/add "datomic.tx" :db/doc "Retract incorrect assertion"]]})
 
 (d/transact
  conn
- {<span style="color: #008b8b;">:tx-data</span> [[<span style="color: #008b8b;">:db/add</span> [<span style="color: #008b8b;">:inv/sku</span> <span style="color: #8b2252;">"SKU-42"</span>] <span style="color: #008b8b;">:inv/count</span> 1000]
-            [<span style="color: #008b8b;">:db/add</span> <span style="color: #8b2252;">"datomic.tx"</span> <span style="color: #008b8b;">:db/doc</span> <span style="color: #8b2252;">"Update inventory"</span>]]})
+ {:tx-data [[:db/add [:inv/sku "SKU-42"] :inv/count 1000]
+            [:db/add "datomic.tx" :db/doc "Update inventory"]]})
 ```
 
 
@@ -55,19 +55,19 @@ With Datomic, you can make a database query asOf any previous point in time, whe
 
 noslide
 
-```
-<pre class="src src-clojure">@(<span style="color: #a020f0;">def</span> <span style="color: #0000ff;">recent-txns</span>
+```clojure
+@(def recent-txns
    (d/q
-    '[<span style="color: #008b8b;">:find</span> (<span style="color: #a0522d;">max</span> 3 ?tx)
-      <span style="color: #008b8b;">:where</span>
-      [?tx <span style="color: #008b8b;">:db/txInstant</span>]]
+    '[:find (max 3 ?tx)
+      :where
+      [?tx :db/txInstant]]
     (d/db conn)))
 ```
 
 
 
-```
-<pre class="src src-clojure">=> [[[13194139533330 13194139533329 13194139533328]]] <span style="color: #b22222;">;; </span><span style="color: #b22222;">your values may differ</span>
+```clojure
+=> [[[13194139533330 13194139533329 13194139533328]]] ;; your values may differ
 ```
 
 
@@ -76,28 +76,28 @@ The `max` in find limits the results to the three highest valued (most recent) t
 
 noslide
 
-```
-<pre class="src src-clojure">
-<span style="color: #b22222;">;; </span><span style="color: #b22222;">Get the earliest transaction id</span>
-(<span style="color: #a020f0;">def</span> <span style="color: #0000ff;">txid</span>
-  (<span style="color: #483d8b;">->></span> recent-txns
-       ffirst
-       (<span style="color: #a0522d;">apply</span> min)))
+```clojure
 
-@(<span style="color: #a020f0;">def</span> <span style="color: #0000ff;">db-before</span> (d/as-of db txid))
+;; Get the earliest transaction id
+(def txid
+  (->> recent-txns
+       ffirst
+       (apply min)))
+
+@(def db-before (d/as-of db txid))
 
 (d/q
- '[<span style="color: #008b8b;">:find</span> ?sku ?count
-   <span style="color: #008b8b;">:where</span>
-   [?inv <span style="color: #008b8b;">:inv/sku</span> ?sku]
-   [?inv <span style="color: #008b8b;">:inv/count</span> ?count]]
+ '[:find ?sku ?count
+   :where
+   [?inv :inv/sku ?sku]
+   [?inv :inv/count ?count]]
  db-before)
 ```
 
 
 
-```
-<pre class="src src-clojure">=> [[<span style="color: #8b2252;">"SKU-42"</span> 100] [<span style="color: #8b2252;">"SKU-21"</span> 7] [<span style="color: #8b2252;">"SKU-22"</span> 7]]
+```clojure
+=> [["SKU-42" 100] ["SKU-21" 7] ["SKU-22" 7]]
 ```
 
 
@@ -113,31 +113,31 @@ In addition to point-in-time auditing, you can also review the entire history of
 
 noslide
 
-```
-<pre class="src src-clojure">(<span style="color: #a0522d;">require</span> '[clojure.pprint <span style="color: #008b8b;">:as</span> pp])
+```clojure
+(require '[clojure.pprint :as pp])
 
-(<span style="color: #a020f0;">def</span> <span style="color: #0000ff;">db-hist</span> (d/history (d/db conn)))
+(def db-hist (d/history (d/db conn)))
 
-(<span style="color: #483d8b;">->></span> (d/q
-      '[<span style="color: #008b8b;">:find</span> ?tx ?sku ?val ?op
-        <span style="color: #008b8b;">:where</span>
-        [?inv <span style="color: #008b8b;">:inv/count</span> ?val ?tx ?op]
-        [?inv <span style="color: #008b8b;">:inv/sku</span> ?sku]]
+(->> (d/q
+      '[:find ?tx ?sku ?val ?op
+        :where
+        [?inv :inv/count ?val ?tx ?op]
+        [?inv :inv/sku ?sku]]
       db-hist)
-     (<span style="color: #a0522d;">sort-by</span> first)
+     (sort-by first)
      (pp/pprint))
 ```
 
 
 
-```
-<pre class="src src-clojure">=>
-([13194139534399 <span style="color: #8b2252;">"SKU-21"</span> 7 true]
- [13194139534399 <span style="color: #8b2252;">"SKU-22"</span> 7 true]
- [13194139534399 <span style="color: #8b2252;">"SKU-42"</span> 100 true]
- [13194139534400 <span style="color: #8b2252;">"SKU-22"</span> 7 false]
- [13194139534402 <span style="color: #8b2252;">"SKU-42"</span> 1000 true]
- [13194139534402 <span style="color: #8b2252;">"SKU-42"</span> 100 false])
+```clojure
+=>
+([13194139534399 "SKU-21" 7 true]
+ [13194139534399 "SKU-22" 7 true]
+ [13194139534399 "SKU-42" 100 true]
+ [13194139534400 "SKU-22" 7 false]
+ [13194139534402 "SKU-42" 1000 true]
+ [13194139534402 "SKU-42" 100 false])
 ```
 
 

@@ -32,27 +32,27 @@ If you choose to use logback on the peer, you can use the transactor's *bin/logb
 
 For maven, add the following to the dependencies section of your pom.xml, replacing DATOMIC\_VERSION, as described above.
 
-```
-<pre class="src src-xml"><<span style="color: #0000ff;">dependency</span>>
-  <<span style="color: #0000ff;">groupId</span>>com.datomic</<span style="color: #0000ff;">groupId</span>>
-  <<span style="color: #0000ff;">artifactId</span>>datomic-pro</<span style="color: #0000ff;">artifactId</span>>
-  <<span style="color: #0000ff;">version</span>>DATOMIC_VERSION</<span style="color: #0000ff;">version</span>>
-  <<span style="color: #0000ff;">exclusions</span>>
-    <<span style="color: #0000ff;">exclusion</span>>
-      <<span style="color: #0000ff;">groupId</span>>org.slf4j</<span style="color: #0000ff;">groupId</span>>
-      <<span style="color: #0000ff;">artifactId</span>>slf4j-log4j12</<span style="color: #0000ff;">artifactId</span>>
-    </<span style="color: #0000ff;">exclusion</span>>
-    <<span style="color: #0000ff;">exclusion</span>>
-     <<span style="color: #0000ff;">groupId</span>>org.slf4j</<span style="color: #0000ff;">groupId</span>>
-     <<span style="color: #0000ff;">artifactId</span>>slf4j-nop</<span style="color: #0000ff;">artifactId</span>>
-    </<span style="color: #0000ff;">exclusion</span>>
-  </<span style="color: #0000ff;">exclusions</span>>
-</<span style="color: #0000ff;">dependency</span>>
-<<span style="color: #0000ff;">dependency</span>>
-  <<span style="color: #0000ff;">groupId</span>>ch.qos.logback</<span style="color: #0000ff;">groupId</span>>
-  <<span style="color: #0000ff;">artifactId</span>>logback-classic</<span style="color: #0000ff;">artifactId</span>>
-  <<span style="color: #0000ff;">version</span>>1.0.1</<span style="color: #0000ff;">version</span>>
-</<span style="color: #0000ff;">dependency</span>>
+```xml
+<dependency>
+  <groupId>com.datomic</groupId>
+  <artifactId>datomic-pro</artifactId>
+  <version>DATOMIC_VERSION</version>
+  <exclusions>
+    <exclusion>
+      <groupId>org.slf4j</groupId>
+      <artifactId>slf4j-log4j12</artifactId>
+    </exclusion>
+    <exclusion>
+     <groupId>org.slf4j</groupId>
+     <artifactId>slf4j-nop</artifactId>
+    </exclusion>
+  </exclusions>
+</dependency>
+<dependency>
+  <groupId>ch.qos.logback</groupId>
+  <artifactId>logback-classic</artifactId>
+  <version>1.0.1</version>
+</dependency>
 ```
 
 
@@ -65,10 +65,10 @@ For maven, add the following to the dependencies section of your pom.xml, replac
 
 For leiningen, add the following to the dependencies section of your project.clj, replacing DATOMIC\_VERSION, as described above.
 
-```
-<pre class="src src-clojure">[com.datomic/datomic-pro <span style="color: #8b2252;">"DATOMIC_VERSION"</span>
- <span style="color: #008b8b;">:exclusions</span> [org.slf4j/slf4j-nop org.slf4j/slf4j-log4j12]]
-[ch.qos.logback/logback-classic <span style="color: #8b2252;">"1.0.1"</span>]
+```clojure
+[com.datomic/datomic-pro "DATOMIC_VERSION"
+ :exclusions [org.slf4j/slf4j-nop org.slf4j/slf4j-log4j12]]
+[ch.qos.logback/logback-classic "1.0.1"]
 ```
 
 
@@ -87,27 +87,27 @@ For leiningen, add the following to the dependencies section of your project.clj
 
 For maven, add the following to the dependencies section of your pom.xml, replacing DATOMIC\_VERSION, as described above.
 
-```
-<pre class="src src-xml"><<span style="color: #0000ff;">dependency</span>>
-  <<span style="color: #0000ff;">groupId</span>>com.datomic</<span style="color: #0000ff;">groupId</span>>
-  <<span style="color: #0000ff;">artifactId</span>>datomic-pro</<span style="color: #0000ff;">artifactId</span>>
-  <<span style="color: #0000ff;">version</span>>DATOMIC_VERSION</<span style="color: #0000ff;">version</span>>
-  <<span style="color: #0000ff;">exclusions</span>>
-    <<span style="color: #0000ff;">exclusion</span>>
-      <<span style="color: #0000ff;">groupId</span>>org.slf4j</<span style="color: #0000ff;">groupId</span>>
-      <<span style="color: #0000ff;">artifactId</span>>jul-to-slf4j</<span style="color: #0000ff;">artifactId</span>>
-    </<span style="color: #0000ff;">exclusion</span>>
-    <<span style="color: #0000ff;">exclusion</span>>
-     <<span style="color: #0000ff;">groupId</span>>org.slf4j</<span style="color: #0000ff;">groupId</span>>
-     <<span style="color: #0000ff;">artifactId</span>>slf4j-nop</<span style="color: #0000ff;">artifactId</span>>
-    </<span style="color: #0000ff;">exclusion</span>>
-  <<span style="color: #0000ff;">exclusions</span>>
-</<span style="color: #0000ff;">dependency</span>>
-<<span style="color: #0000ff;">dependency</span>>
-  <<span style="color: #0000ff;">groupId</span>>org.slf4j</<span style="color: #0000ff;">groupId</span>>
-  <<span style="color: #0000ff;">artifactId</span>>slf4j-jdk14</<span style="color: #0000ff;">artifactId</span>>
-  <<span style="color: #0000ff;">version</span>>1.6.4</<span style="color: #0000ff;">version</span>>
-</<span style="color: #0000ff;">dependency</span>>
+```xml
+<dependency>
+  <groupId>com.datomic</groupId>
+  <artifactId>datomic-pro</artifactId>
+  <version>DATOMIC_VERSION</version>
+  <exclusions>
+    <exclusion>
+      <groupId>org.slf4j</groupId>
+      <artifactId>jul-to-slf4j</artifactId>
+    </exclusion>
+    <exclusion>
+     <groupId>org.slf4j</groupId>
+     <artifactId>slf4j-nop</artifactId>
+    </exclusion>
+  <exclusions>
+</dependency>
+<dependency>
+  <groupId>org.slf4j</groupId>
+  <artifactId>slf4j-jdk14</artifactId>
+  <version>1.6.4</version>
+</dependency>
 ```
 
 
@@ -120,10 +120,10 @@ For maven, add the following to the dependencies section of your pom.xml, replac
 
 For leiningen, add the following to the dependencies section of your project.clj, replacing DATOMIC\_VERSION, as described above.
 
-```
-<pre class="src src-clojure">[com.datomic/datomic-pro <span style="color: #8b2252;">"DATOMIC_VERSION"</span>
- <span style="color: #008b8b;">:exclusions</span> [org.slf4j/jul-to-slf4j org.slf4j/slf4j-nop]]
-[org.slf4j/slf4j-jdk14 <span style="color: #8b2252;">"1.6.4"</span>]
+```clojure
+[com.datomic/datomic-pro "DATOMIC_VERSION"
+ :exclusions [org.slf4j/jul-to-slf4j org.slf4j/slf4j-nop]]
+[org.slf4j/slf4j-jdk14 "1.6.4"]
 ```
 
 
@@ -142,27 +142,27 @@ For leiningen, add the following to the dependencies section of your project.clj
 
 For maven, add the following to the dependencies section of your pom.xml, replacing DATOMIC\_VERSION, as described above.
 
-```
-<pre class="src src-xml"><<span style="color: #0000ff;">dependency</span>>
-  <<span style="color: #0000ff;">groupId</span>>com.datomic</<span style="color: #0000ff;">groupId</span>>
-  <<span style="color: #0000ff;">artifactId</span>>datomic-pro</<span style="color: #0000ff;">artifactId</span>>
-  <<span style="color: #0000ff;">version</span>>DATOMIC_VERSION</<span style="color: #0000ff;">version</span>>
-  <<span style="color: #0000ff;">exclusions</span>>
-    <<span style="color: #0000ff;">exclusion</span>>
-     <<span style="color: #0000ff;">groupId</span>>org.slf4j</<span style="color: #0000ff;">groupId</span>>
-     <<span style="color: #0000ff;">artifactId</span>>slf4j-nop</<span style="color: #0000ff;">artifactId</span>>
-    </<span style="color: #0000ff;">exclusion</span>>
-    <<span style="color: #0000ff;">exclusion</span>>
-     <<span style="color: #0000ff;">groupId</span>>org.slf4j</<span style="color: #0000ff;">groupId</span>>
-     <<span style="color: #0000ff;">artifactId</span>>log4j-over-slf4j</<span style="color: #0000ff;">artifactId</span>>
-    </<span style="color: #0000ff;">exclusion</span>>
-  </<span style="color: #0000ff;">exclusions</span>>
-</<span style="color: #0000ff;">dependency</span>>
-<<span style="color: #0000ff;">dependency</span>>
-  <<span style="color: #0000ff;">groupId</span>>org.slf4j</<span style="color: #0000ff;">groupId</span>>
-  <<span style="color: #0000ff;">artifactId</span>>slf4j-log4j12</<span style="color: #0000ff;">artifactId</span>>
-  <<span style="color: #0000ff;">version</span>>1.6.4</<span style="color: #0000ff;">version</span>>
-</<span style="color: #0000ff;">dependency</span>>
+```xml
+<dependency>
+  <groupId>com.datomic</groupId>
+  <artifactId>datomic-pro</artifactId>
+  <version>DATOMIC_VERSION</version>
+  <exclusions>
+    <exclusion>
+     <groupId>org.slf4j</groupId>
+     <artifactId>slf4j-nop</artifactId>
+    </exclusion>
+    <exclusion>
+     <groupId>org.slf4j</groupId>
+     <artifactId>log4j-over-slf4j</artifactId>
+    </exclusion>
+  </exclusions>
+</dependency>
+<dependency>
+  <groupId>org.slf4j</groupId>
+  <artifactId>slf4j-log4j12</artifactId>
+  <version>1.6.4</version>
+</dependency>
 ```
 
 
@@ -175,8 +175,8 @@ For maven, add the following to the dependencies section of your pom.xml, replac
 
 For leiningen, add the following to the dependencies section of your project.clj, replacing DATOMIC\_VERSION, as described above.
 
-```
-<pre class="src src-clojure">[com.datomic/datomic-pro <span style="color: #8b2252;">"DATOMIC_VERSION"</span>
- <span style="color: #008b8b;">:exclusions</span> [org.slf4j/slf4j-nop org.slf4j/log4j-over-slf4j]]
-[org.slf4j/slf4j-log4j12 <span style="color: #8b2252;">"1.6.4"</span>]
+```clojure
+[com.datomic/datomic-pro "DATOMIC_VERSION"
+ :exclusions [org.slf4j/slf4j-nop org.slf4j/log4j-over-slf4j]]
+[org.slf4j/slf4j-log4j12 "1.6.4"]
 ```

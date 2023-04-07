@@ -22,9 +22,9 @@ The [Clojure API](../clojure/index.html) is a functional projection of the [Java
 
 It is idiomatic to reference the *datomic.api* namespace as *d*, with *db* and *q* added to the current namespace.
 
-```
-<pre class="src src-clojure">(<span style="color: #483d8b;">ns</span> project-ns
-  (<span style="color: #008b8b;">:require</span> [datomic.api <span style="color: #008b8b;">:as</span> d <span style="color: #008b8b;">:refer</span> [db q]]))
+```clojure
+(ns project-ns
+  (:require [datomic.api :as d :refer [db q]]))
 ```
 
 
@@ -33,21 +33,21 @@ The code below illustrates the translation of the Java API to Clojure.
 
 Here is the code in Java:
 
-```
-<pre class="src src-java"><span style="color: #228b22;">String</span> <span style="color: #a0522d;">uri</span> = <span style="color: #8b2252;">"datomic:mem://test"</span>;
-<span style="color: #228b22;">Connection</span> <span style="color: #a0522d;">conn</span> = Peer.connect(uri);
-<span style="color: #228b22;">Collection</span> <span style="color: #a0522d;">results</span> = Peer.query(<span style="color: #8b2252;">"[:find ?e :where [?e :db/doc]]"</span>, conn.db);
+```java
+String uri = "datomic:mem://test";
+Connection conn = Peer.connect(uri);
+Collection results = Peer.query("[:find ?e :where [?e :db/doc]]", conn.db);
 ```
 
 
 
 and the equivalent code in Clojure:
 
-```
-<pre class="src src-clojure"><span style="color: #b22222;">;; </span><span style="color: #b22222;">clojure</span>
-(<span style="color: #a020f0;">def</span> <span style="color: #0000ff;">uri</span> <span style="color: #8b2252;">"datomic:mem://test"</span>)
-(<span style="color: #a020f0;">def</span> <span style="color: #0000ff;">conn</span> (d/connect uri))
-(<span style="color: #a020f0;">def</span> <span style="color: #0000ff;">results</span> (q '[<span style="color: #008b8b;">:find</span> ?e <span style="color: #008b8b;">:where</span> [?e <span style="color: #008b8b;">:db/doc</span>]] (db conn)))
+```clojure
+;; clojure
+(def uri "datomic:mem://test")
+(def conn (d/connect uri))
+(def results (q '[:find ?e :where [?e :db/doc]] (db conn)))
 ```
 
 

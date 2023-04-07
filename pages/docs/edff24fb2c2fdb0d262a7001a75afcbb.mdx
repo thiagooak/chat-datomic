@@ -20,14 +20,14 @@ You must retrieve the current database value to issue a query against a Datomic 
 
 Retrieve the current database value and store it in a var:
 
-```
-<pre class="src src-clojure">(<span style="color: #a020f0;">def</span> <span style="color: #0000ff;">db</span> (d/db conn))  
+```clojure
+(def db (d/db conn))  
 ```
 
 
 
-```
-<pre class="src src-clojure">=> #'user/db
+```clojure
+=> #'user/db
 ```
 
 
@@ -52,9 +52,9 @@ Right now we want to find every movie in the database. A movie is anything that 
 
 You will use the [list form of the query data](../clojure/index.html#datomic.api/q). You must create a vector with the three mandatory components listed above. Let's look at a minimal query:
 
-```
-<pre class="src src-clojure">(<span style="color: #a020f0;">def</span> <span style="color: #0000ff;">all-movies-q</span> '[<span style="color: #008b8b;">:find</span> ?e 
-                    <span style="color: #008b8b;">:where</span> [?e <span style="color: #008b8b;">:movie/title</span>]])
+```clojure
+(def all-movies-q '[:find ?e 
+                    :where [?e :movie/title]])
 ```
 
 
@@ -68,14 +68,14 @@ The whole query reads as "find me the ids of all entities which have an attribut
 
 To actually issue the query, call `q` and pass the query and the database value you captured in the first part of this tutorial:
 
-```
-<pre class="src src-clojure">(d/q all-movies-q db)
+```clojure
+(d/q all-movies-q db)
 ```
 
 
 
-```
-<pre class="src src-clojure">=> [[17592186045418] [17592186045419] [17592186045420]]
+```clojure
+=> [[17592186045418] [17592186045419] [17592186045420]]
 ```
 
 
@@ -84,9 +84,9 @@ You can see that there were three entities in the database with a `:movie/title`
 
 Instead of finding the entity ids, perhaps you just want to find all the titles of all the movies in the database. In that case, your query would specify a `:find` clause with a named value (`?movie-title`) that you bind to an attribute (`:movie/title`). That would look like this:
 
-```
-<pre class="src src-clojure">(<span style="color: #a020f0;">def</span> <span style="color: #0000ff;">all-titles-q</span> '[<span style="color: #008b8b;">:find</span> ?movie-title 
-                    <span style="color: #008b8b;">:where</span> [_ <span style="color: #008b8b;">:movie/title</span> ?movie-title]])
+```clojure
+(def all-titles-q '[:find ?movie-title 
+                    :where [_ :movie/title ?movie-title]])
 ```
 
 
@@ -95,14 +95,14 @@ Notice the underscore at the beginning of the clause where `?e` used to be. That
 
 To execute the query, pass it and the db value in as before:
 
-```
-<pre class="src src-clojure">(d/q all-titles-q db)
+```clojure
+(d/q all-titles-q db)
 ```
 
 
 
-```
-<pre class="src src-clojure">=> [[<span style="color: #8b2252;">"Commando"</span>] [<span style="color: #8b2252;">"The Goonies"</span>] [<span style="color: #8b2252;">"Repo Man"</span>]] 
+```clojure
+=> [["Commando"] ["The Goonies"] ["Repo Man"]] 
 ```
 
 
@@ -117,50 +117,50 @@ The `:where` clause in our last example contained an `_` where we first saw `?e`
 
 The new query looks like this:
 
-```
-<pre class="src src-clojure">(<span style="color: #a020f0;">def</span> <span style="color: #0000ff;">titles-from-1985</span> '[<span style="color: #008b8b;">:find</span> ?title 
-                        <span style="color: #008b8b;">:where</span> [?e <span style="color: #008b8b;">:movie/title</span> ?title] 
-                               [?e <span style="color: #008b8b;">:movie/release-year</span> 1985]])
+```clojure
+(def titles-from-1985 '[:find ?title 
+                        :where [?e :movie/title ?title] 
+                               [?e :movie/release-year 1985]])
 ```
 
 
 
 This query reads: "find the title of any entity that has a `:movie/title` attribute and whose `:movie/release-year` is 1985". When you issue the new query:
 
-```
-<pre class="src src-clojure">(d/q titles-from-1985 db)
+```clojure
+(d/q titles-from-1985 db)
 ```
 
 
 
-```
-<pre class="src src-clojure">=> [[<span style="color: #8b2252;">"Commando"</span>] [<span style="color: #8b2252;">"The Goonies"</span>]]
+```clojure
+=> [["Commando"] ["The Goonies"]]
 ```
 
 
 
 What if you want to return all the attributes for each movie released in 1985? You need a clause for each attribute you want to return and for the filter on release year, all of which should be joined through `?e`. That query looks like:
 
-```
-<pre class="src src-clojure">(<span style="color: #a020f0;">def</span> <span style="color: #0000ff;">all-data-from-1985</span> '[<span style="color: #008b8b;">:find</span> ?title ?year ?genre 
-                          <span style="color: #008b8b;">:where</span> [?e <span style="color: #008b8b;">:movie/title</span> ?title] 
-                                 [?e <span style="color: #008b8b;">:movie/release-year</span> ?year] 
-                                 [?e <span style="color: #008b8b;">:movie/genre</span> ?genre] 
-                                 [?e <span style="color: #008b8b;">:movie/release-year</span> 1985]])
+```clojure
+(def all-data-from-1985 '[:find ?title ?year ?genre 
+                          :where [?e :movie/title ?title] 
+                                 [?e :movie/release-year ?year] 
+                                 [?e :movie/genre ?genre] 
+                                 [?e :movie/release-year 1985]])
 ```
 
 
 
 And when you run it:
 
-```
-<pre class="src src-clojure">(d/q all-data-from-1985 db)
+```clojure
+(d/q all-data-from-1985 db)
 ```
 
 
 
-```
-<pre class="src src-clojure">=> [[<span style="color: #8b2252;">"The Goonies"</span> 1985 <span style="color: #8b2252;">"action/adventure"</span>] [<span style="color: #8b2252;">"Commando"</span> 1985 <span style="color: #8b2252;">"action/adventure"</span>]]
+```clojure
+=> [["The Goonies" 1985 "action/adventure"] ["Commando" 1985 "action/adventure"]]
 ```
 
 

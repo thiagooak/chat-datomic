@@ -3,20 +3,20 @@ Data Structure Literals
 
 Datomic is designed to be directly programmable using data. Transactions, queries and query results are all represented as simple collection data structures. The documentation presents these data structures in literal form:
 
-```
-<pre class="src src-clojure">[<span style="color: #008b8b;">:find</span> ?c <span style="color: #008b8b;">:where</span> [?c <span style="color: #008b8b;">:community/name</span> <span style="color: #8b2252;">"belltown"</span>]]
-```
-
-
-
-```
-<pre class="src src-clojure">[<span style="color: #008b8b;">:find</span> ?c <span style="color: #008b8b;">:in</span> ?x <span style="color: #008b8b;">:where</span> [(<span style="color: #483d8b;">.getClass</span> ?x) ?c]]
+```clojure
+[:find ?c :where [?c :community/name "belltown"]]
 ```
 
 
 
+```clojure
+[:find ?c :in ?x :where [(.getClass ?x) ?c]]
 ```
-<pre class="src src-clojure">[{<span style="color: #008b8b;">:db/id</span> #db/id[<span style="color: #008b8b;">:db.part/user</span> -1] <span style="color: #008b8b;">:db/doc</span> <span style="color: #8b2252;">"This is an example"</span>}]
+
+
+
+```clojure
+[{:db/id #db/id[:db.part/user -1] :db/doc "This is an example"}]
 ```
 
 
@@ -40,8 +40,8 @@ Building data structures
 
 When you program with Datomic, your application will build data structures like these. There are two approaches to creating them. The first approach is to represent them as strings. This code invokes a query using a data structure literal in string form.
 
-```
-<pre class="src src-java">results = Peer.query(<span style="color: #8b2252;">"[:find ?c :where [?c :community/name \"belltown\"]]"</span>, db)
+```java
+results = Peer.query("[:find ?c :where [?c :community/name \"belltown\"]]", db)
 ```
 
 
@@ -52,8 +52,8 @@ The second approach is to construct the data structures programmatically. When y
 
 The *datomic.Util* class provides *list* and *map* methods to make it easy to build data structures. This code builds a transaction to add a new entity with a given doc string.
 
-```
-<pre class="src src-java">tx = Util.list(Util.map(<span style="color: #8b2252;">":db/doc"</span>, <span style="color: #8b2252;">"This is an example"</span>));
+```java
+tx = Util.list(Util.map(":db/doc", "This is an example"));
 conn.transact(tx).get();
 ```
 

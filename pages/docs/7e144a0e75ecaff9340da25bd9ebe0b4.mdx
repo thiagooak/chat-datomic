@@ -6,38 +6,38 @@ Querying a database
 
 To query a database, we must first get a *value* of the database from the [connection](../getting-started/connect-to-a-database.html):
 
-```
-<pre class="src src-java"><span style="color: #228b22;">Database</span> <span style="color: #a0522d;">db</span> = conn.db();
+```java
+Database db = conn.db();
 ```
 
 
 
 A *Database* is an immutable value, and will never change. If we use *db* for several queries we will know the answers are based upon exactly the same data from a single point in time. As we said, the database itself acts as a relation of 5-tuples of
 
-```
-<pre class="src src-clojure">[entity attribute value transaction added?]
+```clojure
+[entity attribute value transaction added?]
 ```
 
 
 
 The following query finds all release names in the database:
 
-```
-<pre class="src src-clojure"><span style="color: #b22222;">;; </span><span style="color: #b22222;">query</span>
-[<span style="color: #008b8b;">:find</span> ?release-name
- <span style="color: #008b8b;">:where</span> [_ <span style="color: #008b8b;">:release/name</span> ?release-name]
-<span style="color: #b22222;">;; </span><span style="color: #b22222;">inputs</span>
+```clojure
+;; query
+[:find ?release-name
+ :where [_ :release/name ?release-name]
+;; inputs
 db
 ```
 
 
 
-```
-<pre class="src src-clojure">=>
-#{[<span style="color: #8b2252;">"Osmium"</span>]
- [<span style="color: #8b2252;">"Hela roept de akela"</span>] 
- [<span style="color: #8b2252;">"Ali Baba"</span>] 
- [<span style="color: #8b2252;">"The Power of the True Love Knot"</span>]
+```clojure
+=>
+#{["Osmium"]
+ ["Hela roept de akela"] 
+ ["Ali Baba"] 
+ ["The Power of the True Love Knot"]
  ...}
 ```
 
@@ -90,18 +90,18 @@ Unification
 
 Unification occurs when a variable appears in more than one data pattern. In the following query, *?e* appears twice:
 
-```
-<pre class="src src-clojure"><span style="color: #b22222;">;;</span><span style="color: #b22222;">which 42-year-olds like what?</span>
-[<span style="color: #008b8b;">:find</span> ?e ?x 
- <span style="color: #008b8b;">:where</span> [?e <span style="color: #008b8b;">:age</span> 42] [?e <span style="color: #008b8b;">:likes</span> ?x]]
+```clojure
+;;which 42-year-olds like what?
+[:find ?e ?x 
+ :where [?e :age 42] [?e :likes ?x]]
 ```
 
 
 
 Matches for the variable *?e* must *unify*, i.e. represent the same value in every clause in order to satisfy the set of clauses. So a matching *?e* must have both *:age* 42 and *:likes* for some *?x*:
 
-```
-<pre class="src src-clojure">[[fred pizza], [ethel sushi]]
+```clojure
+[[fred pizza], [ethel sushi]]
 ```
 
 
@@ -115,11 +115,11 @@ List form vs. Map form
 
 Queries written by humans typically are a list, and the various keyword arguments are inferred by position. For example, in the query
 
-```
-<pre class="src src-clojure">[<span style="color: #008b8b;">:find</span> ?e
- <span style="color: #008b8b;">:in</span> $ ?fname ?lname
- <span style="color: #008b8b;">:where</span> [?e <span style="color: #008b8b;">:user/firstName</span> ?fname]
-[?e <span style="color: #008b8b;">:user/lastName</span> ?lname]]
+```clojure
+[:find ?e
+ :in $ ?fname ?lname
+ :where [?e :user/firstName ?fname]
+[?e :user/lastName ?lname]]
 ```
 
 
@@ -128,11 +128,11 @@ there is one :find argument, three :in arguments, and two :where arguments.
 
 While most people find the positional syntax easy to read, it makes extra work for programmatic readers and writers, which have to keep track of what keyword is currently "active" and interpret tokens accordingly. For such cases, queries can be specified more simply as maps. The query above becomes:
 
-```
-<pre class="src src-clojure">{<span style="color: #008b8b;">:find</span> [?e]
- <span style="color: #008b8b;">:in</span> [$ ?fname ?lname]
- <span style="color: #008b8b;">:where</span> [[?e <span style="color: #008b8b;">:user/firstName</span> ?fname]
- [?e <span style="color: #008b8b;">:user/lastName</span> ?lname]]}
+```clojure
+{:find [?e]
+ :in [$ ?fname ?lname]
+ :where [[?e :user/firstName ?fname]
+ [?e :user/lastName ?lname]]}
 ```
 
 
@@ -162,33 +162,33 @@ To minimize the amount work the query engine must do, query authors should put t
 
 As an example, consider the following [two queries](https://github.com/Datomic/day-of-datomic/blob/master/tutorial/query_perf.clj#L20-40) looking for Paul McCartney's releases. The first *:where* clause begins with a data pattern (*\[?release :release/name ?name\]*) that is not at all selective, forcing the query engine to consider **all** the releases in the system:
 
-```
-<pre class="src src-clojure"><span style="color: #b22222;">;; </span><span style="color: #b22222;">query</span>
-[<span style="color: #008b8b;">:find</span> [?name ...]
- <span style="color: #008b8b;">:in</span> $ ?artist
- <span style="color: #008b8b;">:where</span> [?release <span style="color: #008b8b;">:release/name</span> ?name]
-        [?release <span style="color: #008b8b;">:release/artists</span> ?artist]]
-<span style="color: #b22222;">;; </span><span style="color: #b22222;">inputs</span>
+```clojure
+;; query
+[:find [?name ...]
+ :in $ ?artist
+ :where [?release :release/name ?name]
+        [?release :release/artists ?artist]]
+;; inputs
 db, mccartney
 ```
 
 
 
-```
-<pre class="src src-clojure">=> [<span style="color: #8b2252;">"McCartney"</span> <span style="color: #8b2252;">"Another Day / Oh Woman Oh Why"</span> <span style="color: #8b2252;">"Ram"</span>]
+```clojure
+=> ["McCartney" "Another Day / Oh Woman Oh Why" "Ram"]
 ```
 
 
 
 The following equivalent query reorders the *:where* clause, leading with a much more selective pattern (*\[?release :release/artists ?artist\]*) that is limited in this context to the single *?artist*passed in.
 
-```
-<pre class="src src-clojure"><span style="color: #b22222;">;; </span><span style="color: #b22222;">query</span>
-[<span style="color: #008b8b;">:find</span> [?name ...]
- <span style="color: #008b8b;">:in</span> $ ?artist
- <span style="color: #008b8b;">:where</span> [?release <span style="color: #008b8b;">:release/artists</span> ?artist]
-        [?release <span style="color: #008b8b;">:release/name</span> ?name]]
-<span style="color: #b22222;">;; </span><span style="color: #b22222;">inputs and result same as above</span>
+```clojure
+;; query
+[:find [?name ...]
+ :in $ ?artist
+ :where [?release :release/artists ?artist]
+        [?release :release/name ?name]]
+;; inputs and result same as above
 ```
 
 

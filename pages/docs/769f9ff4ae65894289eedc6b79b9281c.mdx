@@ -11,16 +11,16 @@ Connection.log and Log.txRange
 
 [Connection.log](../javadoc/datomic/Connection.html#log--) returns an immutable log value.
 
-```
-<pre class="src src-java"><span style="color: #008b8b;">datomic</span>.<span style="color: #228b22;">Log</span> <span style="color: #a0522d;">log</span> = conn.log();
+```java
+datomic.Log log = conn.log();
 ```
 
 
 
 Given a log, you can retrieve an Iterable over a range in the log with [Log.txRange](../javadoc/datomic/Log.html#txRange-java.lang.Object-java.lang.Object-):
 
-```
-<pre class="src src-java"><span style="color: #228b22;">Iterable</span><<span style="color: #228b22;">Map</span>> <span style="color: #a0522d;">range</span> = log.txRange(1000, 1020);
+```java
+Iterable<Map> range = log.txRange(1000, 1020);
 ```
 
 
@@ -45,18 +45,18 @@ Log in Query: tx-ids and tx-data
 
 The log API includes two convenience functions that are available within query. The *tx-ids* function takes arguments similar to *txRange* above, but returns a collection of transaction entity ids. You will typically use the collection binding form *\[?tx …\]*to capture the results.
 
-```
-<pre class="src src-clojure">[(tx-ids ?log ?t1 ?tx) [?tx ...]]
+```clojure
+[(tx-ids ?log ?t1 ?tx) [?tx ...]]
 ```
 
 
 
 The following example query returns the count of transactions within the range \[t1, t2):
 
-```
-<pre class="src src-clojure">(d/q '[<span style="color: #008b8b;">:find</span> (<span style="color: #a0522d;">count</span> ?tx)
-       <span style="color: #008b8b;">:in</span> $ ?log ?t1 ?t2
-       <span style="color: #008b8b;">:where</span> [(tx-ids ?log ?t1 ?t2) [?tx ...]]]
+```clojure
+(d/q '[:find (count ?tx)
+       :in $ ?log ?t1 ?t2
+       :where [(tx-ids ?log ?t1 ?t2) [?tx ...]]]
      (d/db conn) (d/log conn) t1 t2)  
 ```
 
@@ -64,8 +64,8 @@ The following example query returns the count of transactions within the range \
 
 The *tx-data* function returns the datoms associated with a particular t or tx. You will typically use the relation binding form *\[ \[?e ?a ?v \_ ?op \] \]* to capture the results.
 
-```
-<pre class="src src-clojure">[(tx-data ?log ?tx) [[?e ?a ?v _ ?op]]]
+```clojure
+[(tx-data ?log ?tx) [[?e ?a ?v _ ?op]]]
 ```
 
 
@@ -74,12 +74,12 @@ Note the underscore binding. You should **not** bind the *?tx* position, as *?tx
 
 *tx-data* is the efficient way to get transaction data given t or tx. A common scenario is to use *tx-data* in combination with *tx-ids*, to return the datoms associated with a range in time. The following example query returns all the entities that were modified on August 1, 2013:
 
-```
-<pre class="src src-clojure">(d/q '[<span style="color: #008b8b;">:find</span> ?e
-       <span style="color: #008b8b;">:in</span> $ ?log ?t1 ?t2
-       <span style="color: #008b8b;">:where</span> [(tx-ids ?log ?t1 ?t2) [?tx ...]]
+```clojure
+(d/q '[:find ?e
+       :in $ ?log ?t1 ?t2
+       :where [(tx-ids ?log ?t1 ?t2) [?tx ...]]
               [(tx-data ?log ?tx) [[?e]]]]
-     (d/db conn) (d/log conn) #inst <span style="color: #8b2252;">"2013-08-01"</span> #inst <span style="color: #8b2252;">"2013-08-02"</span>)
+     (d/db conn) (d/log conn) #inst "2013-08-01" #inst "2013-08-02")
 ```
 
 

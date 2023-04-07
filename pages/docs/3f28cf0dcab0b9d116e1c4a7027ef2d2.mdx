@@ -27,36 +27,36 @@ An *asOf* filter returns a database "as of" a particular point in time, ignoring
 
 Because the *item/count* of dilithium crystals is changing over time, different *asOf* views will show different counts:
 
-```
-<pre class="src src-clojure">(<span style="color: #a020f0;">def</span> <span style="color: #0000ff;">db</span> (d/db conn))
-(d/entity db [<span style="color: #008b8b;">:item/id</span> <span style="color: #8b2252;">"DLC-042"</span>])
-```
-
-
-
-```
-<pre class="src src-clojure">=>
-{<span style="color: #008b8b;">:item/id</span> <span style="color: #8b2252;">"DLC-042"</span>, 
- <span style="color: #008b8b;">:item/description</span> <span style="color: #8b2252;">"Dilitihium Crystals"</span>, 
- <span style="color: #008b8b;">:item/count</span> 100, 
- <span style="color: #008b8b;">:db/id</span> 17592186045418}
+```clojure
+(def db (d/db conn))
+(d/entity db [:item/id "DLC-042"])
 ```
 
 
 
-```
-<pre class="src src-clojure">(<span style="color: #a020f0;">def</span> <span style="color: #0000ff;">as-of-eoy-2013</span> (d/as-of db #inst <span style="color: #8b2252;">"2014-01-01"</span>))
-(d/entity as-of-eoy-2013 [<span style="color: #008b8b;">:item/id</span> <span style="color: #8b2252;">"DLC-042"</span>])
+```clojure
+=>
+{:item/id "DLC-042", 
+ :item/description "Dilitihium Crystals", 
+ :item/count 100, 
+ :db/id 17592186045418}
 ```
 
 
 
+```clojure
+(def as-of-eoy-2013 (d/as-of db #inst "2014-01-01"))
+(d/entity as-of-eoy-2013 [:item/id "DLC-042"])
 ```
-<pre class="src src-clojure">=>
-{<span style="color: #008b8b;">:item/id</span> <span style="color: #8b2252;">"DLC-042"</span>, 
- <span style="color: #008b8b;">:item/description</span> <span style="color: #8b2252;">"Dilitihium Crystals"</span>, 
- <span style="color: #008b8b;">:item/count</span> 250, 
- <span style="color: #008b8b;">:db/id</span> 17592186045418}
+
+
+
+```clojure
+=>
+{:item/id "DLC-042", 
+ :item/description "Dilitihium Crystals", 
+ :item/count 250, 
+ :db/id 17592186045418}
 ```
 
 
@@ -72,31 +72,31 @@ A *since* filter is the opposite of *asOf*. Taking the same point-in-time argume
 
 There is an important subtlety to consider when using *since*. Typically, the identifying information used to lookup an entity is established in the first transaction about that entity, so a *since* view may not be able to see the information needed for lookup. Our example has exactly this problem trying to find the entity in question by its *:item/id*
 
+```clojure
+(def since-2014 (d/since db #inst "2014-01-01"))
+
+(d/entity since-2014 [:item/id "DLC-042"])
 ```
-<pre class="src src-clojure">(<span style="color: #a020f0;">def</span> <span style="color: #0000ff;">since-2014</span> (d/since db #inst <span style="color: #8b2252;">"2014-01-01"</span>))
-
-(d/entity since-2014 [<span style="color: #008b8b;">:item/id</span> <span style="color: #8b2252;">"DLC-042"</span>])
-```
 
 
 
-```
-<pre class="src src-clojure">=> nil  <span style="color: #b22222;">;; </span><span style="color: #b22222;">!!!</span>
+```clojure
+=> nil  ;; !!!
 ```
 
 
 
 Most callers of *since* will refer to the database twice: one reference to the default "now" db to find entities, and a second reference to the *since* db to shave off the past. With entities, this looks like
 
-```
-<pre class="src src-clojure">(d/entity since-2014 (d/entid db [<span style="color: #008b8b;">:item/id</span> <span style="color: #8b2252;">"DLC-042"</span>]))
+```clojure
+(d/entity since-2014 (d/entid db [:item/id "DLC-042"]))
 ```
 
 
 
-```
-<pre class="src src-clojure">=> {<span style="color: #008b8b;">:item/count</span> 100, 
-    <span style="color: #008b8b;">:db/id</span> 17592186045418}
+```clojure
+=> {:item/count 100, 
+    :db/id 17592186045418}
 ```
 
 
@@ -105,12 +105,12 @@ Notice that the "now" *db* is used to resolve the lookup ref, and the *since-201
 
 In query, this can take the form of passing two different filters of the same db as separate inputs:
 
-```
-<pre class="src src-clojure">(d/q ('[<span style="color: #008b8b;">:find</span> ?count 
-        <span style="color: #008b8b;">:in</span> $ $since ?id 
-        <span style="color: #008b8b;">:where</span> [$ ?e <span style="color: #008b8b;">:item/id</span> ?id] 
-               [$since ?e <span style="color: #008b8b;">:item/count</span> ?count]]) 
-  db since-2014 <span style="color: #8b2252;">"DLC-042"</span>)
+```clojure
+(d/q ('[:find ?count 
+        :in $ $since ?id 
+        :where [$ ?e :item/id ?id] 
+               [$since ?e :item/count ?count]]) 
+  db since-2014 "DLC-042")
 ```
 
 
@@ -128,16 +128,16 @@ The history view of the database includes the present and all of the past, unfil
 
 Here is a query for all assertions about dilithium crystals:
 
-```
-<pre class="src src-clojure">(<span style="color: #a020f0;">def</span> <span style="color: #0000ff;">history</span> (d/history db))
+```clojure
+(def history (d/history db))
 
-(<span style="color: #483d8b;">->></span> (d/q '[<span style="color: #008b8b;">:find</span> ?aname ?v ?inst
-            <span style="color: #008b8b;">:in</span> $ ?e
-            <span style="color: #008b8b;">:where</span> [?e ?a ?v ?tx true]
-                   [?tx <span style="color: #008b8b;">:db/txInstant</span> ?inst]
-                   [?a <span style="color: #008b8b;">:db/ident</span> ?aname]]
-          history [<span style="color: #008b8b;">:item/id</span> <span style="color: #8b2252;">"DLC-042"</span>])
-     (<span style="color: #a0522d;">sort-by</span> #(<span style="color: #a0522d;">nth</span> % 2)))
+(->> (d/q '[:find ?aname ?v ?inst
+            :in $ ?e
+            :where [?e ?a ?v ?tx true]
+                   [?tx :db/txInstant ?inst]
+                   [?a :db/ident ?aname]]
+          history [:item/id "DLC-042"])
+     (sort-by #(nth % 2)))
 ```
 
 
@@ -161,14 +161,14 @@ A filter view allows you to produce values of the database filtered by your own 
 
 For example, suppose that the 9999 value for *:item/count* in the example database above turns out to be a mistake. The transaction that made this assertion could be identified, and used to filter out the incorrect value:
 
-```
-<pre class="src src-clojure">(<span style="color: #a020f0;">def</span> <span style="color: #0000ff;">error-txes</span>
-  <span style="color: #8b2252;">"Known bad transactions"</span>
+```clojure
+(def error-txes
+  "Known bad transactions"
   #{13194139534317})
-(<span style="color: #a020f0;">defn</span> <span style="color: #0000ff;">correct?</span>
+(defn correct?
   [_ datom]
-  (<span style="color: #a0522d;">not</span> (<span style="color: #a0522d;">contains?</span> error-txes (<span style="color: #008b8b;">:tx</span> datom))))
-(<span style="color: #a020f0;">def</span> <span style="color: #0000ff;">corrected</span> (d/filter history correct?))
+  (not (contains? error-txes (:tx datom))))
+(def corrected (d/filter history correct?))
 ```
 
 
@@ -183,10 +183,10 @@ Now, the *corrected* database value can be passed to all our existing queries, w
 
 Imagine that you want to exclude all values of an attribute entirely from consideration. The following code creates a filter that rejects all datoms about the attribute :user/passwordHash.
 
-```
-<pre class="src src-clojure">(<span style="color: #a020f0;">def</span> <span style="color: #0000ff;">password-hash-id</span> (d/entid plain-db <span style="color: #008b8b;">:user/passwordHash</span>))
-(<span style="color: #a020f0;">def</span> <span style="color: #0000ff;">password-hash-filter</span> (<span style="color: #a0522d;">fn</span> [_ <span style="color: #228b22;">^Datom</span> datom] (<span style="color: #a0522d;">not=</span> password-hash-id (<span style="color: #483d8b;">.a</span> datom))))
-(<span style="color: #a020f0;">def</span> <span style="color: #0000ff;">filtered-db</span> (d/filter (d/db conn) password-hash-filter))
+```clojure
+(def password-hash-id (d/entid plain-db :user/passwordHash))
+(def password-hash-filter (fn [_ ^Datom datom] (not= password-hash-id (.a datom))))
+(def filtered-db (d/filter (d/db conn) password-hash-filter))
 ```
 
 
@@ -199,11 +199,11 @@ Imagine that you want to exclude all values of an attribute entirely from consid
 
 It is idiomatic to join different filters of the same database. One motivating case is performance: Since filtering is not free, it makes sense to filter only the parts of the query that need filtering. For example, the query below uses an unfiltered database to find entities, and then a filtered version of the same database to limit the attributes visible through the entity() call:
 
-```
-<pre class="src src-clojure">[<span style="color: #008b8b;">:find</span> ?ent
- <span style="color: #008b8b;">:in</span> $plain $filtered ?email
- <span style="color: #008b8b;">:where</span>
- [$plain ?e <span style="color: #008b8b;">:user/email</span> ?email]
+```clojure
+[:find ?ent
+ :in $plain $filtered ?email
+ :where
+ [$plain ?e :user/email ?email]
  [(datomic.api/entity $filtered ?e) ?ent]]
 ```
 
@@ -215,12 +215,12 @@ It is idiomatic to join different filters of the same database. One motivating c
 
 Filters can do more than look at single datoms. They can also consider datoms in the context of the entire database. For example, imagine that you mark the transactions in your system with a *:source/confidence* field that indicates your confidence in the source, on a scale from 0 to 100. You could then filter the database as follows:
 
-```
-<pre class="src src-java"><span style="color: #a020f0;">public</span> <span style="color: #a020f0;">static</span> <span style="color: #228b22;">Database</span> <span style="color: #0000ff;">filterByConfidence</span>(<span style="color: #228b22;">Database</span> <span style="color: #a0522d;">db</span>, <span style="color: #a020f0;">final</span> <span style="color: #228b22;">long</span> <span style="color: #a0522d;">conf</span>) {
-    <span style="color: #a020f0;">return</span> db.filter(<span style="color: #a020f0;">new</span> <span style="color: #008b8b;">Database</span>.<span style="color: #228b22;">Predicate</span><<span style="color: #008b8b;">datomic</span>.<span style="color: #228b22;">Datom</span>>() {
-        <span style="color: #a020f0;">public</span> <span style="color: #228b22;">boolean</span> <span style="color: #0000ff;">apply</span>(<span style="color: #228b22;">Database</span> <span style="color: #a0522d;">db</span>, <span style="color: #228b22;">Datom</span> <span style="color: #a0522d;">datom</span>) {
-            <span style="color: #228b22;">Long</span> <span style="color: #a0522d;">confidence</span> = (<span style="color: #228b22;">Long</span>) db.entity(datom.tx()).get(<span style="color: #8b2252;">":source/confidence"</span>);
-            <span style="color: #a020f0;">return</span> (confidence != <span style="color: #008b8b;">null</span>) && (confidence > conf);
+```java
+public static Database filterByConfidence(Database db, final long conf) {
+    return db.filter(new Database.Predicate<datomic.Datom>() {
+        public boolean apply(Database db, Datom datom) {
+            Long confidence = (Long) db.entity(datom.tx()).get(":source/confidence");
+            return (confidence != null) && (confidence > conf);
         }
     });
 }
@@ -230,9 +230,9 @@ Filters can do more than look at single datoms. They can also consider datoms in
 
 Queries using this filter can focus on finding data of interest, without worrying about the cross-cutting concern of how trusted the data is. The query below finds only the stories whose titles were added by sources with a trust score higher than 90:
 
-```
-<pre class="src src-java">q(<span style="color: #8b2252;">"[:find ?title"</span> +
-  <span style="color: #8b2252;">" :where [_ :story/title ?title]]"</span>, filterByConfidence(db, 90L));
+```java
+q("[:find ?title" +
+  " :where [_ :story/title ?title]]", filterByConfidence(db, 90L));
 ```
 
 

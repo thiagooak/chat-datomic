@@ -22,12 +22,12 @@ Project Configuration
 - <a id="maven"></a>Maven  
     To retrieve the Client library for a Maven project, add the following snippet inside the &lt;dependencies&gt; block of your pom.xml file:
     
-    ```
-    <pre class="src src-xml"><<span style="color: #0000ff;">dependency</span>>
-      <<span style="color: #0000ff;">groupId</span>>com.datomic</<span style="color: #0000ff;">groupId</span>>
-      <<span style="color: #0000ff;">artifactId</span>>client-pro</<span style="color: #0000ff;">artifactId</span>>
-      <<span style="color: #0000ff;">version</span>>1.0.76</<span style="color: #0000ff;">version</span>>
-    </<span style="color: #0000ff;">dependency</span>>
+    ```xml
+<dependency>
+      <groupId>com.datomic</groupId>
+      <artifactId>client-pro</artifactId>
+      <version>1.0.76</version>
+    </dependency>
     ```
     
     
@@ -36,8 +36,8 @@ Project Configuration
 - <a id="deps"></a>Clojure CLI  
     To use the Client library from a [Clojure CLI REPL](https://clojure.org/guides/deps_and_cli), add the following to your *deps.edn* dependencies map:
     
-    ```
-    <pre class="src src-clojure">com.datomic/client-pro {<span style="color: #008b8b;">:mvn/version</span> <span style="color: #8b2252;">"1.0.76"</span>}
+    ```clojure
+com.datomic/client-pro {:mvn/version "1.0.76"}
     ```
     
     
@@ -46,8 +46,8 @@ Project Configuration
 - <a id="leiningen"></a>Leiningen  
     To include the Client library in a Leiningen project, add the following snippet to your *project.clj* file in collection under `:dependencies` key
     
-    ```
-    <pre class="src src-clojure">[com.datomic/client-pro <span style="color: #8b2252;">"1.0.76"</span>]
+    ```clojure
+[com.datomic/client-pro "1.0.76"]
     ```
     
     

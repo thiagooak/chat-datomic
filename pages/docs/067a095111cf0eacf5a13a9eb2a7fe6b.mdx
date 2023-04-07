@@ -59,20 +59,20 @@ The examples below presume a Datomic system named `tomhanks` with a database nam
 
 The following query shows all [catalogs](analytics-concepts.html#sql-mapping).
 
-```
-<pre class="src src-sql"><span style="color: #a020f0;">select</span> * <span style="color: #a020f0;">from</span> <span style="color: #a020f0;">system</span>.metadata.catalogs;
+```sql
+select * from system.metadata.catalogs;
 ```
 
 
 
-```
-<pre class="src src-sql">=>
-<span style="color: #a020f0;">catalog_name</span> | connector_id
-<span style="color: #b22222;">--------------</span><span style="color: #b22222;">+--------------</span>
+```sql
+=>
+catalog_name | connector_id
+--------------+--------------
  analytics    | analytics
  sample       | sample
- <span style="color: #a020f0;">system</span>       | <span style="color: #a020f0;">system</span>
- <span style="color: #a020f0;">catalog_name</span> | connector_id 
+ system       | system
+ catalog_name | connector_id 
 ```
 
 
@@ -92,10 +92,10 @@ The following query shows all the [schemas](analytics-concepts.html#sql-mapping)
 show schemas;
 ```
 
-```
-<pre class="src src-sql">=>
-       <span style="color: #a020f0;">Schema</span>       
-<span style="color: #b22222;">--------------------</span>
+```sql
+=>
+       Schema       
+--------------------
  information_schema 
  mbrainz   
 ```
@@ -112,16 +112,16 @@ You should see an `information_schema` catalog, plus one schema per [exposed Dat
 
 The following query shows all the [tables](analytics-concepts.html#sql-mapping) in the default schema.
 
-```
-<pre class="src src-sql">show tables;
+```sql
+show tables;
 ```
 
 
 
-```
-<pre class="src src-sql">=>
-           <span style="color: #a020f0;">Table</span>           
-<span style="color: #b22222;">---------------------------</span>
+```sql
+=>
+           Table           
+---------------------------
  abstractrelease           
  abstractrelease_x_artists 
  artist                    
@@ -145,18 +145,18 @@ You should see `db__attrs` and `db__idents`, plus any tables you have configured
 
 The following query describes a table named `country` in the default schema:
 
-```
-<pre class="src src-sql"><span style="color: #a020f0;">describe</span> country;
+```sql
+describe country;
 ```
 
 
 
-```
-<pre class="src src-sql">=>
- <span style="color: #a020f0;">Column</span> |  <span style="color: #a020f0;">Type</span>   | Extra | Comment 
-<span style="color: #b22222;">--------</span><span style="color: #b22222;">+---------+-------+---------</span>
- code   | <span style="color: #228b22;">varchar</span> |       |         
- <span style="color: #a020f0;">name</span>   | <span style="color: #228b22;">varchar</span> |       |         
+```sql
+=>
+ Column |  Type   | Extra | Comment 
+--------+---------+-------+---------
+ code   | varchar |       |         
+ name   | varchar |       |         
  db__id | bigint  |       |         
 ```
 
@@ -168,14 +168,14 @@ The following query describes a table named `country` in the default schema:
 
 ### Query
 
-```
-<pre class="src src-sql"><span style="color: #a020f0;">select</span> * <span style="color: #a020f0;">from</span> track_x_artists <span style="color: #a020f0;">limit</span> 10;
+```sql
+select * from track_x_artists limit 10;
 ```
 
 
 
-```
-<pre class="src src-sql"><span style="color: #a020f0;">select</span> * <span style="color: #a020f0;">from</span> country <span style="color: #a020f0;">limit</span> 10;
+```sql
+select * from country limit 10;
 ```
 
 

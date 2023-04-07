@@ -17,8 +17,8 @@ Backing Up
 
 You can use the `backup-db` command to back up a database at a database-uri to storage at a [backup uri](#uri-syntax).
 
-```
-<pre class="src src-sh">bin/datomic -Xmx4g -Xms4g backup-db from-db-uri to-backup-uri
+```sh
+bin/datomic -Xmx4g -Xms4g backup-db from-db-uri to-backup-uri
 ```
 
 
@@ -38,8 +38,8 @@ A backup from a database URI and [restore](#restoring) to that database URI shou
 
 Backups to s3 can be encrypted with [S3 server-side encryption](https://docs.aws.amazon.com/AmazonS3/latest/userguide/serv-side-encryption.html). By default, ****backups are not stored encrypted****. To enable encryption, pass the `--encryption sse` flag:
 
-```
-<pre class="src src-sh">bin/datomic -Xmx4g -Xms4g backup-db --encryption sse from-db-uri to-backup-uri
+```sh
+bin/datomic -Xmx4g -Xms4g backup-db --encryption sse from-db-uri to-backup-uri
 ```
 
 
@@ -63,8 +63,8 @@ Listing Backups
 
 You can use the `list-backups` command to list the available points in time tthat can be restored.
 
-```
-<pre class="src src-sh">bin/datomic list-backups backup-uri
+```sh
+bin/datomic list-backups backup-uri
 ```
 
 
@@ -87,8 +87,8 @@ In order to restore a database you must ****first**** do the following:
 
 > There should be no process actively backing up to a backup-uri when restoring from that database URI.
 
-```
-<pre class="src src-sh">bin/datomic -Xmx4g -Xms4g restore-db from-backup-uri to-db-uri
+```sh
+bin/datomic -Xmx4g -Xms4g restore-db from-backup-uri to-db-uri
 ```
 
 
@@ -97,8 +97,8 @@ You should give the restore process as much memory as you [give the transactor p
 
 By default the most recent backup will be restored. You can restore to any `t` output by [list backups](#listing-backups) by putting that t at the end of the command:
 
-```
-<pre class="src src-sh">bin/datomic -Xmx4g -Xms4g restore-db from-backup-uri to-db-uri t
+```sh
+bin/datomic -Xmx4g -Xms4g restore-db from-backup-uri to-db-uri t
 ```
 
 
@@ -140,8 +140,8 @@ You can use the `verify-backup` command to verify that a backup includes all seg
 
 The positional arguments to `verify-backup` are a backup-uri, a boolean for `read-all` and the backup t you wish to verify.
 
-```
-<pre class="src src-sh">bin/datomic -Xmx4g -Xms4g verify-backup backup-uri read-all t
+```sh
+bin/datomic -Xmx4g -Xms4g verify-backup backup-uri read-all t
 ```
 
 
@@ -201,23 +201,23 @@ When backing up from DDB, the required AWS permissions are the same as those a P
 
 Peers performing backup will need to be able to write to nested keys within the backup S3 bucket. Peers performing restore will need to read from the backup S3 bucket. The following role policy would grant both permissions.
 
-```
-<pre class="src src-js">{<span style="color: #8b2252;">"Statement"</span>:
- [{<span style="color: #8b2252;">"Effect"</span>:<span style="color: #8b2252;">"Allow"</span>,
-   <span style="color: #8b2252;">"Action"</span>:[<span style="color: #8b2252;">"s3:*"</span>],
-   <span style="color: #8b2252;">"Resource"</span>:
-   [<span style="color: #8b2252;">"arn:aws:s3:::{bucket-name}"</span>, <span style="color: #8b2252;">"arn:aws:s3:::{bucket-name}/*"</span>]}]}
+```js
+{"Statement":
+ [{"Effect":"Allow",
+   "Action":["s3:*"],
+   "Resource":
+   ["arn:aws:s3:::{bucket-name}", "arn:aws:s3:::{bucket-name}/*"]}]}
 ```
 
 
 
 Additionally, peers performing restore to a DDB table will need to be able to both read from and write to that table:
 
-```
-<pre class="src src-js">{<span style="color: #8b2252;">"Statement"</span>:
- [{<span style="color: #8b2252;">"Effect"</span>:<span style="color: #8b2252;">"Allow"</span>,
-   <span style="color: #8b2252;">"Action"</span>:[<span style="color: #8b2252;">"dynamodb:*"</span>],
-   <span style="color: #8b2252;">"Resource"</span>:<span style="color: #8b2252;">"arn:aws:dynamodb:*:{account-id}:table/{table-name}"</span>}]}
+```js
+{"Statement":
+ [{"Effect":"Allow",
+   "Action":["dynamodb:*"],
+   "Resource":"arn:aws:dynamodb:*:{account-id}:table/{table-name}"}]}
 ```
 
 

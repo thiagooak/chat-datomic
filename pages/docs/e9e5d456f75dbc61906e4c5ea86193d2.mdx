@@ -65,8 +65,8 @@ As of this release all Datomic licenses are valid for Unlimited Peers and/or Cli
 
 Peers from this release forward **cannot** connect to older transactors. Attempting to connect a peer from this release (or newer) to an older transactor will result in the following exception:
 
-```
-<pre class="src src-sample">ActiveMQConnectionTimedOutException AMQ119013: Timed out waiting to receive cluster topology. Group:null  org.apache.activemq.artemis.core.client.impl.ServerLocatorImpl.createSessionFactory (ServerLocatorImpl.java:816)
+```sample
+ActiveMQConnectionTimedOutException AMQ119013: Timed out waiting to receive cluster topology. Group:null  org.apache.activemq.artemis.core.client.impl.ServerLocatorImpl.createSessionFactory (ServerLocatorImpl.java:816)
 ```
 
 
@@ -82,8 +82,8 @@ When upgrading to (or past) this release, you must upgrade transactors prior to 
 
 Peers from this release forward **cannot** connect to older transactors. Attempting to connect a peer from this release (or newer) to an older transactor will result in the following exception:
 
-```
-<pre class="src src-sample">HornetQConnectionTimedOutException HQ119013: Timed out waiting to receive cluster topology. Group:null  org.hornetq.core.client.impl.ServerLocatorImpl.createSessionFactory (ServerLocatorImpl.java:946)
+```sample
+HornetQConnectionTimedOutException HQ119013: Timed out waiting to receive cluster topology. Group:null  org.hornetq.core.client.impl.ServerLocatorImpl.createSessionFactory (ServerLocatorImpl.java:946)
 ```
 
 
@@ -132,33 +132,33 @@ Until then, you can use maven/leiningen dependency settings, on a peer-by-peer b
 
 Leiningen dependencies:
 
-```
-<pre class="src src-clojure">[org.clojure/clojure <span style="color: #8b2252;">"1.7.0"</span>]
-[com.datomic/datomic-pro <span style="color: #8b2252;">"0.9.5327"</span>
- <span style="color: #008b8b;">:exclusions</span> [... org.clojure/clojure]]
+```clojure
+[org.clojure/clojure "1.7.0"]
+[com.datomic/datomic-pro "0.9.5327"
+ :exclusions [... org.clojure/clojure]]
 ```
 
 
 
 Maven dependencies:
 
-```
-<pre class="src src-xml"><<span style="color: #0000ff;">dependency</span>>
-  <<span style="color: #0000ff;">groupId</span>>org.clojure</<span style="color: #0000ff;">groupId</span>>
-  <<span style="color: #0000ff;">artifactId</span>>clojure</<span style="color: #0000ff;">artifactId</span>>
-  <<span style="color: #0000ff;">version</span>>1.7.0</<span style="color: #0000ff;">version</span>>
-</<span style="color: #0000ff;">dependency</span>>
-<<span style="color: #0000ff;">dependency</span>>
-  <<span style="color: #0000ff;">groupId</span>>com.datomic</<span style="color: #0000ff;">groupId</span>>
-  <<span style="color: #0000ff;">artifactId</span>>datomic-pro</<span style="color: #0000ff;">artifactId</span>>
-  <<span style="color: #0000ff;">version</span>>0.9.5327</<span style="color: #0000ff;">version</span>>
-  <<span style="color: #0000ff;">exclusions</span>>
-    <<span style="color: #0000ff;">exclusion</span>>
-      <<span style="color: #0000ff;">groupId</span>>org.clojure</<span style="color: #0000ff;">groupId</span>>
-      <<span style="color: #0000ff;">artifactId</span>>clojure</<span style="color: #0000ff;">artifactId</span>>
-    </<span style="color: #0000ff;">exclusion</span>>
-  </<span style="color: #0000ff;">exclusions</span>>
-</<span style="color: #0000ff;">dependency</span>>
+```xml
+<dependency>
+  <groupId>org.clojure</groupId>
+  <artifactId>clojure</artifactId>
+  <version>1.7.0</version>
+</dependency>
+<dependency>
+  <groupId>com.datomic</groupId>
+  <artifactId>datomic-pro</artifactId>
+  <version>0.9.5327</version>
+  <exclusions>
+    <exclusion>
+      <groupId>org.clojure</groupId>
+      <artifactId>clojure</artifactId>
+    </exclusion>
+  </exclusions>
+</dependency>
 ```
 
 
@@ -231,33 +231,33 @@ Until then, you can use maven/leiningen dependency settings, on a peer-by-peer b
 
 Leiningen dependencies:
 
-```
-<pre class="src src-clojure">[org.clojure/clojure <span style="color: #8b2252;">"1.6.0"</span>]
-[com.datomic/datomic-pro <span style="color: #8b2252;">"0.9.4815.10"</span>
- <span style="color: #008b8b;">:exclusions</span> [... org.clojure/clojure]]
+```clojure
+[org.clojure/clojure "1.6.0"]
+[com.datomic/datomic-pro "0.9.4815.10"
+ :exclusions [... org.clojure/clojure]]
 ```
 
 
 
 Maven dependencies:
 
-```
-<pre class="src src-xml"><<span style="color: #0000ff;">dependency</span>>
-  <<span style="color: #0000ff;">groupId</span>>org.clojure</<span style="color: #0000ff;">groupId</span>>
-  <<span style="color: #0000ff;">artifactId</span>>clojure</<span style="color: #0000ff;">artifactId</span>>
-  <<span style="color: #0000ff;">version</span>>1.6.0</<span style="color: #0000ff;">version</span>>
-</<span style="color: #0000ff;">dependency</span>>
-<<span style="color: #0000ff;">dependency</span>>
-  <<span style="color: #0000ff;">groupId</span>>com.datomic</<span style="color: #0000ff;">groupId</span>>
-  <<span style="color: #0000ff;">artifactId</span>>datomic-pro</<span style="color: #0000ff;">artifactId</span>>
-  <<span style="color: #0000ff;">version</span>>0.9.4815.10</<span style="color: #0000ff;">version</span>>
-  <<span style="color: #0000ff;">exclusions</span>>
-    <<span style="color: #0000ff;">exclusion</span>>
-      <<span style="color: #0000ff;">groupId</span>>org.clojure</<span style="color: #0000ff;">groupId</span>>
-      <<span style="color: #0000ff;">artifactId</span>>clojure</<span style="color: #0000ff;">artifactId</span>>
-    </<span style="color: #0000ff;">exclusion</span>>
-  </<span style="color: #0000ff;">exclusions</span>>
-</<span style="color: #0000ff;">dependency</span>>
+```xml
+<dependency>
+  <groupId>org.clojure</groupId>
+  <artifactId>clojure</artifactId>
+  <version>1.6.0</version>
+</dependency>
+<dependency>
+  <groupId>com.datomic</groupId>
+  <artifactId>datomic-pro</artifactId>
+  <version>0.9.4815.10</version>
+  <exclusions>
+    <exclusion>
+      <groupId>org.clojure</groupId>
+      <artifactId>clojure</artifactId>
+    </exclusion>
+  </exclusions>
+</dependency>
 ```
 
 
@@ -286,8 +286,8 @@ The 0.9.4724 release upgrades the backup format to improve backup capacity again
 
 Attempting to use an older version of Datomic to restore a newer backup will result in the following stacktrace:
 
-```
-<pre class="src src-example">java.lang.IllegalArgumentException: No matching clause: 3
+```example
+java.lang.IllegalArgumentException: No matching clause: 3
 	at datomic.backup$backup__GT_mem.invoke(backup.clj:301)
 	at datomic.backup$read_roots.invoke(backup.clj:320)
 	at datomic.backup$create_restore_job.invoke(backup.clj:392)
@@ -311,8 +311,8 @@ Users should backup existing databases before upgrading to this release.
 
 Adaptive indexing automatically manages the memory index for you, and should generally be used with the following default settings, regardless of the shape of your transaction load.
 
-```
-<pre class="src src-example">memory-index-threshold=32m
+```example
+memory-index-threshold=32m
 memory-index-max=512m
 ```
 
@@ -328,8 +328,8 @@ In order to realize the benefits of adaptive indexing, we've had to move away fr
 
 Datomic versions prior to 0.9.4699 cannot read adaptive indexes, and will fail with the following stacktrace:
 
-```
-<pre class="src src-sample">java.lang.NullPointerException
+```sample
+java.lang.NullPointerException
 at com.google.common.base.Preconditions.checkNotNull(Preconditions.java:191)
 at com.google.common.cache.LocalCache.getIfPresent(LocalCache.java:3988)
 at com.google.common.cache.LocalCache$LocalManualCache.getIfPresent(LocalCache.java:4783)
@@ -362,16 +362,16 @@ The transactor and peers are backwards compatible with log version 1. Transactor
 
 Older versions of the peer and transactor are **not** forward compatible with log version 2, and will report the following error:
 
-```
-<pre class="src src-java"><span style="color: #228b22;">NullPointerException</span>   <span style="color: #008b8b;">java</span>.<span style="color: #008b8b;">util</span>.UUID.<span style="color: #a0522d;">fromString</span>
+```java
+NullPointerException   java.util.UUID.fromString
 ```
 
 
 
 Downgrading to log version 1 is possible. This release includes a command line tool that can be used to downgrade a database to log version 1:
 
-```
-<pre class="src src-shx">bin/datomic revert-to-log-version-1 {your-database-uri}
+```shx
+bin/datomic revert-to-log-version-1 {your-database-uri}
 ```
 
 
@@ -431,33 +431,33 @@ Until then, you can use maven/leiningen dependency settings, on a peer-by-peer b
 
 Leiningen dependencies:
 
-```
-<pre class="src src-clojure">[org.clojure/clojure <span style="color: #8b2252;">"1.5.1"</span>]
-[com.datomic/datomic-pro <span style="color: #8b2252;">"0.8.3862"</span>
- <span style="color: #008b8b;">:exclusions</span> [... org.clojure/clojure]]
+```clojure
+[org.clojure/clojure "1.5.1"]
+[com.datomic/datomic-pro "0.8.3862"
+ :exclusions [... org.clojure/clojure]]
 ```
 
 
 
 Maven dependencies:
 
-```
-<pre class="src src-xml"><<span style="color: #0000ff;">dependency</span>>
-  <<span style="color: #0000ff;">groupId</span>>org.clojure</<span style="color: #0000ff;">groupId</span>>
-  <<span style="color: #0000ff;">artifactId</span>>clojure</<span style="color: #0000ff;">artifactId</span>>
-  <<span style="color: #0000ff;">version</span>>1.5.1</<span style="color: #0000ff;">version</span>>
-</<span style="color: #0000ff;">dependency</span>>
-<<span style="color: #0000ff;">dependency</span>>
-  <<span style="color: #0000ff;">groupId</span>>com.datomic</<span style="color: #0000ff;">groupId</span>>
-  <<span style="color: #0000ff;">artifactId</span>>datomic-pro</<span style="color: #0000ff;">artifactId</span>>
-  <<span style="color: #0000ff;">version</span>>0.8.3862</<span style="color: #0000ff;">version</span>>
-  <<span style="color: #0000ff;">exclusions</span>>
-    <<span style="color: #0000ff;">exclusion</span>>
-      <<span style="color: #0000ff;">groupId</span>>org.clojure</<span style="color: #0000ff;">groupId</span>>
-      <<span style="color: #0000ff;">artifactId</span>>clojure</<span style="color: #0000ff;">artifactId</span>>
-    </<span style="color: #0000ff;">exclusion</span>>
-  </<span style="color: #0000ff;">exclusions</span>>
-</<span style="color: #0000ff;">dependency</span>>
+```xml
+<dependency>
+  <groupId>org.clojure</groupId>
+  <artifactId>clojure</artifactId>
+  <version>1.5.1</version>
+</dependency>
+<dependency>
+  <groupId>com.datomic</groupId>
+  <artifactId>datomic-pro</artifactId>
+  <version>0.8.3862</version>
+  <exclusions>
+    <exclusion>
+      <groupId>org.clojure</groupId>
+      <artifactId>clojure</artifactId>
+    </exclusion>
+  </exclusions>
+</dependency>
 ```
 
 

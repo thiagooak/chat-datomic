@@ -31,10 +31,10 @@ Checking Analytics Server Status
 
 In the [debug CLI](#debug-cli), run the following system queries:
 
-```
-<pre class="src src-sql">SHOW SCHEMAS <span style="color: #a020f0;">FROM</span> <span style="color: #a020f0;">system</span>;
+```sql
+SHOW SCHEMAS FROM system;
 
-SHOW TABLES <span style="color: #a020f0;">FROM</span> <span style="color: #a020f0;">system</span>.runtime;
+SHOW TABLES FROM system.runtime;
 ```
 
 
@@ -54,8 +54,8 @@ If you encounter a `schemaName is null` error when using the CLI, you may have a
 
 Run the following query in the [debug CLI](#debug-cli):
 
-```
-<pre class="src src-sql"><span style="color: #a020f0;">SELECT</span> * <span style="color: #a020f0;">FROM</span> <span style="color: #a020f0;">system</span>.metadata.catalogs;
+```sql
+SELECT * FROM system.metadata.catalogs;
 ```
 
 
@@ -77,8 +77,8 @@ Metaschemas are dynamically associated with Datomic databases and errors or typo
 
 Start the [SQL CLI](analytics-cli.html) with your catalog and schema names and run the following:
 
-```
-<pre class="src src-sql">SHOW tables;
+```sql
+SHOW tables;
 ```
 
 
@@ -87,9 +87,9 @@ You should see at least two tables: `db__idents` and `db__attrs`, which are both
 
 You can examine the contents of these tables with:
 
-```
-<pre class="src src-sql"><span style="color: #a020f0;">SELECT</span> * <span style="color: #a020f0;">FROM</span> db__idents;
-<span style="color: #a020f0;">SELECT</span> * <span style="color: #a020f0;">FROM</span> db__attrs;
+```sql
+SELECT * FROM db__idents;
+SELECT * FROM db__attrs;
 ```
 
 

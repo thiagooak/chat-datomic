@@ -12,24 +12,24 @@ The REST Service
 
 A Datomic peer can be run as a standalone HTTP service using the *bin/rest* command:
 
-```
-<pre class="src src-example">bin/rest -p port [-o origins]? [alias uri]+
+```example
+bin/rest -p port [-o origins]? [alias uri]+
 ```
 
 
 
 The URIs are as described in the [documentation for connect](../javadoc/datomic/Peer.html#connect-java.lang.Object-) with the database name elided, for example:
 
-```
-<pre class="src src-example">datomic:ddb://aws-region/ddb-table?aws_access_key_id=XXX&aws_secret_key=YYY
+```example
+datomic:ddb://aws-region/ddb-table?aws_access_key_id=XXX&aws_secret_key=YYY
 ```
 
 
 
 Clients of the REST API will use the supplied storage aliases to talk about the storages, and will be unaware of the connection and location details. A storage alias is set with the \[alias uri\] form above, e.g.:
 
-```
-<pre class="src src-example">dev datomic:dev://localhost:4334/
+```example
+dev datomic:dev://localhost:4334/
 #+end_src example
 
 Would alias the local dev storage as "dev" and make it accessible through REST.
@@ -83,8 +83,8 @@ Returns vector of storage aliases the REST service was configured with.
 
 - `GET /data/`
 
-```
-<pre class="src src-example">curl http://localhost:8001/data/
+```example
+curl http://localhost:8001/data/
 
 ["dev"]
 ```
@@ -102,8 +102,8 @@ Returns vector of names of databases that exist in the specified storage.
 - `GET /data/<storage-alias>/`
     - **storage-alias** - One of the aliases configured when the REST service was started.
 
-```
-<pre class="src src-example">curl http://localhost:8001/data/dev/
+```example
+curl http://localhost:8001/data/dev/
 
 ["mbrainz-1968-1973"]
 ```
@@ -123,8 +123,8 @@ Creates a database in the specified storage, if it does not already exist.
     - Request body
     - **db-name** - The name of the database to create.
 
-application/edn{:db-name "new-db-name"}application/x-www-form-urlencodeddb-name=new-db-name```
-<pre class="src src-example">curl -X POST -H "Content-Type: application/edn" http://localhost:8001/data/dev/ -d "{:db-name scratch}"
+application/edn{:db-name "new-db-name"}application/x-www-form-urlencodeddb-name=new-db-name```example
+curl -X POST -H "Content-Type: application/edn" http://localhost:8001/data/dev/ -d "{:db-name scratch}"
 
 ["mbrainz-1968-1973" "scratch"]
 ```
@@ -145,8 +145,8 @@ Executes a transaction against the specified database, returns result.
     - Request body
     - **tx-data** - The transaction to execute
 
-application/edn{:tx-data \[{:db/id "foo" …}\]application/x-www-form-urlencodedtx-data=\[{:db/id "foo" …}\]```
-<pre class="src src-example">curl -X POST -H "Content-Type: application/edn" http://localhost:8001/data/dev/scratch/ -d "{:tx-data [{:db/doc \"hello REST world\"}]}"
+application/edn{:tx-data \[{:db/id "foo" …}\]application/x-www-form-urlencodedtx-data=\[{:db/id "foo" …}\]```example
+curl -X POST -H "Content-Type: application/edn" http://localhost:8001/data/dev/scratch/ -d "{:tx-data [{:db/doc \"hello REST world\"}]}"
 
 {:db-before {:basis-t 63, :db/alias "dev/scratch"}, :db-after {:basis-t 1000, :db/alias "dev/scratch"},
 :tx-data [{:e 13194139534312, :a 50, :v #inst "2014-12-01T15:27:26.632-00:00", :tx 13194139534312, :added true}
@@ -169,8 +169,8 @@ Returns information about specified database.
     - **db-name** - Name of database in storage.
     - **basis-t** - A t value or `-` for current database value.
 
-```
-<pre class="src src-example">curl http://localhost:8001/data/dev/mbrainz-1968-1973/-/
+```example
+curl http://localhost:8001/data/dev/mbrainz-1968-1973/-/
 
 {:db/alias "dev/mbrainz-1968-1973", :basis-t 130627}
 ```
@@ -201,8 +201,8 @@ Returns a set or range of datoms from an index.
     - **since-t** - A t value that filters the database to only include facts asserted since that time (optional)
     - **history** - Boolean indicating whether to use a database value containing all historical facts (optional)
 
-```
-<pre class="src src-example">curl http://localhost:8001/data/dev/mbrainz-1968-1973/-/datoms\?index\=avet\&e\=\&a\=\&v\=\&start\=\&end\=\&offset\=\&limit\=100\&as-
+```example
+curl http://localhost:8001/data/dev/mbrainz-1968-1973/-/datoms\?index\=avet\&e\=\&a\=\&v\=\&start\=\&end\=\&offset\=\&limit\=100\&as-
 of\=\&since\=
 
 [
@@ -232,8 +232,8 @@ Returns all attributes of specified entity.
     - **as-of-t** - A t value that filters the database to only include facts asserted as of that time (optional)
     - **since-t** - A t value that filters the database to only include facts asserted since that time (optional)
 
-```
-<pre class="src src-example">curl http://localhost:8001/data/dev/mbrainz-1968-1973/-/entity\?e\=17592186048482\&as-of\=\&since\=
+```example
+curl http://localhost:8001/data/dev/mbrainz-1968-1973/-/entity\?e\=17592186048482\&as-of\=\&since\=
 
 {:artist/startMonth 2,
 :artist/type :artist.type/group,
@@ -269,8 +269,8 @@ Executes a query against one or more databases, returns results.
     - Request body
     - Same arguments as GET, supports longer list of args
 
-application/edn{:q \[:find …\] :args \[{:db/alias … }\]}application/x-www-form-urlencodedq=\[:find …\]&amp;args=\[{:db/alias …}\]```
-<pre class="src src-example">curl "http://localhost:8001/api/query?q=%5B%3Afind+%3Fe+%3Ain+%24+%3Fname+%3Awhere+%5B%3Fe+%3Aartist%2Fname+%3Fname%5D%5D&args=%5B%7B%3Adb%2Falias+%22dev%2Fmbrainz-1968-1973%22%7D+%22The+Who%22%5D&offset=&limit="
+application/edn{:q \[:find …\] :args \[{:db/alias … }\]}application/x-www-form-urlencodedq=\[:find …\]&amp;args=\[{:db/alias …}\]```example
+curl "http://localhost:8001/api/query?q=%5B%3Afind+%3Fe+%3Ain+%24+%3Fname+%3Awhere+%5B%3Fe+%3Aartist%2Fname+%3Fname%5D%5D&args=%5B%7B%3Adb%2Falias+%22dev%2Fmbrainz-1968-1973%22%7D+%22The+Who%22%5D&offset=&limit="
 
 [[17592186048482]]
 ```
@@ -290,8 +290,8 @@ Starts a [Server-Sent Events (SSE)](https://w3c.github.io/eventsource) stream to
     - **db-name** - Name of database in storage.
     - **basis-t** - A t value or `-` for current database value.
 
-```
-<pre class="src src-example">http://localhost:8001/data/dev/mbrainz-1968-1973/-/events
+```example
+http://localhost:8001/data/dev/mbrainz-1968-1973/-/events
 ```
 
 
@@ -301,6 +301,6 @@ Starts a [Server-Sent Events (SSE)](https://w3c.github.io/eventsource) stream to
     - **db-name** - Name of database in storage.
     - Client must send 'Accept: text/event-stream' header in GET request, as per the SSE spec. A successful connection returns 200 and leaves the connection open, transmitting heartbeat comment lines and transaction reports.
 
-```
-<pre class="src src-example">curl -H "Accept: text/event-stream" http://localhost:8001/events/dev/mbrainz-1968-1973
+```example
+curl -H "Accept: text/event-stream" http://localhost:8001/events/dev/mbrainz-1968-1973
 ```

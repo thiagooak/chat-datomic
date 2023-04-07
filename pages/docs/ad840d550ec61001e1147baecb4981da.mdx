@@ -5,11 +5,11 @@ In the relational database world, outer joins allow you to return relations even
 
 In Datomic, you can find the entities you want with [datalog](../query/query-data-reference.html), and then make an independent decision about which details you want to [pull](../query/query-pull.html). The following example uses query to find the artists, and then plugs in a pull pattern to get both the artist name and start year:
 
-```
-<pre class="src src-clojure">(<span style="color: #a020f0;">def</span> <span style="color: #0000ff;">find-expr</span> '[<span style="color: #008b8b;">:find</span> (pull ?e details-expr)
-                 <span style="color: #008b8b;">:in</span> $ details-expr
-                 <span style="color: #008b8b;">:where</span> [?e <span style="color: #008b8b;">:artist/name</span>]])
-(<span style="color: #a020f0;">def</span> <span style="color: #0000ff;">details-expr</span> [<span style="color: #008b8b;">:artist/name</span> <span style="color: #008b8b;">:artist/startYear</span>])
+```clojure
+(def find-expr '[:find (pull ?e details-expr)
+                 :in $ details-expr
+                 :where [?e :artist/name]])
+(def details-expr [:artist/name :artist/startYear])
 (d/q find-expr db details-expr)
 ```
 
@@ -19,11 +19,11 @@ The query/pull separation also makes it easy to reuse query and pull logic indep
 
 Datomic also includes the [get-else query function](../query/query-data-reference.html#get-else), which is closer to a literal outer join in that you can reference a possibly-missing attribute in directly in datalog, specifying an alternate value when the attribute is missing. The example below replaces a missing start year with "Unknown".
 
-```
-<pre class="src src-clojure">[<span style="color: #008b8b;">:find</span> ?e ?name ?year
- <span style="color: #008b8b;">:where</span>
- [?e <span style="color: #008b8b;">:artist/name</span> ?name]
- [(get-else $ ?e <span style="color: #008b8b;">:artist/startYear</span> <span style="color: #8b2252;">"Unknown"</span>) ?year]]
+```clojure
+[:find ?e ?name ?year
+ :where
+ [?e :artist/name ?name]
+ [(get-else $ ?e :artist/startYear "Unknown") ?year]]
 ```
 
 

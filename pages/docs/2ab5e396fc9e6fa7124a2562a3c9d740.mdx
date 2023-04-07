@@ -28,8 +28,8 @@ The instructions are listed here to give an overview of what needs to be done fo
     - Note the `Download Key` under "License Information"
 - Download the datomic-pro dependency (Instructions for this are listed on the my.datomic.com account page)
     
-    ```
-    <pre class="src src-sh">wget --http-user=your@email.com --http-password=$<span style="color: #a0522d;">YOUR_DOWNLOAD_KEY</span> https://my.datomic.com/repo/com/datomic/datomic-pro/$<span style="color: #a0522d;">VERSION</span>/datomic-pro-$<span style="color: #a0522d;">VERSION</span>.zip -O datomic-pro-$<span style="color: #a0522d;">VERSION</span>.zip
+    ```sh
+wget --http-user=your@email.com --http-password=$YOUR_DOWNLOAD_KEY https://my.datomic.com/repo/com/datomic/datomic-pro/$VERSION/datomic-pro-$VERSION.zip -O datomic-pro-$VERSION.zip
     ```
     
     
@@ -43,25 +43,25 @@ The instructions are listed here to give an overview of what needs to be done fo
     - Note the latest version of the memcache-asg-java-client in the [release notes](../changes.html) for your version of Datomic. You may need to look at previous versions to see when the last update was to this dependency.
     - From the path where datomic-pro-$VERSION.zip was unzipped to: Download the `memcache-asg-java-client-$MAJC_VERSION.jar`
         
-        ```
-        <pre class="src src-sh">wget --http-user=your@email.com --http-password=$<span style="color: #a0522d;">YOUR_DOWNLOAD_KEY</span> https://my.datomic.com/repo/com/datomic/memcache-asg-java-client/$<span style="color: #a0522d;">MAJC_VERSION</span>/memcache-asg-java-client-$<span style="color: #a0522d;">MAJC</span>-VERSION.jar -O memcache-asg-java-client/memcache-asg-java-client-$<span style="color: #a0522d;">MAJC_VERSION</span>.jar
+        ```sh
+wget --http-user=your@email.com --http-password=$YOUR_DOWNLOAD_KEY https://my.datomic.com/repo/com/datomic/memcache-asg-java-client/$MAJC_VERSION/memcache-asg-java-client-$MAJC-VERSION.jar -O memcache-asg-java-client/memcache-asg-java-client-$MAJC_VERSION.jar
         ```
     - From the path where datomic-pro-$VERSION.zip was unzipped to: Download the pom to memcache-asg-java-client-$MAJC\_VERSION.pom
         
-        ```
-        <pre class="src src-sh">wget --http-user=your@email.com --http-password=$<span style="color: #a0522d;">YOUR_DOWNLOAD_KEY</span> https://my.datomic.com/repo/com/datomic/memcache-asg-java-client/$<span style="color: #a0522d;">MAJC_VERSION</span>/memcache-asg-java-client-$<span style="color: #a0522d;">MAJC</span>-VERSION.pom -O memcache-asg-java-client/memcache-asg-java-client-$<span style="color: #a0522d;">MAJC</span>-VERSION.pom
+        ```sh
+wget --http-user=your@email.com --http-password=$YOUR_DOWNLOAD_KEY https://my.datomic.com/repo/com/datomic/memcache-asg-java-client/$MAJC_VERSION/memcache-asg-java-client-$MAJC-VERSION.pom -O memcache-asg-java-client/memcache-asg-java-client-$MAJC-VERSION.pom
         ```
 - Generate the files which will be deployed to your storage 
     - Make the repository directory: `mkdir repo`
     - Install datomic-pro to the above local repo (replace $VERSION with your version if you're not using an environment variable for $VERSION):
         
-        ```
-        <pre class="src src-sh">mvn install:install-file -DgroupId=com.datomic -DartifactId=datomic-pro -Dfile=datomic-pro-$<span style="color: #a0522d;">VERSION</span>.jar -DpomFile=pom.xml -DlocalRepositoryPath=$(<span style="color: #483d8b;">pwd</span>)/repo -DcreateChecksum=true~
+        ```sh
+mvn install:install-file -DgroupId=com.datomic -DartifactId=datomic-pro -Dfile=datomic-pro-$VERSION.jar -DpomFile=pom.xml -DlocalRepositoryPath=$(pwd)/repo -DcreateChecksum=true~
         ```
     - Install memcache-asg-java-client to the above local repo (replace $VERSION with your version if you're not using an environment variable for $VERSION):
         
-        ```
-        <pre class="src src-sh">mvn install:install-file -DgroupId=com.datomic -DartifactId=memcache-asg-java-client -Dfile=memcache-asg-java-client/memcache-asg-java-client-$<span style="color: #a0522d;">MAJC_VERSION</span>.jar -DpomFile=memcache-asg-java-client/memcache-asg-java-client-$<span style="color: #a0522d;">MAJC_VERSION</span>.pom -DlocalRepositoryPath=$(<span style="color: #483d8b;">pwd</span>)/repo -DcreateChecksum=true~
+        ```sh
+mvn install:install-file -DgroupId=com.datomic -DartifactId=memcache-asg-java-client -Dfile=memcache-asg-java-client/memcache-asg-java-client-$MAJC_VERSION.jar -DpomFile=memcache-asg-java-client/memcache-asg-java-client-$MAJC_VERSION.pom -DlocalRepositoryPath=$(pwd)/repo -DcreateChecksum=true~
         ```
 
 You should now have a `/repo` directory with the necessary datomic-pro and memcache-asg-java-client files to act as a maven repository for Datomic On-prem.
@@ -88,7 +88,7 @@ Once your storage has your `/repo` directory copied to it, access is limited and
 
 Setup your dependency management to use your storage location as a maven repository. An example for [tools.deps](https://clojure.org/guides/deps_and_cli):
 
-```
-<pre class="src src-clj">{:mvn/repos {"my.private.repo" {:url "protocol://path/to/storage"}}
+```clj
+{:mvn/repos {"my.private.repo" {:url "protocol://path/to/storage"}}
  :deps {com.datomic/datomic-pro {:mvn/version "${VERSION}"}}}
 ```

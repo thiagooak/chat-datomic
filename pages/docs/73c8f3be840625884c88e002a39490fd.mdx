@@ -9,22 +9,22 @@ Putting domain data into your database also takes advantage of the [`transact`](
 
 Define your data in a var:
 
-```
-<pre class="src src-clojure">(<span style="color: #a020f0;">def</span> <span style="color: #0000ff;">first-movies</span> [{<span style="color: #008b8b;">:movie/title</span> <span style="color: #8b2252;">"The Goonies"</span>
-                    <span style="color: #008b8b;">:movie/genre</span> <span style="color: #8b2252;">"action/adventure"</span>
-                    <span style="color: #008b8b;">:movie/release-year</span> 1985}
-                   {<span style="color: #008b8b;">:movie/title</span> <span style="color: #8b2252;">"Commando"</span>
-                    <span style="color: #008b8b;">:movie/genre</span> <span style="color: #8b2252;">"action/adventure"</span>
-                    <span style="color: #008b8b;">:movie/release-year</span> 1985}
-                   {<span style="color: #008b8b;">:movie/title</span> <span style="color: #8b2252;">"Repo Man"</span>
-                    <span style="color: #008b8b;">:movie/genre</span> <span style="color: #8b2252;">"punk dystopia"</span>
-                    <span style="color: #008b8b;">:movie/release-year</span> 1984}])
+```clojure
+(def first-movies [{:movie/title "The Goonies"
+                    :movie/genre "action/adventure"
+                    :movie/release-year 1985}
+                   {:movie/title "Commando"
+                    :movie/genre "action/adventure"
+                    :movie/release-year 1985}
+                   {:movie/title "Repo Man"
+                    :movie/genre "punk dystopia"
+                    :movie/release-year 1984}])
 ```
 
 
 
-```
-<pre class="src src-clojure">=> #'user/first-movies
+```clojure
+=> #'user/first-movies
 ```
 
 
@@ -33,27 +33,27 @@ This is an example of the power of working directly with data – anything you m
 
 Now that you have the movies ready to go, transact them into the database:
 
-```
-<pre class="src src-clojure">@(d/transact conn first-movies)
+```clojure
+@(d/transact conn first-movies)
 ```
 
 
 
-```
-<pre class="src src-clojure">=>
-{<span style="color: #008b8b;">:db-before</span> datomic.db.Db@f0d17d2a, <span style="color: #008b8b;">:db-after</span> datomic.db.Db@6bc4da95,
- <span style="color: #008b8b;">:tx-data</span> 
-   [#datom[13194139534313 50 #inst <span style="color: #8b2252;">"2017-02-16T16:27:03.660-00:00"</span> 13194139534313 true] 
-    #datom[17592186045418 63 <span style="color: #8b2252;">"The Goonies"</span> 13194139534313 true] 
-    #datom[17592186045418 64 <span style="color: #8b2252;">"action/adventure"</span> 13194139534313 true] 
+```clojure
+=>
+{:db-before datomic.db.Db@f0d17d2a, :db-after datomic.db.Db@6bc4da95,
+ :tx-data 
+   [#datom[13194139534313 50 #inst "2017-02-16T16:27:03.660-00:00" 13194139534313 true] 
+    #datom[17592186045418 63 "The Goonies" 13194139534313 true] 
+    #datom[17592186045418 64 "action/adventure" 13194139534313 true] 
     #datom[17592186045418 65 1985 13194139534313 true] 
-    #datom[17592186045419 63 <span style="color: #8b2252;">"Commando"</span> 13194139534313 true] 
-    #datom[17592186045419 64 <span style="color: #8b2252;">"action/adventure"</span> 13194139534313 true] 
+    #datom[17592186045419 63 "Commando" 13194139534313 true] 
+    #datom[17592186045419 64 "action/adventure" 13194139534313 true] 
     #datom[17592186045419 65 1985 13194139534313 true] 
-    #datom[17592186045420 63 <span style="color: #8b2252;">"Repo Man"</span> 13194139534313 true] 
-    #datom[17592186045420 64 <span style="color: #8b2252;">"punk dystopia"</span> 13194139534313 true] 
+    #datom[17592186045420 63 "Repo Man" 13194139534313 true] 
+    #datom[17592186045420 64 "punk dystopia" 13194139534313 true] 
     #datom[17592186045420 65 1984 13194139534313 true]], 
- <span style="color: #008b8b;">:tempids</span> {-9223301668109598141 17592186045418,
+ :tempids {-9223301668109598141 17592186045418,
            -9223301668109598140 17592186045419,
            -9223301668109598139 17592186045420}}
 ```

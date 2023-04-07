@@ -12,16 +12,16 @@ Using the venv [created previously](analytics-python.html#setup-venv):
 
 - From the directory created when making the venv (my-python-env):
 
-```
-<pre class="src src-sh">. venv/bin/activate
+```sh
+. venv/bin/activate
 ```
 
 
 
 - Install Jupyter:
 
-```
-<pre class="src src-sh">pip install jupyterlab
+```sh
+pip install jupyterlab
 ```
 
 
@@ -45,14 +45,14 @@ jupyter notebook
 
 Use the following configuration to connect to your Datomic Analytics from Jupyter:
 
-```
-<pre class="src src-python"><span style="color: #a020f0;">from</span> pyhive <span style="color: #a020f0;">import</span> presto
-<span style="color: #a0522d;">conn</span> = presto.connect(
-    host=<span style="color: #8b2252;">'<host>'</span>,
+```python
+from pyhive import presto
+conn = presto.connect(
+    host='<host>',
     port=<port>,
-    catalog=<span style="color: #8b2252;">'<catalog>'</span>,
-    schema=<span style="color: #8b2252;">'<schema>'</span>,
-    username=<span style="color: #8b2252;">'presto'</span>
+    catalog='<catalog>',
+    schema='<schema>',
+    username='presto'
 )
 cur = conn.cursor()
 ```
@@ -61,7 +61,7 @@ cur = conn.cursor()
 
 Run a test query.
 
-```
-<pre class="src src-python">cur.execute(<span style="color: #8b2252;">'SELECT * FROM system.runtime.nodes'</span>)
-<span style="color: #483d8b;">print</span>(cur.fetchall())
+```python
+cur.execute('SELECT * FROM system.runtime.nodes')
+print(cur.fetchall())
 ```

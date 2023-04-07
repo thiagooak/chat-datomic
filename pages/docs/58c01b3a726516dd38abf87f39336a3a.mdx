@@ -75,18 +75,18 @@ The Datomic ion-dev tools should be installed via an alias in your [user deps.ed
 
 To install the tools, add the `datomic-cloud` maven repo under your `:mvn/repos` key:
 
-```
-<pre class="src src-clojure"><span style="color: #8b2252;">"datomic-cloud"</span> {<span style="color: #008b8b;">:url</span> <span style="color: #8b2252;">"s3://datomic-releases-1fc2183a/maven/releases"</span>}
+```clojure
+"datomic-cloud" {:url "s3://datomic-releases-1fc2183a/maven/releases"}
 ```
 
 
 
 Then add an `:ion-dev` entry under your `:aliases` key with the [latest version](../releases.html#current) of ion-dev:
 
-```
-<pre class="src src-clojure"><span style="color: #008b8b;">:ion-dev</span>
-{<span style="color: #008b8b;">:deps</span> {com.datomic/ion-dev {<span style="color: #008b8b;">:mvn/version</span> <span style="color: #8b2252;">"1.0.306"</span>}}
- <span style="color: #008b8b;">:main-opts</span> [<span style="color: #8b2252;">"-m"</span> <span style="color: #8b2252;">"datomic.ion.dev"</span>]}
+```clojure
+:ion-dev
+{:deps {com.datomic/ion-dev {:mvn/version "1.0.306"}}
+ :main-opts ["-m" "datomic.ion.dev"]}
 ```
 
 
@@ -106,16 +106,16 @@ The Datomic ion library should be installed in the deps.edn for each ion project
 
 Add the `datomic-cloud` maven repo under your `:mvn/repos` key:
 
-```
-<pre class="src src-clojure"><span style="color: #8b2252;">"datomic-cloud"</span> {<span style="color: #008b8b;">:url</span> <span style="color: #8b2252;">"s3://datomic-releases-1fc2183a/maven/releases"</span>}
+```clojure
+"datomic-cloud" {:url "s3://datomic-releases-1fc2183a/maven/releases"}
 ```
 
 
 
 Then add the [latest version](../releases.html#current) of ion-dev to your `:deps`:
 
-```
-<pre class="src src-clojure">com.datomic/ion {<span style="color: #008b8b;">:mvn/version</span> <span style="color: #8b2252;">"1.0.62"</span>}
+```clojure
+com.datomic/ion {:mvn/version "1.0.62"}
 ```
 
 
@@ -173,8 +173,8 @@ or
 
 - the following [AWS CLI](#install-cli) command, replacing `[region]` with the region you want to query:
 
-```
-<pre class="src src-sh">aws ec2 describe-instances --region [region] --filters <span style="color: #8b2252;">"Name=tag-key,Values=datomic:tx-group"</span> <span style="color: #8b2252;">"Name=instance-state-name,Values=running"</span> --query <span style="color: #8b2252;">'Reservations[*].Instances[*].[Tags[?Key==`datomic:system`].Value]'</span> --output text
+```sh
+aws ec2 describe-instances --region [region] --filters "Name=tag-key,Values=datomic:tx-group" "Name=instance-state-name,Values=running" --query 'Reservations[*].Instances[*].[Tags[?Key==`datomic:system`].Value]' --output text
 ```
 
 
@@ -243,8 +243,8 @@ Find Template Outputs
 
 Datomic's CloudFormation templates create [outputs](https://docs.amazonaws.cn/en_us/AWSCloudFormation/latest/UserGuide/outputs-section-structure.html) describing the resources that they manage. You can view these outputs in the [CloudFormation console](http://console.aws.amazon.com/cloudformation/home?#/stacks?filter=active), or query them from the AWS CLI. The following example query lists the outputs for a stack named "inventory-primary":
 
-```
-<pre class="src src-sh">aws cloudformation describe-stacks --stack-name inventory-primary
+```sh
+aws cloudformation describe-stacks --stack-name inventory-primary
 ```
 
 
@@ -269,9 +269,9 @@ Existing databases do **not** automatically incorporate enhancements to the base
 
 FeatureMinimum Datomic VersionReleasedtuples480-8770June 27, 2019attribute predicates480-8770June 27, 2019entity specs480-8770June 27, 2019db.type/symbol480-8770June 27, 2019One you have upgraded all compute groups, you can upgrade an existing database to use the latest base schema by passing the `:upgrade-schema`action to `administer-system`. For example:
 
-```
-<pre class="src src-clojure">(d/administer-system client {<span style="color: #008b8b;">:db-name</span> <span style="color: #8b2252;">"movies"</span>
-                             <span style="color: #008b8b;">:action</span> <span style="color: #008b8b;">:upgrade-schema</span>})
+```clojure
+(d/administer-system client {:db-name "movies"
+                             :action :upgrade-schema})
 ```
 
 

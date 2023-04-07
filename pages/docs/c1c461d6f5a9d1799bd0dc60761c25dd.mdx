@@ -10,9 +10,9 @@ The *:db/retractEntity* function takes an entity id as an argument. It retracts 
 
 The following example transaction data retracts two entities, specifying one of the entities by id, and the other by a [lookup ref](../schema/identity.html#lookup-refs).
 
-```
-<pre class="src src-clojure">[[<span style="color: #008b8b;">:db/retractEntity</span> id-of-jane]
- [<span style="color: #008b8b;">:db/retractEntity</span> [<span style="color: #008b8b;">:person/email</span> <span style="color: #8b2252;">"jdoe@example.com"</span>]]]
+```clojure
+[[:db/retractEntity id-of-jane]
+ [:db/retractEntity [:person/email "jdoe@example.com"]]]
 ```
 
 
@@ -30,6 +30,6 @@ You can use *nil* for the old value to specify that the new value should be asse
 
 The following example transaction data sets entity 42's *:account/balance* to 110, if and only if *:account/balance* is 100 at the time the transaction executes:
 
-```
-<pre class="src src-clojure">[[<span style="color: #008b8b;">:db/cas</span> 42 <span style="color: #008b8b;">:account/balance</span> 100 110]]
+```clojure
+[[:db/cas 42 :account/balance 100 110]]
 ```

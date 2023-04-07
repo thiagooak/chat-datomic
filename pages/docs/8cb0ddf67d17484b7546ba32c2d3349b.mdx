@@ -64,8 +64,8 @@ Before you configure Client API connectivity to a Datomic database from outside 
 
 To connect to the access gateway, run the [datomic access](../operation/cli-tools.html#client-access) command to create an SOCKS proxy connection, passing your [system name](../operation/howto.html#system-name):
 
-```
-<pre class="src src-sh">datomic client access <system>
+```sh
+datomic client access <system>
 ```
 
 
@@ -80,16 +80,16 @@ The script will continue to run once launched.
 
 Run the following command to test your system's ability to reach Datomic through the SOCKS proxy, replacing `[system]`, `[region]`. and `[port]` with your [system-name, region](../operation/howto.html#system-name) and port.
 
-```
-<pre class="src src-sh">curl -x socks5h://localhost:[port] http://entry.[system].[region].datomic.net:8182/
+```sh
+curl -x socks5h://localhost:[port] http://entry.[system].[region].datomic.net:8182/
 ```
 
 
 
 On success, this command will return text like:
 
-```
-<pre class="src src-clojure">{<span style="color: #008b8b;">:s3-auth-path</span> [bucket-name]}
+```clojure
+{:s3-auth-path [bucket-name]}
 ```
 
 

@@ -35,22 +35,22 @@ You can modify this setting later, but it is easier to do it now!
 
 - Export your AWS account's credentials as environment variables so that they're accessible to scripts:
 
-```
-<pre class="src src-sh"><span style="color: #483d8b;">export</span> <span style="color: #a0522d;">AWS_ACCESS_KEY_ID</span>=<aws-access-key-id>
+```sh
+export AWS_ACCESS_KEY_ID=<aws-access-key-id>
 ```
 
 
 
-```
-<pre class="src src-sh"><span style="color: #483d8b;">export</span> <span style="color: #a0522d;">AWS_SECRET_KEY</span>=<aws-secret-key>
+```sh
+export AWS_SECRET_KEY=<aws-secret-key>
 ```
 
 
 
 - Run the *ensure-cf* command, specifying your properties file as the input and another file name as the output (the file names can be the same):
 
-```
-<pre class="src src-sh">bin/datomic ensure-cf my-cf.properties my-cf.properties
+```sh
+bin/datomic ensure-cf my-cf.properties my-cf.properties
 ```
 
 
@@ -59,8 +59,8 @@ The *ensure-cf* command will create the necessary AWS constructs, and emit an up
 
 - Run the *create-cf-template* command, specifying both your transactor properties file and your CloudFormation properties file as input, and redirect the output to a JSON file.
 
-```
-<pre class="src src-sh">bin/datomic create-cf-template my-transactor.properties my-cf.properties cf-template.json
+```sh
+bin/datomic create-cf-template my-transactor.properties my-cf.properties cf-template.json
 ```
 
 
@@ -73,8 +73,8 @@ The *ensure-cf* command will create the necessary AWS constructs, and emit an up
 
 Use the *create-cf-stack* command to run the configuration you have defined on AWS, passing the name of the stack and the template you previously created:
 
-```
-<pre class="src src-sh">bin/datomic create-cf-stack us-east-1 MyTransactor cf-template.json
+```sh
+bin/datomic create-cf-stack us-east-1 MyTransactor cf-template.json
 ```
 
 
@@ -85,8 +85,8 @@ You can now run EC2-based peer applications against the Transactor AMI.
 
 Use the *delete-cf-stack* command to tear down the stack and stop all associated running instances with cf-delete-stack:
 
-```
-<pre class="src src-sh">bin/datomic delete-cf-stack us-east-1 MyTransactor
+```sh
+bin/datomic delete-cf-stack us-east-1 MyTransactor
 ```
 
 
@@ -164,8 +164,8 @@ Specify a unique name for *aws-cloudwatch-dimension-value* and the desired AWS r
 
 Once your property file is edited, run the *ensure-transactor*command, specifying your properties file and another filename as the output (the file names can be the same).
 
-```
-<pre class="src src-sh">bin/datomic ensure-transactor my-transactor.properties my-transactor.properties.
+```sh
+bin/datomic ensure-transactor my-transactor.properties my-transactor.properties.
 ```
 
 
@@ -201,23 +201,23 @@ Specify a unique name for *aws-cloudwatch-dimension-value* and the desired AWS r
 
 To enable the transactor to access the AWS resources you specify, you must attach the following policies to the transactor role:
 
-```
-<pre class="src src-js">{<span style="color: #8b2252;">"Statement"</span>:
- [{<span style="color: #8b2252;">"Effect"</span>:<span style="color: #8b2252;">"Allow"</span>,
-   <span style="color: #8b2252;">"Action"</span>:[<span style="color: #8b2252;">"s3:PutObject"</span>],
-   <span style="color: #8b2252;">"Resource"</span>:
-   [<span style="color: #8b2252;">"arn:aws:s3:::{bucket-name}"</span>, <span style="color: #8b2252;">"arn:aws:s3:::{bucket-name}/*"</span>]}]}
+```js
+{"Statement":
+ [{"Effect":"Allow",
+   "Action":["s3:PutObject"],
+   "Resource":
+   ["arn:aws:s3:::{bucket-name}", "arn:aws:s3:::{bucket-name}/*"]}]}
 ```
 
 
 
-```
-<pre class="src src-js">{<span style="color: #8b2252;">"Statement"</span>:
- [{<span style="color: #8b2252;">"Resource"</span>:<span style="color: #8b2252;">"*"</span>,
-   <span style="color: #8b2252;">"Effect"</span>:<span style="color: #8b2252;">"Allow"</span>,
-   <span style="color: #8b2252;">"Action"</span>:
-   [<span style="color: #8b2252;">"cloudwatch:PutMetricData"</span>, <span style="color: #8b2252;">"cloudwatch:PutMetricDataBatch"</span>],
-   <span style="color: #8b2252;">"Condition"</span>:{<span style="color: #8b2252;">"Bool"</span>:{<span style="color: #8b2252;">"aws:SecureTransport"</span>:<span style="color: #8b2252;">"true"</span>}}}]}
+```js
+{"Statement":
+ [{"Resource":"*",
+   "Effect":"Allow",
+   "Action":
+   ["cloudwatch:PutMetricData", "cloudwatch:PutMetricDataBatch"],
+   "Condition":{"Bool":{"aws:SecureTransport":"true"}}}]}
 ```
 
 

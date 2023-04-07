@@ -88,10 +88,10 @@ Programs should not assume that an entity will be limited to the set of attribut
 
 For example, usage should be structured to handle a given set of attributes for an entity, not applying arbitrary usage to all possible attributes:
 
-```
-<pre class="src src-clojure">(do-side-effecty-thing-with-each
- (<span style="color: #a0522d;">select-keys</span> some-entity keys-i-understand))
-<span style="color: #b22222;">;; </span><span style="color: #b22222;">not (do-side-effecty-thing-with-each some-entity)</span>
+```clojure
+(do-side-effecty-thing-with-each
+ (select-keys some-entity keys-i-understand))
+;; not (do-side-effecty-thing-with-each some-entity)
 ```
 
 
@@ -107,8 +107,8 @@ When you create a reference type, Datomic automatically indexes the reference in
 
 For example, the mbrainz sample schema connects artists and releases via the `:release/artists` attribute. There is no need for a separate `:artist/releases` attribute. The data clause below can find `?artist` from `?release` and/or `?release` from `?artist`.
 
-```
-<pre class="src src-clojure">[?release <span style="color: #008b8b;">:release/artists</span> ?artist]
+```clojure
+[?release :release/artists ?artist]
 ```
 
 
@@ -124,8 +124,8 @@ Enumerated types should be represented by a reference pointing to an entity that
 
 The mbrainz sample schema demonstrates this with `:artist/country`. Note that transactions can use an ident directly as a reference value, eliding the indirection. The transaction data below creates a reference between `artist-id` and the entity whose ident is `:country/GB`
 
-```
-<pre class="src src-clojure">[artist-id <span style="color: #008b8b;">:artist/country</span> <span style="color: #008b8b;">:country/GB</span>]
+```clojure
+[artist-id :artist/country :country/GB]
 ```
 
 
@@ -141,12 +141,12 @@ If an attribute is used as a external key, you should set that attribute to be `
 
 For example, you could represent an ISO 3166-1 compliant country code external key with the following attribute definition:
 
-```
-<pre class="src src-clojure">{<span style="color: #008b8b;">:db/ident</span> <span style="color: #008b8b;">:country/code</span>
- <span style="color: #008b8b;">:db/valueType</span> <span style="color: #008b8b;">:db.type/string</span>
- <span style="color: #008b8b;">:db/cardinality</span> <span style="color: #008b8b;">:db.cardinality/one</span>
- <span style="color: #008b8b;">:db/unique</span> <span style="color: #008b8b;">:db.unique/identity</span>
- <span style="color: #008b8b;">:db/doc</span> <span style="color: #8b2252;">"ISO 3166-1 alpha-3 country code"</span>}
+```clojure
+{:db/ident :country/code
+ :db/valueType :db.type/string
+ :db/cardinality :db.cardinality/one
+ :db/unique :db.unique/identity
+ :db/doc "ISO 3166-1 alpha-3 country code"}
 ```
 
 
@@ -175,16 +175,16 @@ Further details on *growth* vs. *breakage* can be found in Rich Hickey's 2016 Cl
 
 Datomic provides lightweight, flexible schema that can be *grown* as necessary to support new information about your system or domain. *Growth* is always additive, i.e. adding new attributes, adding new 'types', adding relationships between 'types':
 
-```
-<pre class="src src-clojure"><span style="color: #b22222;">;; </span><span style="color: #b22222;">Given some initial schema</span>
-{<span style="color: #008b8b;">:db/ident</span> <span style="color: #008b8b;">:user/id</span>
- <span style="color: #008b8b;">:db/valueType</span> <span style="color: #008b8b;">:db.type/string</span>
- <span style="color: #008b8b;">:db/cardinality</span> <span style="color: #008b8b;">:db.cardinality/one</span>}
+```clojure
+;; Given some initial schema
+{:db/ident :user/id
+ :db/valueType :db.type/string
+ :db/cardinality :db.cardinality/one}
 
-<span style="color: #b22222;">;; </span><span style="color: #b22222;">Grow system by adding schema:</span>
-{<span style="color: #008b8b;">:db/ident</span> <span style="color: #008b8b;">:user/name</span>
- <span style="color: #008b8b;">:db/valueType</span> <span style="color: #008b8b;">:db.type/string</span>
- <span style="color: #008b8b;">:db/cardinality</span> <span style="color: #008b8b;">:db.cardinality/one</span>}
+;; Grow system by adding schema:
+{:db/ident :user/name
+ :db/valueType :db.type/string
+ :db/cardinality :db.cardinality/one}
 ```
 
 
@@ -211,8 +211,8 @@ Instead of removing or reusing names, you can use aliases to allow multiple name
 
 For example, to create an alias, `:user/primary-email` that refers to the same schema element as an existing ident (`:user/id`) transact the following assertion:
 
-```
-<pre class="src src-clojure">[<span style="color: #008b8b;">:db/add</span> <span style="color: #008b8b;">:user/id</span> <span style="color: #008b8b;">:db/ident</span> <span style="color: #008b8b;">:user/primary-email</span>]
+```clojure
+[:db/add :user/id :db/ident :user/primary-email]
 ```
 
 
@@ -233,10 +233,10 @@ Because Datomic Schema is stored as data, you can and should annotate your schem
 
 For example, in the case of a [preferred newer schema option](#grow-schema), you could add a `:schema/see-instead` flag and a `:db/doc` on the older schema element to point users at the new convention:
 
-```
-<pre class="src src-clojure">{<span style="color: #008b8b;">:db/ident</span> <span style="color: #008b8b;">:user/email</span>
- <span style="color: #008b8b;">:schema/see-instead</span> <span style="color: #008b8b;">:user2/email</span>
- <span style="color: #008b8b;">:db/doc</span> <span style="color: #8b2252;">"prefer the user2 namespace for new development"</span>}
+```clojure
+{:db/ident :user/email
+ :schema/see-instead :user2/email
+ :db/doc "prefer the user2 namespace for new development"}
 ```
 
 
@@ -256,9 +256,9 @@ Transactions are ordinary entities: you can create attributes that are about tra
 
 For example, the following datoms use a `:data/src` attribute to link the transaction to a source URL from an external system.
 
-```
-<pre class="src src-clojure">[[<span style="color: #008b8b;">:db/add</span> <span style="color: #8b2252;">"datomic.tx"</span> <span style="color: #008b8b;">:data/src</span> <span style="color: #8b2252;">"import-file"</span>]
- [<span style="color: #008b8b;">:db/add</span> <span style="color: #8b2252;">"import-file"</span> <span style="color: #008b8b;">:source/url</span> <span style="color: #8b2252;">"http://example.com/catalog-2_29_2012.xml"</span>]]
+```clojure
+[[:db/add "datomic.tx" :data/src "import-file"]
+ [:db/add "import-file" :source/url "http://example.com/catalog-2_29_2012.xml"]]
 ```
 
 
@@ -279,25 +279,25 @@ Lookup refs flatten this into a single step. With a lookup ref, you can specify 
 
 So instead of:
 
-```
-<pre class="src src-clojure"><span style="color: #b22222;">;; </span><span style="color: #b22222;">query for e</span>
-[<span style="color: #008b8b;">:find</span> ?e
- <span style="color: #008b8b;">:where</span> [?e <span style="color: #008b8b;">:user/email</span> <span style="color: #8b2252;">"jdoe@example.com"</span>]]
+```clojure
+;; query for e
+[:find ?e
+ :where [?e :user/email "jdoe@example.com"]]
 
-<span style="color: #b22222;">;; </span><span style="color: #b22222;">tx-data using e</span>
-[[<span style="color: #008b8b;">:db/add</span> e <span style="color: #008b8b;">:db/doc</span> <span style="color: #8b2252;">"doc about John"</span>]]
+;; tx-data using e
+[[:db/add e :db/doc "doc about John"]]
 ```
 
 
 
 you can simply:
 
-```
-<pre class="src src-clojure"><span style="color: #b22222;">;; </span><span style="color: #b22222;">tx-data with a lookup ref, no query needed</span>
-[<span style="color: #008b8b;">:db/add</span>
- [<span style="color: #008b8b;">:user/email</span> <span style="color: #8b2252;">"jdoe@example.com"</span>]
- <span style="color: #008b8b;">:db/doc</span>
- <span style="color: #8b2252;">"doc about John"</span>]
+```clojure
+;; tx-data with a lookup ref, no query needed
+[:db/add
+ [:user/email "jdoe@example.com"]
+ :db/doc
+ "doc about John"]
 ```
 
 
@@ -313,24 +313,24 @@ Transactional systems can use optimistic or pessimistic concurrency controls to 
 
 The following example illustrates the use of `db/cas` for adding a deposit to an account. In only the case that `db/cas` fails (note that we catch `:cognitect.anomalies/conflict` for this specific case), we retry the deposit.
 
-```
-<pre class="src src-clojure">(<span style="color: #a020f0;">defn</span> <span style="color: #0000ff;">make-deposit!</span>
+```clojure
+(defn make-deposit!
   ([conn account-id deposit]
    (make-deposit! conn account-id deposit 1))
   ([conn account-id deposit retries]
-   (<span style="color: #483d8b;">let</span> [db (d/db conn)
-         acc-lookup [<span style="color: #008b8b;">:account/number</span> account-id]
-         balance (<span style="color: #483d8b;">-></span> (d/pull db '[<span style="color: #008b8b;">:account/balance</span>] acc-lookup)
-                     <span style="color: #008b8b;">:account/balance</span>)]
-     (<span style="color: #483d8b;">try</span> (d/transact conn {<span style="color: #008b8b;">:tx-data</span> [[<span style="color: #008b8b;">:db/cas</span> acc-lookup
-                                       <span style="color: #008b8b;">:account/balance</span> balance
-                                       (<span style="color: #a0522d;">+</span> balance deposit)]]})
-          (<span style="color: #483d8b;">catch</span> <span style="color: #483d8b;">ExceptionInfo</span> t
-            (<span style="color: #483d8b;">if</span> (<span style="color: #a0522d;">=</span> (<span style="color: #008b8b;">:cognitect.anomalies/category</span> (ex-data t)) <span style="color: #008b8b;">:cognitect.anomalies/conflict</span>)
-              (<span style="color: #483d8b;">if</span> (<span style="color: #a0522d;"><</span> retries 5)
-                (make-deposit! conn account-id deposit (<span style="color: #a0522d;">inc</span> retries))
-                (<span style="color: #483d8b;">throw</span> (<span style="color: #483d8b;">java.lang.IllegalStateException.</span> <span style="color: #8b2252;">"Max Retries Exceeded"</span>)))
-              (<span style="color: #483d8b;">throw</span> t)))))))
+   (let [db (d/db conn)
+         acc-lookup [:account/number account-id]
+         balance (-> (d/pull db '[:account/balance] acc-lookup)
+                     :account/balance)]
+     (try (d/transact conn {:tx-data [[:db/cas acc-lookup
+                                       :account/balance balance
+                                       (+ balance deposit)]]})
+          (catch ExceptionInfo t
+            (if (= (:cognitect.anomalies/category (ex-data t)) :cognitect.anomalies/conflict)
+              (if (< retries 5)
+                (make-deposit! conn account-id deposit (inc retries))
+                (throw (java.lang.IllegalStateException. "Max Retries Exceeded")))
+              (throw t)))))))
 ```
 
 
@@ -348,18 +348,18 @@ Because `:db-after` can also be retrieved from [with](https://docs.datomic.com/c
 
 The following example uses `:db/cas` and `:db-after` in conjunction to verify that a deposit only increases the account by the correct amount:
 
-```
-<pre class="src src-clojure">(<span style="color: #483d8b;">let</span> [db (d/db conn)
+```clojure
+(let [db (d/db conn)
       deposit 850.00
-      acc-lookup [<span style="color: #008b8b;">:account/number</span> <span style="color: #8b2252;">"123"</span>]
-      balance-before (<span style="color: #483d8b;">-></span> (d/pull db '[<span style="color: #008b8b;">:account/balance</span>] acc-lookup)
-                         <span style="color: #008b8b;">:account/balance</span>)
-      tx-result (d/transact conn {<span style="color: #008b8b;">:tx-data</span> [[<span style="color: #008b8b;">:db/cas</span> acc-lookup 
-                                             <span style="color: #008b8b;">:account/balance</span> balance-before 
-                                             (<span style="color: #a0522d;">+</span> balance-before deposit)]]})
-      db-after (<span style="color: #008b8b;">:db-after</span> tx-result)
-      balance-after (<span style="color: #483d8b;">-></span> (d/pull db-after '[<span style="color: #008b8b;">:account/balance</span>] acc-lookup)                   
-                  <span style="color: #008b8b;">:account/balance</span>)]
+      acc-lookup [:account/number "123"]
+      balance-before (-> (d/pull db '[:account/balance] acc-lookup)
+                         :account/balance)
+      tx-result (d/transact conn {:tx-data [[:db/cas acc-lookup 
+                                             :account/balance balance-before 
+                                             (+ balance-before deposit)]]})
+      db-after (:db-after tx-result)
+      balance-after (-> (d/pull db-after '[:account/balance] acc-lookup)                   
+                  :account/balance)]
   balance-after)
 ```
 
@@ -381,9 +381,9 @@ Note that Datomic's `:db/txInstant` values must increase monotonically. So when 
 
 To set `:db/txInstant`, add a map to the transaction with the special `:db/id` value "datomic.tx" and a supplied value for the `:db/txInstant` attribute.
 
-```
-<pre class="src src-clojure">[{<span style="color: #008b8b;">:db/id</span> <span style="color: #8b2252;">"datomic.tx"</span>
-  <span style="color: #008b8b;">:db/txInstant</span> #inst <span style="color: #8b2252;">"2014-02-28"</span>}]
+```clojure
+[{:db/id "datomic.tx"
+  :db/txInstant #inst "2014-02-28"}]
 ```
 
 
@@ -399,47 +399,47 @@ Data imports will run significantly faster if you pipeline transactions using th
 
 This can be accomplished using [pipeline](https://clojure.github.io/core.async/#clojure.core.async/pipeline) in *core.async*:
 
-```
-<pre class="src src-clojure">(<span style="color: #483d8b;">ns</span> your.namespace
-  (<span style="color: #008b8b;">:require</span> [clojure.core.async <span style="color: #008b8b;">:as</span> a <span style="color: #008b8b;">:refer</span> (>!! <! >! go-loop)]
-            [datomic.client.api <span style="color: #008b8b;">:as</span> d]))
+```clojure
+(ns your.namespace
+  (:require [clojure.core.async :as a :refer (>!! <! >! go-loop)]
+            [datomic.client.api :as d]))
 
-(<span style="color: #a020f0;">defn</span> <span style="color: #0000ff;">tx-pipeline</span>
-  <span style="color: #8b2252;">"Transacts data from from-ch. Returns a map with:</span>
-<span style="color: #8b2252;">     :result, a return channel getting {:error t} or {:completed n}</span>
-<span style="color: #8b2252;">     :stop, a fn you can use to terminate early."</span>
+(defn tx-pipeline
+  "Transacts data from from-ch. Returns a map with:
+     :result, a return channel getting {:error t} or {:completed n}
+     :stop, a fn you can use to terminate early."
   [conn conc from-ch]
-  (<span style="color: #483d8b;">let</span> [to-ch (a/chan 100)
+  (let [to-ch (a/chan 100)
         done-ch (a/chan)
-        transact-data (<span style="color: #a0522d;">fn</span> [data]
-                       (<span style="color: #483d8b;">try</span>
-                          (d/transact conn {<span style="color: #008b8b;">:tx-data</span> data})
-                        <span style="color: #b22222;">; if exception in a transaction</span>
-                        <span style="color: #b22222;">; will close channels and put error</span>
-                        <span style="color: #b22222;">; on done channel.</span>
-                        (<span style="color: #483d8b;">catch</span> <span style="color: #483d8b;">Throwable</span> t
-                          (<span style="color: #483d8b;">.printStackTrace</span> t)
+        transact-data (fn [data]
+                       (try
+                          (d/transact conn {:tx-data data})
+                        ; if exception in a transaction
+                        ; will close channels and put error
+                        ; on done channel.
+                        (catch Throwable t
+                          (.printStackTrace t)
                           (a/close! from-ch)
                           (a/close! to-ch)
-                          (>!! done-ch {<span style="color: #008b8b;">:error</span> t}))))]
+                          (>!! done-ch {:error t}))))]
 
-   <span style="color: #b22222;">; go block prints a '.' after every 1000 transactions, puts completed</span>
-   <span style="color: #b22222;">; report on done channel when no value left to be taken.</span>
+   ; go block prints a '.' after every 1000 transactions, puts completed
+   ; report on done channel when no value left to be taken.
    (go-loop [total 0]
-     (<span style="color: #483d8b;">when</span> (zero? (<span style="color: #a0522d;">mod</span> total 1000))
-       (<span style="color: #a0522d;">print</span> <span style="color: #8b2252;">"."</span>) (<span style="color: #a0522d;">flush</span>))
-     (<span style="color: #483d8b;">if-let</span> [c (<! to-ch)]
-       (<span style="color: #483d8b;">recur</span> (<span style="color: #a0522d;">inc</span> total))
-       (>! done-ch {<span style="color: #008b8b;">:completed</span> total})))
+     (when (zero? (mod total 1000))
+       (print ".") (flush))
+     (if-let [c (<! to-ch)]
+       (recur (inc total))
+       (>! done-ch {:completed total})))
 
-   <span style="color: #b22222;">; pipeline that uses transducer form of map to transact data taken from</span>
-   <span style="color: #b22222;">; from-ch and puts results on to-ch</span>
-   (a/pipeline-blocking conc to-ch (<span style="color: #a0522d;">map</span> transact-data) from-ch)
+   ; pipeline that uses transducer form of map to transact data taken from
+   ; from-ch and puts results on to-ch
+   (a/pipeline-blocking conc to-ch (map transact-data) from-ch)
 
-   <span style="color: #b22222;">; returns done channel and a function that you can use</span>
-   <span style="color: #b22222;">; for early termination.</span>
-   {<span style="color: #008b8b;">:result</span> done-ch
-    <span style="color: #008b8b;">:stop</span> (<span style="color: #a0522d;">fn</span> [] (a/close! to-ch))}))
+   ; returns done channel and a function that you can use
+   ; for early termination.
+   {:result done-ch
+    :stop (fn [] (a/close! to-ch))}))
 ```
 
 
@@ -453,9 +453,9 @@ Put the Most Selective Clause First in Query
 
 The `:where` clauses of Datomic queries are executed in order. To minimize the work performed by the query engine, the [most restrictive](query/query-executing.html#clause-order)clauses should come before the less restrictive clauses, i.e.:
 
-```
-<pre class="src src-clojure"><span style="color: #008b8b;">:where</span> [?e <span style="color: #008b8b;">:only/matches</span> ?few]
-       [?e <span style="color: #008b8b;">:will/match</span> ?many]
+```clojure
+:where [?e :only/matches ?few]
+       [?e :will/match ?many]
 ```
 
 
@@ -486,22 +486,22 @@ You can use a [collection binding](query/query-data-reference.html#collection-bi
 
 The following query uses a collection binding to return all names for artists based in Japan or Canada:
 
-```
-<pre class="src src-clojure"><span style="color: #b22222;">;; </span><span style="color: #b22222;">query</span>
-[<span style="color: #008b8b;">:find</span> (pull ?a [<span style="color: #008b8b;">:artist/name</span>])
- <span style="color: #008b8b;">:in</span> $ [?c ...]
- <span style="color: #008b8b;">:where</span> [?a <span style="color: #008b8b;">:artist/country</span> ?country]
- [?country <span style="color: #008b8b;">:country/name</span> ?c]]
+```clojure
+;; query
+[:find (pull ?a [:artist/name])
+ :in $ [?c ...]
+ :where [?a :artist/country ?country]
+ [?country :country/name ?c]]
 
-<span style="color: #b22222;">;; </span><span style="color: #b22222;">inputs</span>
-db [<span style="color: #8b2252;">"Canada"</span> <span style="color: #8b2252;">"Japan"</span>]
+;; inputs
+db ["Canada" "Japan"]
 
-<span style="color: #b22222;">;; </span><span style="color: #b22222;">Results</span>
-[[{<span style="color: #008b8b;">:artist/name</span> <span style="color: #8b2252;">"The Guess Who"</span>}]
- [{<span style="color: #008b8b;">:artist/name</span> <span style="color: #8b2252;">"Whiskey Howl"</span>}]
- [{<span style="color: #008b8b;">:artist/name</span> <span style="color: #8b2252;">"Yoko Ono"</span>}]
+;; Results
+[[{:artist/name "The Guess Who"}]
+ [{:artist/name "Whiskey Howl"}]
+ [{:artist/name "Yoko Ono"}]
   ...
- [{<span style="color: #008b8b;">:artist/name</span> <span style="color: #8b2252;">"Asakawa Maki"</span>}]]
+ [{:artist/name "Asakawa Maki"}]]
 
 ```
 
@@ -516,35 +516,35 @@ Use Pull to Retrieve Attribute Values
 
 `pull` is usually the simplest way to retrieve a value for a specified attribute for a given entity. Using an [entity identifier](transactions/transaction-data-reference.html#entity-identifiers), calling `pull` is straightforward - see the example below that retrieves the documentation for `:db/ident`:
 
-```
-<pre class="src src-clojure">(d/pull db [<span style="color: #008b8b;">:db/doc</span>] <span style="color: #008b8b;">:db/ident</span>)
+```clojure
+(d/pull db [:db/doc] :db/ident)
 ```
 
 
 
 `pull` returns a map:
 
-```
-<pre class="src src-clojure">{<span style="color: #008b8b;">:db/doc</span> <span style="color: #8b2252;">"Attribute used to uniquely name an entity."</span>}
+```clojure
+{:db/doc "Attribute used to uniquely name an entity."}
 ```
 
 
 
 You should use the `:where` clauses to *identify* entities of interest, combined with a `pull` expression to *navigate* to attribute values for those entities. An example:
 
-```
-<pre class="src src-clojure">[<span style="color: #008b8b;">:find</span> (pull ?e [<span style="color: #008b8b;">:artist/name</span>])
- <span style="color: #008b8b;">:where</span> [?e <span style="color: #008b8b;">:artist/country</span> <span style="color: #008b8b;">:country/JP</span>]]
+```clojure
+[:find (pull ?e [:artist/name])
+ :where [?e :artist/country :country/JP]]
 ```
 
 
 
 Finds all artists from Japan then uses pull to list their names. Note that the results are now self documenting:
 
-```
-<pre class="src src-clojure">[[#<span style="color: #008b8b;">:artist</span>{<span style="color: #008b8b;">:name</span> <span style="color: #8b2252;">"Flower Travellin' Band"</span>}]
- [#<span style="color: #008b8b;">:artist</span>{<span style="color: #008b8b;">:name</span> <span style="color: #8b2252;">"The Tigers"</span>}]
- [#<span style="color: #008b8b;">:artist</span>{<span style="color: #008b8b;">:name</span> <span style="color: #8b2252;">"Jacks"</span>}]
+```clojure
+[[#:artist{:name "Flower Travellin' Band"}]
+ [#:artist{:name "The Tigers"}]
+ [#:artist{:name "Jacks"}]
  ...]
 ```
 
@@ -552,19 +552,19 @@ Finds all artists from Japan then uses pull to list their names. Note that the r
 
 - `pull` does not unify on attributes. While a `:where` clause will omit an entity that lacks a specified attribute, `pull` will simply omit requested attributes that are missing.
 
-```
-<pre class="src src-clojure">[<span style="color: #008b8b;">:find</span> (pull ?e [<span style="color: #008b8b;">:artist/name</span> <span style="color: #008b8b;">:artist/gender</span>])
- <span style="color: #008b8b;">:where</span> [?e <span style="color: #008b8b;">:artist/country</span> <span style="color: #008b8b;">:country/JP</span>]]
+```clojure
+[:find (pull ?e [:artist/name :artist/gender])
+ :where [?e :artist/country :country/JP]]
 ```
 
 
 
 Returns maps for artists that have no gender listed:
 
-```
-<pre class="src src-clojure">[[#<span style="color: #008b8b;">:artist</span>{<span style="color: #008b8b;">:name</span> <span style="color: #8b2252;">"Yoko Ono"</span> <span style="color: #008b8b;">:gender</span> {<span style="color: #008b8b;">:db/id</span> 17592186045591} <span style="color: #008b8b;">:ident</span> <span style="color: #008b8b;">:artist.gender/female</span>}]
- [#<span style="color: #008b8b;">:artist</span>{<span style="color: #008b8b;">:name</span> <span style="color: #8b2252;">"Far Out"</span>}]
- [#<span style="color: #008b8b;">:artist</span>{<span style="color: #008b8b;">:gender</span> {<span style="color: #008b8b;">:db/id</span> 17592186045591} <span style="color: #008b8b;">:ident</span> <span style="color: #008b8b;">:artist.gender/female</span> <span style="color: #008b8b;">:name</span> <span style="color: #8b2252;">"Asakawa Maki"</span>} 
+```clojure
+[[#:artist{:name "Yoko Ono" :gender {:db/id 17592186045591} :ident :artist.gender/female}]
+ [#:artist{:name "Far Out"}]
+ [#:artist{:gender {:db/id 17592186045591} :ident :artist.gender/female :name "Asakawa Maki"} 
  ...]
 ```
 
@@ -579,9 +579,9 @@ Put Blanks in Data Patterns
 
 [Blanks](query/query-data-reference.html#blanks) can be used as placeholders that match anything but do not bind or unify. This mbrainz example finds all countries which have an artist in the mbrainz database, using a blank to match any artist:
 
-```
-<pre class="src src-clojure">[<span style="color: #008b8b;">:find</span> ?c
- <span style="color: #008b8b;">:where</span> [_ <span style="color: #008b8b;">:artist/country</span> ?c]]
+```clojure
+[:find ?c
+ :where [_ :artist/country ?c]]
 ```
 
 
@@ -602,40 +602,40 @@ Datomic will [cache](query/query-executing.html#query-caching) queries, so long 
 
 The following query finds the names of all bands starting with `"B"`, of type *group*, with a startyear of `1970`:
 
-```
-<pre class="src src-clojure">[<span style="color: #008b8b;">:find</span> ?name
- <span style="color: #008b8b;">:where</span> [?a <span style="color: #008b8b;">:artist/type</span> <span style="color: #008b8b;">:artist.type/group</span>]
-        [?a <span style="color: #008b8b;">:artist/name</span> ?name]
-        [?a <span style="color: #008b8b;">:artist/startYear</span> 1970]
-        [(<span style="color: #483d8b;">.startsWith</span> <span style="color: #228b22;">^String</span> ?name <span style="color: #8b2252;">"B"</span>)]]
+```clojure
+[:find ?name
+ :where [?a :artist/type :artist.type/group]
+        [?a :artist/name ?name]
+        [?a :artist/startYear 1970]
+        [(.startsWith ^String ?name "B")]]
 ```
 
 
 
 A common anti-pattern is to make repeated adjustments to the query's data structure to change what facts it will match, e.g.:
 
-```
-<pre class="src src-clojure">[<span style="color: #008b8b;">:find</span> ?name
- <span style="color: #008b8b;">:where</span> [?a <span style="color: #008b8b;">:artist/type</span> <span style="color: #008b8b;">:artist.type/group</span>]
-        [?a <span style="color: #008b8b;">:artist/name</span> ?name]
-        [?a <span style="color: #008b8b;">:artist/startYear</span> 1971]
-        [(<span style="color: #483d8b;">.startsWith</span> <span style="color: #228b22;">^String</span> ?name <span style="color: #8b2252;">"C"</span>)]]
+```clojure
+[:find ?name
+ :where [?a :artist/type :artist.type/group]
+        [?a :artist/name ?name]
+        [?a :artist/startYear 1971]
+        [(.startsWith ^String ?name "C")]]
 ```
 
 
 
 Instead, you should parameterize the query so that you can call it multiple times with different inputs:
 
-```
-<pre class="src src-clojure">[<span style="color: #008b8b;">:find</span> ?name
- <span style="color: #008b8b;">:in</span> $ ?year ?letter
- <span style="color: #008b8b;">:where</span> [?a <span style="color: #008b8b;">:artist/type</span> <span style="color: #008b8b;">:artist.type/group</span>]
-        [?a <span style="color: #008b8b;">:artist/name</span> ?name]
-        [?a <span style="color: #008b8b;">:artist/startYear</span> ?year]
-        [(<span style="color: #483d8b;">.startsWith</span> <span style="color: #228b22;">^String</span> ?name ?letter)]]
+```clojure
+[:find ?name
+ :in $ ?year ?letter
+ :where [?a :artist/type :artist.type/group]
+        [?a :artist/name ?name]
+        [?a :artist/startYear ?year]
+        [(.startsWith ^String ?name ?letter)]]
 
-<span style="color: #b22222;">;; </span><span style="color: #b22222;">inputs</span>
-mbrainz-db 1971 <span style="color: #8b2252;">"C"</span>
+;; inputs
+mbrainz-db 1971 "C"
 ```
 
 
@@ -664,29 +664,29 @@ For filtering databases by time, establishing the relative order of events in a 
 
 For example, if you are interested in the wall clock time in which The Rolling Stones were added to the mbrainz database, you might use a query like this:
 
-```
-<pre class="src src-clojure">'[<span style="color: #008b8b;">:find</span> ?<span style="color: #483d8b;">txInstant</span>
-  <span style="color: #008b8b;">:where</span> [?a <span style="color: #008b8b;">:artist/name</span> <span style="color: #8b2252;">"The Rolling Stones"</span> ?tx]
-         [?tx <span style="color: #008b8b;">:db/txInstant</span> ?<span style="color: #483d8b;">txInstant</span>]]
+```clojure
+'[:find ?txInstant
+  :where [?a :artist/name "The Rolling Stones" ?tx]
+         [?tx :db/txInstant ?txInstant]]
 ```
 
 
 
 But if you want to use the Log API to inspect the other data transacted along with this fact, you should get the transaction ID itself:
 
-```
-<pre class="src src-clojure">[<span style="color: #008b8b;">:find</span> ?tx 
- <span style="color: #008b8b;">:where</span> [?a <span style="color: #008b8b;">:artist/name</span> <span style="color: #8b2252;">"The Rolling Stones"</span> ?tx]]
+```clojure
+[:find ?tx 
+ :where [?a :artist/name "The Rolling Stones" ?tx]]
 ```
 
 
 
 This transaction id can be converted to a t value with exact precision, or itself used as an argument to e.g. `txRange` where it can be used to retrieve the datoms in the transaction.
 
-```
-<pre class="src src-clojure">(<span style="color: #483d8b;">-></span> (d/tx-range conn {<span style="color: #008b8b;">:start</span> tx <span style="color: #008b8b;">:end</span> (<span style="color: #a0522d;">inc</span> tx)})
+```clojure
+(-> (d/tx-range conn {:start tx :end (inc tx)})
     first
-    <span style="color: #008b8b;">:tx-data</span>)
+    :tx-data)
 ```
 
 
@@ -705,15 +705,15 @@ With the history filter, your database will have a view that spans time and sees
 
 The following example uses a history database to retrieve all purchases ever entered for a user as well as the time the purchase was logged by the system. Since it uses a history database, it includes facts that were once asserted but have been later retracted.
 
-```
-<pre class="src src-clojure"><span style="color: #b22222;">;; </span><span style="color: #b22222;">query</span>
-[<span style="color: #008b8b;">:find</span> ?p ?inst ?added
- <span style="color: #008b8b;">:in</span> $ ?userid
- <span style="color: #008b8b;">:where</span> [?u <span style="color: #008b8b;">:user/purchase</span> ?p ?tx ?added]
- [?u <span style="color: #008b8b;">:user/id</span> ?userid]
- [?tx <span style="color: #008b8b;">:db/txInstant</span> ?inst]]
+```clojure
+;; query
+[:find ?p ?inst ?added
+ :in $ ?userid
+ :where [?u :user/purchase ?p ?tx ?added]
+ [?u :user/id ?userid]
+ [?tx :db/txInstant ?inst]]
 
-<span style="color: #b22222;">;; </span><span style="color: #b22222;">inputs</span>
+;; inputs
 (d/history db) userid
 ```
 
@@ -721,11 +721,11 @@ The following example uses a history database to retrieve all purchases ever ent
 
 This will bind `?added` to `true` if the datom is an assertion and `false` if the datom is a retraction, returning results like:
 
-```
-<pre class="src src-clojure">[[<span style="color: #8b2252;">"Bread"</span> #inst <span style="color: #8b2252;">"2014-11-18T03:41:59.301-00:00"</span> false]
- [<span style="color: #8b2252;">"Bread"</span> #inst <span style="color: #8b2252;">"2014-11-18T03:41:37.031-00:00"</span> true]
- [<span style="color: #8b2252;">"Soda"</span> #inst <span style="color: #8b2252;">"2014-11-18T03:41:39.617-00:00"</span> true]
- [<span style="color: #8b2252;">"French Fries"</span> #inst <span style="color: #8b2252;">"2014-11-18T03:41:56.115-00:00"</span> true]]
+```clojure
+[["Bread" #inst "2014-11-18T03:41:59.301-00:00" false]
+ ["Bread" #inst "2014-11-18T03:41:37.031-00:00" true]
+ ["Soda" #inst "2014-11-18T03:41:39.617-00:00" true]
+ ["French Fries" #inst "2014-11-18T03:41:56.115-00:00" true]]
 ```
 
 
@@ -743,11 +743,11 @@ When using filters, you will often need to use multiple points in time for a dat
 
 An example of using two points in time is provided in the [day-of-datomic-cloud](https://github.com/cognitect-labs/day-of-datomic-cloud/blob/master/tutorial/filters.clj#L91-L95)sample repository. This query:
 
-```
-<pre class="src src-clojure">[<span style="color: #008b8b;">:find</span> ?count 
- <span style="color: #008b8b;">:in</span> $ $since ?id
- <span style="color: #008b8b;">:where</span> [$ ?e <span style="color: #008b8b;">:item/id</span> ?id]
-        [$since ?e <span style="color: #008b8b;">:item/count</span> ?count]]
+```clojure
+[:find ?count 
+ :in $ $since ?id
+ :where [$ ?e :item/id ?id]
+        [$since ?e :item/count ?count]]
 ```
 
 
@@ -769,8 +769,8 @@ The Log API provides access to the transaction id and data for each transaction.
 
 An example using the `tx-range` API is provided in the [Day of Datomic Cloud](https://github.com/cognitect-labs/day-of-datomic-cloud/blob/master/tutorial/log.clj#L44) sample repository. This example:
 
-```
-<pre class="src src-clojure">(d/tx-range conn {<span style="color: #008b8b;">:start</span> tx-id <span style="color: #008b8b;">:end</span> tx-id})
+```clojure
+(d/tx-range conn {:start tx-id :end tx-id})
 ```
 
 

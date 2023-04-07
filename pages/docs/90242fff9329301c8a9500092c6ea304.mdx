@@ -24,11 +24,11 @@ A transaction is simply a list of lists and/or maps, each of which is a statemen
 
 Each list a transaction contains represents either the addition or retraction of a specific fact about an entity, attribute, and value, or the invocation of a data function, as shown below.
 
-```
-<pre class="src src-clojure">[<span style="color: #008b8b;">:db/add</span> entity-id attribute value]
+```clojure
+[:db/add entity-id attribute value]
 
-[<span style="color: #008b8b;">:db/retract</span> entity-id attribute value]
-[<span style="color: #008b8b;">:db/retract</span> entity-id attribute]
+[:db/retract entity-id attribute value]
+[:db/retract entity-id attribute]
 [data-fn args*]
 ```
 
@@ -42,8 +42,8 @@ Each list a transaction contains represents either the addition or retraction of
 
 Each map a transaction contains is equivalent to a set of one or more *:db/add* operations. The map may include a *:db/id* key identifying the entity data that the map refers to. It may additionally include any number of attribute, value pairs.
 
-```
-<pre class="src src-clojure">{<span style="color: #008b8b;">:db/id</span> entity-id
+```clojure
+{:db/id entity-id
  attribute value
  attribute value
  ... }
@@ -53,9 +53,9 @@ Each map a transaction contains is equivalent to a set of one or more *:db/add* 
 
 Internally, the map structure gets transformed to the list structure. Each attribute/value pair becomes a *:db/add* list. If you did not provide an entity-id, Datomic will generate a temporary entity-id for you.
 
-```
-<pre class="src src-clojure">[<span style="color: #008b8b;">:db/add</span> entity-id attribute value]
-[<span style="color: #008b8b;">:db/add</span> entity-id attribute value]
+```clojure
+[:db/add entity-id attribute value]
+[:db/add entity-id attribute value]
 ...
 ```
 
@@ -98,9 +98,9 @@ The simplest kind of temporary id is a string that follows these rules:
 
 In the transaction data below, the temporary id "jdoe" is used to indicate that the two datoms are both about the same entity:
 
-```
-<pre class="src src-clojure">[[<span style="color: #008b8b;">:db/add</span> <span style="color: #8b2252;">"jdoe"</span> <span style="color: #008b8b;">:person/first</span> <span style="color: #8b2252;">"Jan"</span>]
- [<span style="color: #008b8b;">:db/add</span> <span style="color: #8b2252;">"jdoe"</span> <span style="color: #008b8b;">:person/last</span> <span style="color: #8b2252;">"Doe"</span>]]
+```clojure
+[[:db/add "jdoe" :person/first "Jan"]
+ [:db/add "jdoe" :person/last "Doe"]]
 ```
 
 
@@ -127,26 +127,26 @@ To add, modify or retract data about existing entities in a transaction, you mus
 
 For example, this query retrieves the id of an existing entity based on an email address.
 
-```
-<pre class="src src-clojure">[<span style="color: #008b8b;">:find</span> ?e <span style="color: #008b8b;">:in</span> $ ?email <span style="color: #008b8b;">:where</span> [?e <span style="color: #008b8b;">:person/email</span> ?email]]
+```clojure
+[:find ?e :in $ ?email :where [?e :person/email ?email]]
 ```
 
 
 
 If the entity id returned by the query is 17592186046416, the following transaction data will set the entity's customer status:
 
-```
-<pre class="src src-clojure">{<span style="color: #008b8b;">:db/id</span> 17592186046416
- <span style="color: #008b8b;">:customer/status</span> <span style="color: #008b8b;">:active</span>}
+```clojure
+{:db/id 17592186046416
+ :customer/status :active}
 ```
 
 
 
 If the entity in question has a unique identifier, you can specify the entity id by using a [lookup ref](../schema/identity.html#lookup-refs). Rather than querying the database, you can provide the unique attribute, value pair corresponding to the entity you want to assert or retract a fact for. Note that a lookup ref specified in a transaction will be resolved by the transactor.
 
-```
-<pre class="src src-clojure">{<span style="color: #008b8b;">:db/id</span> [<span style="color: #008b8b;">:customer/email</span> <span style="color: #8b2252;">"joe@example.com"</span>]
- <span style="color: #008b8b;">:customer/status</span> <span style="color: #008b8b;">:active</span>}
+```clojure
+{:db/id [:customer/email "joe@example.com"]
+ :customer/status :active}
 ```
 
 
@@ -165,8 +165,8 @@ You can also use *:db/ident* to define entities representing enumerated values t
 
 In the example below, the entity is specified by the ident *:person/name*:
 
-```
-<pre class="src src-clojure">[<span style="color: #008b8b;">:db/add</span> <span style="color: #008b8b;">:person/name</span> <span style="color: #008b8b;">:db/doc</span> <span style="color: #8b2252;">"A person's full name"</span>]
+```clojure
+[:db/add :person/name :db/doc "A person's full name"]
 ```
 
 
@@ -190,17 +190,17 @@ To add data to a new entity, build a transaction using *:db/add*implicitly with 
 
 This example builds a transaction that creates a new entity with two attributes, *:person/name* and *:person/email*.
 
-```
-<pre class="src src-clojure">[{<span style="color: #008b8b;">:person/name</span> <span style="color: #8b2252;">"Bob"</span>
-  <span style="color: #008b8b;">:person/email</span> <span style="color: #8b2252;">"bob@example.com"</span>}]
+```clojure
+[{:person/name "Bob"
+  :person/email "bob@example.com"}]
 ```
 
 
 
 This code constructs the same transaction programmatically.
 
-```
-<pre class="src src-java">tx = Util.list(Util.map(<span style="color: #8b2252;">":person/name"</span>, <span style="color: #8b2252;">"Bob"</span>, <span style="color: #8b2252;">":person/email"</span>, <span style="color: #8b2252;">"bob@example.com"</span>));
+```java
+tx = Util.list(Util.map(":person/name", "Bob", ":person/email", "bob@example.com"));
 ```
 
 
@@ -217,22 +217,22 @@ To add data to an existing entity, build a transaction using *:db/add*implicitly
 
 This example queries for an existing entity id and uses it in a new transaction to change the value of the entity's *:person/name*attribute to "Robert".
 
-```
-<pre class="src src-java">bob_id = Peer.query(
-  <span style="color: #8b2252;">"[:find ?e . :in $ ?email :where [?e :person/email ?email]]"</span>,
+```java
+bob_id = Peer.query(
+  "[:find ?e . :in $ ?email :where [?e :person/email ?email]]",
   conn.db(),
-  <span style="color: #8b2252;">"bob@example.com"</span>);
+  "bob@example.com");
 
-tx = Util.list(Util.map(<span style="color: #8b2252;">":db/id"</span>, bob_id, <span style="color: #8b2252;">":person/name"</span>, <span style="color: #8b2252;">"Robert"</span>));
+tx = Util.list(Util.map(":db/id", bob_id, ":person/name", "Robert"));
 ```
 
 
 
 The following example uses a lookup ref to perform the same transaction.
 
-```
-<pre class="src src-java">tx = Util.list(Util.map(<span style="color: #8b2252;">":db/id"</span>, Util.list(<span style="color: #8b2252;">":person/email"</span>, <span style="color: #8b2252;">"bob@example.com"</span>),
-                        <span style="color: #8b2252;">":person/name"</span>, <span style="color: #8b2252;">"Robert"</span>));
+```java
+tx = Util.list(Util.map(":db/id", Util.list(":person/email", "bob@example.com"),
+                        ":person/name", "Robert"));
 ```
 
 
@@ -247,27 +247,27 @@ Attributes of reference type allow entities to refer to other entities. When a t
 
 This example shows the literal representation of a transaction that creates two new entities, people named "Bob" and "Alice". Each entity has a reference to the other, connected using temporary ids, "bobid" and "aliceid", respectively. All instances of a given temporary id within a transaction will resolve to a single entity id.
 
-```
-<pre class="src src-clojure">[{<span style="color: #008b8b;">:db/id</span> <span style="color: #8b2252;">"bobid"</span>
-  <span style="color: #008b8b;">:person/name</span> <span style="color: #8b2252;">"Bob"</span>
-  <span style="color: #008b8b;">:person/spouse</span> <span style="color: #8b2252;">"aliceid"</span>}
- {<span style="color: #008b8b;">:db/id</span> <span style="color: #8b2252;">"aliceid"</span>
-  <span style="color: #008b8b;">:person/name</span> <span style="color: #8b2252;">"Alice"</span>
-  <span style="color: #008b8b;">:person/spouse</span> <span style="color: #8b2252;">"bobid"</span>}]
+```clojure
+[{:db/id "bobid"
+  :person/name "Bob"
+  :person/spouse "aliceid"}
+ {:db/id "aliceid"
+  :person/name "Alice"
+  :person/spouse "bobid"}]
 ```
 
 
 
 This example shows constructing the same transaction from code.
 
-```
-<pre class="src src-java">tx = <span style="color: #008b8b;">Util</span>.List(
-       Util.map(<span style="color: #8b2252;">":db/id"</span>, <span style="color: #8b2252;">"bobid"</span>,
-                <span style="color: #8b2252;">":person/name"</span>, <span style="color: #8b2252;">"Bob"</span>,
-                <span style="color: #8b2252;">":person/spouse"</span>, <span style="color: #8b2252;">"aliceid"</span>),
-       Util.map(<span style="color: #8b2252;">":db/id"</span>, <span style="color: #8b2252;">"aliceid"</span>,
-                <span style="color: #8b2252;">":person/name"</span>, <span style="color: #8b2252;">"Alice"</span>,
-                <span style="color: #8b2252;">":person/spouse"</span>, <span style="color: #8b2252;">"bobid"</span>));
+```java
+tx = Util.List(
+       Util.map(":db/id", "bobid",
+                ":person/name", "Bob",
+                ":person/spouse", "aliceid"),
+       Util.map(":db/id", "aliceid",
+                ":person/name", "Alice",
+                ":person/spouse", "bobid"));
 ```
 
 
@@ -280,11 +280,11 @@ This example shows constructing the same transaction from code.
 
 You can transact multiple values for a *:db.cardinality/many* attribute at one time using a list. The following example transacts a person named "Bob" with multiple aliases:
 
-```
-<pre class="src src-clojure">[{<span style="color: #008b8b;">:db/id</span> #db/id[<span style="color: #008b8b;">:db.part/user</span>]
-  <span style="color: #008b8b;">:person/name</span> <span style="color: #8b2252;">"Bob"</span>
-  <span style="color: #008b8b;">:person/email</span> <span style="color: #8b2252;">"bob@example.com"</span>
-  <span style="color: #008b8b;">:person/aliases</span> [<span style="color: #8b2252;">"Robert"</span> <span style="color: #8b2252;">"Bert"</span> <span style="color: #8b2252;">"Bobby"</span> <span style="color: #8b2252;">"Curly"</span>]}]
+```clojure
+[{:db/id #db/id[:db.part/user]
+  :person/name "Bob"
+  :person/email "bob@example.com"
+  :person/aliases ["Robert" "Bert" "Bobby" "Curly"]}]
 ```
 
 
@@ -302,12 +302,12 @@ Often, a group of related entities are created or modified in the same transacti
 
 As an example, the following data uses nested maps to specify two line items belonging to an order:
 
-```
-<pre class="src src-clojure">[{<span style="color: #008b8b;">:db/id</span> order-id
-  <span style="color: #008b8b;">:order/lineItems</span> [{<span style="color: #008b8b;">:lineItem/product</span> chocolate
-                     <span style="color: #008b8b;">:lineItem/quantity</span> 1}
-                    {<span style="color: #008b8b;">:lineItem/product</span> whisky
-                     <span style="color: #008b8b;">:lineItem/quantity</span> 2}]}]
+```clojure
+[{:db/id order-id
+  :order/lineItems [{:lineItem/product chocolate
+                     :lineItem/quantity 1}
+                    {:lineItem/product whisky
+                     :lineItem/quantity 2}]}]
 ```
 
 
@@ -319,15 +319,15 @@ Notice that
 
 Nested maps are often much more convenient than their equivalent flat expansions. The data below shows the same information order and line items as three independent entity maps.
 
-```
-<pre class="src src-clojure">[{<span style="color: #008b8b;">:db/id</span> order-id
-  <span style="color: #008b8b;">:order/lineItems</span> [item-1-id, item-2-id]}
- {<span style="color: #008b8b;">:db/id</span> item-1-id
-  <span style="color: #008b8b;">:lineItem/product</span> chocolate
-  <span style="color: #008b8b;">:lineItem/quantity</span> 1}
- {<span style="color: #008b8b;">:db/id</span> item-2-id
-  <span style="color: #008b8b;">:lineItem/product</span> whisky
-  <span style="color: #008b8b;">:lineItem/quantity</span> 2}]
+```clojure
+[{:db/id order-id
+  :order/lineItems [item-1-id, item-2-id]}
+ {:db/id item-1-id
+  :lineItem/product chocolate
+  :lineItem/quantity 1}
+ {:db/id item-2-id
+  :lineItem/product whisky
+  :lineItem/quantity 2}]
 ```
 
 
@@ -344,31 +344,31 @@ To retract data from an existing entity, build a transaction using *:db/retract*
 
 This example queries for an existing entity id and uses it in a new transaction to retract the value of the entity's *:person/name*attribute.
 
-```
-<pre class="src src-java">bob_id = Peer.query(
-  <span style="color: #8b2252;">"[:find ?e . :in $ ?email :where [?e :person/email ?email]]"</span>,
+```java
+bob_id = Peer.query(
+  "[:find ?e . :in $ ?email :where [?e :person/email ?email]]",
   conn.db(),
-  <span style="color: #8b2252;">"bob@example.com"</span>);
+  "bob@example.com");
 
-tx = Util.list(Util.list(<span style="color: #8b2252;">":db/retract"</span>, bob_id, <span style="color: #8b2252;">":person/name"</span>, <span style="color: #8b2252;">"Robert"</span>));
+tx = Util.list(Util.list(":db/retract", bob_id, ":person/name", "Robert"));
 ```
 
 
 
 The following example accomplishes the same thing with a lookup ref.
 
-```
-<pre class="src src-java">tx = Util.list(Util.list(<span style="color: #8b2252;">":db/retract"</span>, Util.list(<span style="color: #8b2252;">":person/email"</span> <span style="color: #8b2252;">"bob@example.com"</span>),
-                         <span style="color: #8b2252;">":person/name"</span>, <span style="color: #8b2252;">"Robert"</span>));
+```java
+tx = Util.list(Util.list(":db/retract", Util.list(":person/email" "bob@example.com"),
+                         ":person/name", "Robert"));
 ```
 
 
 
 And the following retracts all values of the entity's *:person/name* attribute.
 
-```
-<pre class="src src-java">tx = Util.list(Util.list(<span style="color: #8b2252;">":db/retract"</span>, Util.list(<span style="color: #8b2252;">":person/email"</span> <span style="color: #8b2252;">"bob@example.com"</span>),
-                         <span style="color: #8b2252;">":person/name"</span>));
+```java
+tx = Util.list(Util.list(":db/retract", Util.list(":person/email" "bob@example.com"),
+                         ":person/name"));
 ```
 
 
@@ -396,8 +396,8 @@ You should use *:db.part/user* for your application's entities, or you should cr
 
 This code gets a new temporary id in the *:db.part/user* partition.
 
-```
-<pre class="src src-java">temp_id = Peer.tempid(<span style="color: #8b2252;">":db.part/user"</span>);
+```java
+temp_id = Peer.tempid(":db.part/user");
 ```
 
 
@@ -410,8 +410,8 @@ In some cases, you may want to store the literal representation of a transaction
 
 You can insert temporary ids into the literal representation of a transaction using the following syntax:
 
-```
-<pre class="src src-clojure">#db/id[partition-name value*]
+```clojure
+#db/id[partition-name value*]
 ```
 
 
@@ -426,8 +426,8 @@ When the literal representation of a transaction is parsed, this syntax is inter
 
 String tempids create entities in the *default-partition* for the transactor process. You can set the default partition by editing the transactor properties file:
 
-```
-<pre class="src src-clojure">default-partition=:my.namespace/my-partition
+```clojure
+default-partition=:my.namespace/my-partition
 ```
 
 

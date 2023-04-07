@@ -37,16 +37,16 @@ The actual amount of memory used by the memory index depends on the recent trans
 
 By default, the transactor launches with 1G RAM, which works well with the recommended settings for development use.
 
-```
-<pre class="src src-sh">bin/transactor my-dev-transactor.properties
+```sh
+bin/transactor my-dev-transactor.properties
 ```
 
 
 
 The sample production settings are designed to work with 4G of RAM. When launching a transactor for production, you should always explicitly specify the *Xmx* and *Xms* flags:
 
-```
-<pre class="src src-sh">bin/transactor -Xmx4g -Xms4g my-production-transactor.properties
+```sh
+bin/transactor -Xmx4g -Xms4g my-production-transactor.properties
 ```
 
 
@@ -59,8 +59,8 @@ Most applications will never need to change these settings.
 
 Adaptive indexing automatically manages the memory index for you, and should generally be used with the default settings, regardless of the shape of your transaction load.
 
-```
-<pre class="src src-sh">memory-index-threshold=32m
+```sh
+memory-index-threshold=32m
 memory-index-max=512m
 ```
 
@@ -161,9 +161,9 @@ Note that peer processes may use up to the *memory-index-max* per connected data
 
 To adjust this balance, set the *datomic.objectCacheMax* [system property](../configuration/system-properties.html)before loading the peer library, e.g.
 
-```
-<pre class="src src-java"><span style="color: #b22222;">// </span><span style="color: #b22222;">on startup</span>
-System.setProperty(<span style="color: #8b2252;">"datomic.objectCacheMax"</span>, <span style="color: #8b2252;">"256m"</span>);
+```java
+// on startup
+System.setProperty("datomic.objectCacheMax", "256m");
 ```
 
 
@@ -257,8 +257,8 @@ On large systems, you may want to [prefer squuids](#prefer-squuids) and enable [
 
 By default, background indexing is mostly serial. You can request more parallelism in indexing by setting the `index-parallelism` [transactor](../overview/transactor.html)property, available in 0.9.5981 and later. `index-parallelism`defaults to 1. If you have high write volumes, a transactor with plenty of CPUs to spare, and are using a scalable [storage service](../overview/storage.html), you can set `index-parallelism` as high as 8 to speed up indexing jobs:
 
-```
-<pre class="src src-sh">index-parallelism=8
+```sh
+index-parallelism=8
 ```
 
 
@@ -405,16 +405,16 @@ It may be impossible to delete the underlying storage in a production system, as
 
 To reclaim deleted databases in a storage that is also under ongoing use, Datomic provides the *gc-deleted-dbs* command-line API, taking a system URI (a Datomic URI with database name omitted) as an argument. The following command will delete storage associated with any databases that have been deleted on the *foo* system:
 
-```
-<pre class="src src-sh">bin/datomic gc-deleted-dbs datomic:ddb://us-east-1/foo
+```sh
+bin/datomic gc-deleted-dbs datomic:ddb://us-east-1/foo
 ```
 
 
 
 Such garbage collection competes for resources with ongoing use of the system. You can reduce garbage collection's impact by pacing it with the *datomic.gcStoragePaceMsec* option, e.g.
 
-```
-<pre class="src src-sh">bin/datomic -Ddatomic.gcStoragePaceMsec=10 gc-deleted-dbs datomic:ddb://us-east-1/foo
+```sh
+bin/datomic -Ddatomic.gcStoragePaceMsec=10 gc-deleted-dbs datomic:ddb://us-east-1/foo
 ```
 
 

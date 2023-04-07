@@ -30,27 +30,27 @@ Transactions take a map with the following keys
 
 keyrequiredusage:tx-datayesthe data to be transacted:timeoutnotimeout after which client stops waiting for a responseThe `:tx-data` format is fully described in the [Transaction Data Reference](transaction-data-reference.html). The following example shows a simple transaction using the Synchronous API.
 
-```
-<pre class="src src-clojure"><span style="color: #b22222;">;; </span><span style="color: #b22222;">load the Synchronous API with alias 'd'</span>
-(<span style="color: #a0522d;">require</span> '[datomic.client.api <span style="color: #008b8b;">:as</span> d])
+```clojure
+;; load the Synchronous API with alias 'd'
+(require '[datomic.client.api :as d])
 
-<span style="color: #b22222;">;; </span><span style="color: #b22222;">Get a connection</span>
-(<span style="color: #a020f0;">def</span> <span style="color: #0000ff;">conn</span> (<span style="color: #483d8b;">-></span>
-            {<span style="color: #008b8b;">:server-type</span> <span style="color: #008b8b;">:ion</span>
-             <span style="color: #008b8b;">:region</span> <span style="color: #8b2252;">"region"</span> <span style="color: #b22222;">;; </span><span style="color: #b22222;">e.g. us-east-1</span>
-             <span style="color: #008b8b;">:system</span> <span style="color: #8b2252;">"system-name"</span>
-             <span style="color: #008b8b;">:endpoint</span> <span style="color: #8b2252;">"http://entry.system-name.region.datomic.net:8182/"</span>
-             <span style="color: #008b8b;">:proxy-port</span> 8182}
+;; Get a connection
+(def conn (->
+            {:server-type :ion
+             :region "region" ;; e.g. us-east-1
+             :system "system-name"
+             :endpoint "http://entry.system-name.region.datomic.net:8182/"
+             :proxy-port 8182}
             (d/client)
-            (d/connect {<span style="color: #008b8b;">:db-name</span> <span style="color: #8b2252;">"database name"</span>})))
+            (d/connect {:db-name "database name"})))
 
-<span style="color: #b22222;">;; </span><span style="color: #b22222;">transact a movie</span>
-(<span style="color: #a020f0;">def</span> <span style="color: #0000ff;">result</span> (d/transact conn {<span style="color: #008b8b;">:tx-data</span> [{<span style="color: #008b8b;">:db/id</span> <span style="color: #8b2252;">"goonies"</span>
-                                         <span style="color: #008b8b;">:movie/title</span> <span style="color: #8b2252;">"The Goonies"</span>
-                                         <span style="color: #008b8b;">:movie/genre</span> <span style="color: #8b2252;">"action/adventure"</span>
-                                         <span style="color: #008b8b;">:movie/release-year</span> 1985}]}))
-<span style="color: #b22222;">;; </span><span style="color: #b22222;">what id was assigned to The Goonies?</span>
-(<span style="color: #483d8b;">-></span> result <span style="color: #008b8b;">:tempids</span> (<span style="color: #a0522d;">get</span> <span style="color: #8b2252;">"goonies"</span>))
+;; transact a movie
+(def result (d/transact conn {:tx-data [{:db/id "goonies"
+                                         :movie/title "The Goonies"
+                                         :movie/genre "action/adventure"
+                                         :movie/release-year 1985}]}))
+;; what id was assigned to The Goonies?
+(-> result :tempids (get "goonies"))
 ```
 
 
@@ -66,12 +66,12 @@ Often, a group of related entities are created or modified in the same transacti
 
 As an example, the following data uses nested maps to specify two line items belonging to an order:
 
-```
-<pre class="src src-clojure">[{<span style="color: #008b8b;">:db/id</span> order-id
-  <span style="color: #008b8b;">:order/lineItems</span> [{<span style="color: #008b8b;">:lineItem/product</span> chocolate
-                     <span style="color: #008b8b;">:lineItem/quantity</span> 1}
-                    {<span style="color: #008b8b;">:lineItem/product</span> whisky
-                     <span style="color: #008b8b;">:lineItem/quantity</span> 2}]}]
+```clojure
+[{:db/id order-id
+  :order/lineItems [{:lineItem/product chocolate
+                     :lineItem/quantity 1}
+                    {:lineItem/product whisky
+                     :lineItem/quantity 2}]}]
 ```
 
 
@@ -83,15 +83,15 @@ Notice that
 
 Nested maps are often much more convenient than their equivalent flat expansions. The data below shows the same information order and line items as three independent entity maps.
 
-```
-<pre class="src src-clojure">[{<span style="color: #008b8b;">:db/id</span> order-id
-  <span style="color: #008b8b;">:order/lineItems</span> [item-1-id, item-2-id]}
- {<span style="color: #008b8b;">:db/id</span> item-1-id
-  <span style="color: #008b8b;">:lineItem/product</span> chocolate
-  <span style="color: #008b8b;">:lineItem/quantity</span> 1}
- {<span style="color: #008b8b;">:db/id</span> item-2-id
-  <span style="color: #008b8b;">:lineItem/product</span> whisky
-  <span style="color: #008b8b;">:lineItem/quantity</span> 2}]
+```clojure
+[{:db/id order-id
+  :order/lineItems [item-1-id, item-2-id]}
+ {:db/id item-1-id
+  :lineItem/product chocolate
+  :lineItem/quantity 1}
+ {:db/id item-2-id
+  :lineItem/product whisky
+  :lineItem/quantity 2}]
 ```
 
 
@@ -117,75 +117,75 @@ The `:tempids` can be used to [recover the ids](#tempid-resolution) of newly-cre
 
 Continuing from the transaction in the previous section:
 
-```
-<pre class="src src-clojure">
-<span style="color: #b22222;">;; </span><span style="color: #b22222;">Database value before transaction</span>
-(<span style="color: #a020f0;">def</span> <span style="color: #0000ff;">db-before</span> (<span style="color: #008b8b;">:db-before</span> result))
+```clojure
 
-<span style="color: #b22222;">;; </span><span style="color: #b22222;">Database value after transaction</span>
-(<span style="color: #a020f0;">def</span> <span style="color: #0000ff;">db-after</span> (<span style="color: #008b8b;">:db-after</span> result))
+;; Database value before transaction
+(def db-before (:db-before result))
 
-<span style="color: #b22222;">;; </span><span style="color: #b22222;">Query attempt on previous db value</span>
-(d/q '[<span style="color: #008b8b;">:find</span> ?e
-       <span style="color: #008b8b;">:where</span> [?e <span style="color: #008b8b;">:movie/release-year</span> 1985]]
+;; Database value after transaction
+(def db-after (:db-after result))
+
+;; Query attempt on previous db value
+(d/q '[:find ?e
+       :where [?e :movie/release-year 1985]]
      db-before)
 
 ```
 
 
 
-```
-<pre class="src src-clojure">=>
-[] <span style="color: #b22222;">;; </span><span style="color: #b22222;">empty list, since the data didn't exist before the transaction</span>
+```clojure
+=>
+[] ;; empty list, since the data didn't exist before the transaction
 ```
 
 
 
-```
-<pre class="src src-clojure"><span style="color: #b22222;">;; </span><span style="color: #b22222;">Query attempt on new db value</span>
-(d/q '[<span style="color: #008b8b;">:find</span> ?e
-       <span style="color: #008b8b;">:where</span> [?e <span style="color: #008b8b;">:movie/release-year</span> 1985]]
+```clojure
+;; Query attempt on new db value
+(d/q '[:find ?e
+       :where [?e :movie/release-year 1985]]
      db-after)
 
 ```
 
 
 
-```
-<pre class="src src-clojure">=>
-[[8945626603585608]] <span style="color: #b22222;">;; </span><span style="color: #b22222;">(your value may vary)</span>
-```
-
-
-
-```
-<pre class="src src-clojure"><span style="color: #b22222;">;; </span><span style="color: #b22222;">Grab the temp id for the "goonies" datom /for this transaction/</span>
-<span style="color: #b22222;">;; </span><span style="color: #b22222;">Further "goonies" transactions may not have the same id</span>
-(<span style="color: #a020f0;">def</span> <span style="color: #0000ff;">temp-id</span> (<span style="color: #483d8b;">-></span> result <span style="color: #008b8b;">:tempids</span> (<span style="color: #a0522d;">get</span> <span style="color: #8b2252;">"goonies"</span>)))
-
-<span style="color: #b22222;">;; </span><span style="color: #b22222;">Utilize the temp id against the "after" state of the db</span>
-(d/pull db-after '[<span style="color: #008b8b;">:movie/title</span>] temp-id)
+```clojure
+=>
+[[8945626603585608]] ;; (your value may vary)
 ```
 
 
 
-```
-<pre class="src src-clojure">=>
-#<span style="color: #008b8b;">:movie</span>{<span style="color: #008b8b;">:title</span> <span style="color: #8b2252;">"The Goonies"</span>}
-```
+```clojure
+;; Grab the temp id for the "goonies" datom /for this transaction/
+;; Further "goonies" transactions may not have the same id
+(def temp-id (-> result :tempids (get "goonies")))
 
-
-
-```
-<pre class="src src-clojure"><span style="color: #b22222;">;; </span><span style="color: #b22222;">Or against the current db state</span>
-(d/pull (d/db conn) '[<span style="color: #008b8b;">:movie/title</span>] temp-id)
+;; Utilize the temp id against the "after" state of the db
+(d/pull db-after '[:movie/title] temp-id)
 ```
 
 
 
+```clojure
+=>
+#:movie{:title "The Goonies"}
 ```
-<pre class="src src-clojure">=>
-#<span style="color: #008b8b;">:movie</span>{<span style="color: #008b8b;">:title</span> <span style="color: #8b2252;">"The Goonies"</span>}
+
+
+
+```clojure
+;; Or against the current db state
+(d/pull (d/db conn) '[:movie/title] temp-id)
+```
+
+
+
+```clojure
+=>
+#:movie{:title "The Goonies"}
 ```
 
 
@@ -199,32 +199,32 @@ Transaction Anomalies
 
 Transaction failures are reported as [anomalies](../client/client-api.html#anomalies). For example, the structurally invalid transaction below causes the synchronous API to throw an exception:
 
-```
-<pre class="src src-clojure">(d/transact conn {<span style="color: #008b8b;">:tx-data</span> [[<span style="color: #008b8b;">:this</span> <span style="color: #8b2252;">"does not"</span> <span style="color: #008b8b;">:make</span> <span style="color: #8b2252;">"sense"</span>]]})
+```clojure
+(d/transact conn {:tx-data [[:this "does not" :make "sense"]]})
 ```
 
 
 
-```
-<pre class="src src-clojure">=>
-<span style="color: #483d8b;">ExceptionInfo</span> <span style="color: #483d8b;">Unable</span> to resolve data function: <span style="color: #008b8b;">:this</span>  clojure.core/ex-info (core.clj:4725)
+```clojure
+=>
+ExceptionInfo Unable to resolve data function: :this  clojure.core/ex-info (core.clj:4725)
 ```
 
 
 
 You can use [ex-data](https://clojure.github.io/clojure/clojure.core-api.html#clojure.core/ex-data) to extract the anomaly map from the exception:
 
-```
-<pre class="src src-clojure"><span style="color: #b22222;">;; </span><span style="color: #b22222;">continuing previous example</span>
+```clojure
+;; continuing previous example
 (ex-data *e)
 ```
 
 
 
-```
-<pre class="src src-clojure">=>
-{<span style="color: #008b8b;">:cognitect.anomalies/category</span> <span style="color: #008b8b;">:cognitect.anomalies/incorrect</span>, 
- <span style="color: #008b8b;">:cognitect.anomalies/message</span> <span style="color: #8b2252;">"Unable to resolve data function: :this"</span>, 
+```clojure
+=>
+{:cognitect.anomalies/category :cognitect.anomalies/incorrect, 
+ :cognitect.anomalies/message "Unable to resolve data function: :this", 
  ...}
 ```
 
@@ -243,26 +243,26 @@ If an entity does not have a unique attribute, then Datomic will assign a new en
 
 The `:tempids` key of a transaction result has a mapping from the tempids passed in to the actual ids assigned. The example below demonstrates the resolution of tempids "item-1" and "item-2".
 
+```clojure
+(-> conn
+    (d/transact {:tx-data [[:db/add "item-1" :inv/color :green]
+                           [:db/add "item-1" :inv/sku "SKU-2001"]
+                           [:db/add "item-1" :inv/size :large]
+                           {:db/id "item-2"
+                            :inv/sku "SKU-2002"
+                            :inv/size :small}]})
+    :tempids)
 ```
-<pre class="src src-clojure">(<span style="color: #483d8b;">-></span> conn
-    (d/transact {<span style="color: #008b8b;">:tx-data</span> [[<span style="color: #008b8b;">:db/add</span> <span style="color: #8b2252;">"item-1"</span> <span style="color: #008b8b;">:inv/color</span> <span style="color: #008b8b;">:green</span>]
-                           [<span style="color: #008b8b;">:db/add</span> <span style="color: #8b2252;">"item-1"</span> <span style="color: #008b8b;">:inv/sku</span> <span style="color: #8b2252;">"SKU-2001"</span>]
-                           [<span style="color: #008b8b;">:db/add</span> <span style="color: #8b2252;">"item-1"</span> <span style="color: #008b8b;">:inv/size</span> <span style="color: #008b8b;">:large</span>]
-                           {<span style="color: #008b8b;">:db/id</span> <span style="color: #8b2252;">"item-2"</span>
-                            <span style="color: #008b8b;">:inv/sku</span> <span style="color: #8b2252;">"SKU-2002"</span>
-                            <span style="color: #008b8b;">:inv/size</span> <span style="color: #008b8b;">:small</span>}]})
-    <span style="color: #008b8b;">:tempids</span>)
-```
 
 
 
-```
-<pre class="src src-clojure">=>
-{<span style="color: #8b2252;">"item-2"</span> 2410129488085138, <span style="color: #8b2252;">"item-1"</span> 39292147530203281}
+```clojure
+=>
+{"item-2" 2410129488085138, "item-1" 39292147530203281}
 
-<span style="color: #b22222;">;; </span><span style="color: #b22222;">Tempids are meaningful only inside the scope of a single transaction,</span>
-<span style="color: #b22222;">;; </span><span style="color: #b22222;">e.g. the tempid "item-1" will not necessarily refer to the same entity</span>
-<span style="color: #b22222;">;; </span><span style="color: #b22222;">in two different transactions.</span>
+;; Tempids are meaningful only inside the scope of a single transaction,
+;; e.g. the tempid "item-1" will not necessarily refer to the same entity
+;; in two different transactions.
 ```
 
 
@@ -278,23 +278,23 @@ If an entity has a [`:db.unique/identity`](../schema/schema-reference.html#db-un
 
 The transaction below upserts SKU-42 via tempid "foo" returning the actual entity id:
 
+```clojure
+;; Schema
+(d/transact conn {:tx-data [{:db/ident :inv/sku
+                             :db/cardinality :db.cardinality/one
+                             :db/valueType :db.type/string
+                             :db/unique :db.unique/identity}]})
+
+(-> conn
+    (d/transact {:tx-data [[:db/add "foo" :inv/sku "SKU-42"]]})
+    :tempids
+    (get "foo"))
 ```
-<pre class="src src-clojure"><span style="color: #b22222;">;; </span><span style="color: #b22222;">Schema</span>
-(d/transact conn {<span style="color: #008b8b;">:tx-data</span> [{<span style="color: #008b8b;">:db/ident</span> <span style="color: #008b8b;">:inv/sku</span>
-                             <span style="color: #008b8b;">:db/cardinality</span> <span style="color: #008b8b;">:db.cardinality/one</span>
-                             <span style="color: #008b8b;">:db/valueType</span> <span style="color: #008b8b;">:db.type/string</span>
-                             <span style="color: #008b8b;">:db/unique</span> <span style="color: #008b8b;">:db.unique/identity</span>}]})
-
-(<span style="color: #483d8b;">-></span> conn
-    (d/transact {<span style="color: #008b8b;">:tx-data</span> [[<span style="color: #008b8b;">:db/add</span> <span style="color: #8b2252;">"foo"</span> <span style="color: #008b8b;">:inv/sku</span> <span style="color: #8b2252;">"SKU-42"</span>]]})
-    <span style="color: #008b8b;">:tempids</span>
-    (<span style="color: #a0522d;">get</span> <span style="color: #8b2252;">"foo"</span>))
-```
 
 
 
-```
-<pre class="src src-clojure">=>
+```clojure
+=>
 49460431063875660
 ```
 
@@ -302,17 +302,17 @@ The transaction below upserts SKU-42 via tempid "foo" returning the actual entit
 
 Any subsequent transaction data about `:inv/sku` "SKU-42" will automatically resolve to the same entity id, regardless of the tempid used. The following transaction uses "bar", and resolves the same entity id of 49460431063875660:
 
-```
-<pre class="src src-clojure">(<span style="color: #483d8b;">-></span> conn
-    (d/transact {<span style="color: #008b8b;">:tx-data</span> [[<span style="color: #008b8b;">:db/add</span> <span style="color: #8b2252;">"bar"</span> <span style="color: #008b8b;">:inv/sku</span> <span style="color: #8b2252;">"SKU-42"</span>]]})
-    <span style="color: #008b8b;">:tempids</span>
-    (<span style="color: #a0522d;">get</span> <span style="color: #8b2252;">"bar"</span>))
+```clojure
+(-> conn
+    (d/transact {:tx-data [[:db/add "bar" :inv/sku "SKU-42"]]})
+    :tempids
+    (get "bar"))
 ```
 
 
 
-```
-<pre class="src src-clojure">=>
+```clojure
+=>
 49460431063875660
 ```
 
@@ -329,21 +329,21 @@ If an entity has a [`:db.unique/value`](../schema/schema-reference.html#db-uniqu
 
 In the example below, a `:reservation/code` must be unique and can never be assigned again. The attempt to use "HQJ43P" on a second entity causes an anomaly.
 
+```clojure
+(d/transact conn {:tx-data [{:db/ident :reservation/code
+                             :db/valueType :db.type/string
+                             :db/cardinality :db.cardinality/one
+                             :db/unique :db.unique/value}]})
+(d/transact conn {:tx-data [[:db/add "" :reservation/code "HQJ43P"]]})
+
+(d/transact conn {:tx-data [[:db/add "" :reservation/code "HQJ43P"]]})
 ```
-<pre class="src src-clojure">(d/transact conn {<span style="color: #008b8b;">:tx-data</span> [{<span style="color: #008b8b;">:db/ident</span> <span style="color: #008b8b;">:reservation/code</span>
-                             <span style="color: #008b8b;">:db/valueType</span> <span style="color: #008b8b;">:db.type/string</span>
-                             <span style="color: #008b8b;">:db/cardinality</span> <span style="color: #008b8b;">:db.cardinality/one</span>
-                             <span style="color: #008b8b;">:db/unique</span> <span style="color: #008b8b;">:db.unique/value</span>}]})
-(d/transact conn {<span style="color: #008b8b;">:tx-data</span> [[<span style="color: #008b8b;">:db/add</span> <span style="color: #8b2252;">""</span> <span style="color: #008b8b;">:reservation/code</span> <span style="color: #8b2252;">"HQJ43P"</span>]]})
-
-(d/transact conn {<span style="color: #008b8b;">:tx-data</span> [[<span style="color: #008b8b;">:db/add</span> <span style="color: #8b2252;">""</span> <span style="color: #008b8b;">:reservation/code</span> <span style="color: #8b2252;">"HQJ43P"</span>]]})
-```
 
 
 
-```
-<pre class="src src-clojure">=>
-<span style="color: #483d8b;">ExceptionInfo</span> <span style="color: #483d8b;">Unique</span> conflict: <span style="color: #008b8b;">:reservation/code</span>,
+```clojure
+=>
+ExceptionInfo Unique conflict: :reservation/code,
       value: HQJ43P already held by: 35650565019009171
                     asserted for: 26929238787489940
 
@@ -351,16 +351,16 @@ In the example below, a `:reservation/code` must be unique and can never be assi
 
 
 
-```
-<pre class="src src-clojure"><span style="color: #b22222;">;; </span><span style="color: #b22222;">Other non-duplicate values work fine</span>
-(d/transact conn {<span style="color: #008b8b;">:tx-data</span> [[<span style="color: #008b8b;">:db/add</span> <span style="color: #8b2252;">""</span> <span style="color: #008b8b;">:reservation/code</span> <span style="color: #8b2252;">"HJ1337"</span>]]})
+```clojure
+;; Other non-duplicate values work fine
+(d/transact conn {:tx-data [[:db/add "" :reservation/code "HJ1337"]]})
 ```
 
 
 
-```
-<pre class="src src-clojure">=>
-{<span style="color: #008b8b;">:db-before</span> {<span style="color: #008b8b;">:database-id</span> ...} ... }
+```clojure
+=>
+{:db-before {:database-id ...} ... }
 ```
 
 
@@ -376,27 +376,27 @@ As with all asynchronous operations, Datomic client libraries provide a way to c
 
 The example below sets a very low timeout of 1 msec, leading (at least in some tests) to a timeout:
 
-```
-<pre class="src src-clojure">(d/transact conn {<span style="color: #008b8b;">:tx-data</span> [[<span style="color: #008b8b;">:db/add</span> <span style="color: #8b2252;">""</span> <span style="color: #008b8b;">:db/doc</span> <span style="color: #8b2252;">"might not succeed!"</span>]]
-                  <span style="color: #008b8b;">:timeout</span> 1})
+```clojure
+(d/transact conn {:tx-data [[:db/add "" :db/doc "might not succeed!"]]
+                  :timeout 1})
 ```
 
 
 
-```
-<pre class="src src-clojure">=>
-#<span style="color: #008b8b;">:cognitect.anomalies</span>{<span style="color: #008b8b;">:category</span> <span style="color: #008b8b;">:cognitect.anomalies/interrupted</span>,
-                      <span style="color: #008b8b;">:message</span> <span style="color: #8b2252;">"Datomic Client Timeout"</span>}
+```clojure
+=>
+#:cognitect.anomalies{:category :cognitect.anomalies/interrupted,
+                      :message "Datomic Client Timeout"}
 ```
 
 
 
 When a client times out while waiting for a transaction to complete, the client does not know whether the transaction succeeded and will need to query a recent value of the database to discover what happened. For the previous example, you could use a query like:
 
-```
-<pre class="src src-clojure">(d/q '[<span style="color: #008b8b;">:find</span> ?e ?when
-      <span style="color: #008b8b;">:where</span> [?e <span style="color: #008b8b;">:db/doc</span> <span style="color: #8b2252;">"might not succeed!"</span> ?tx]
-             [?tx <span style="color: #008b8b;">:db/txInstant</span> ?when]]
+```clojure
+(d/q '[:find ?e ?when
+      :where [?e :db/doc "might not succeed!" ?tx]
+             [?tx :db/txInstant ?when]]
      (d/db conn))
 ```
 
@@ -419,14 +419,14 @@ You can query for transaction entities with particular attributes and values the
 
 This example below create a `:data/source` attribute to indicate where data came from, and then sets that attribute on a transaction.
 
-```
-<pre class="src src-clojure">(d/transact conn {<span style="color: #008b8b;">:tx-data</span> [{<span style="color: #008b8b;">:db/ident</span> <span style="color: #008b8b;">:data/source</span>
-                             <span style="color: #008b8b;">:db/valueType</span> <span style="color: #008b8b;">:db.type/string</span>
-                             <span style="color: #008b8b;">:db/cardinality</span> <span style="color: #008b8b;">:db.cardinality/one</span>
-                             <span style="color: #008b8b;">:db/doc</span> <span style="color: #8b2252;">"URI this transaction was imported from"</span>}]})
-(d/transact conn {<span style="color: #008b8b;">:tx-data</span> [{<span style="color: #008b8b;">:db/id</span> <span style="color: #8b2252;">"datomic.tx"</span>
-                             <span style="color: #008b8b;">:data/source</span> <span style="color: #8b2252;">"http://example.com/catalog-2_29_2012.xml"</span>}
-                            {<span style="color: #008b8b;">:inv/sku</span> <span style="color: #8b2252;">"SKU-42"</span> <span style="color: #008b8b;">:inv/color</span> <span style="color: #008b8b;">:green</span> <span style="color: #008b8b;">:inv/size</span> <span style="color: #008b8b;">:large</span>}]})
+```clojure
+(d/transact conn {:tx-data [{:db/ident :data/source
+                             :db/valueType :db.type/string
+                             :db/cardinality :db.cardinality/one
+                             :db/doc "URI this transaction was imported from"}]})
+(d/transact conn {:tx-data [{:db/id "datomic.tx"
+                             :data/source "http://example.com/catalog-2_29_2012.xml"}
+                            {:inv/sku "SKU-42" :inv/color :green :inv/size :large}]})
 ```
 
 
@@ -442,10 +442,10 @@ You can set `:db/txInstant` explicitly, overriding Datomic's clock time. When yo
 
 The transaction below might occur in an import of historical data, adding information about SKU-42 with a transaction time back in 2001. Note that for this transaction to work, everything already in the database, including e.g. the schema itself, must also have been backdated.
 
-```
-<pre class="src src-clojure">(d/transact conn {<span style="color: #008b8b;">:tx-data</span> [{<span style="color: #008b8b;">:inv/sku</span> <span style="color: #8b2252;">"SKU-42"</span>
-                             <span style="color: #008b8b;">:inv/color</span> <span style="color: #008b8b;">:green</span>}
-                            [<span style="color: #008b8b;">:db/add</span> <span style="color: #8b2252;">"datomic.tx"</span> <span style="color: #008b8b;">:db/txInstant</span> #inst <span style="color: #8b2252;">"2001"</span>]]})
+```clojure
+(d/transact conn {:tx-data [{:inv/sku "SKU-42"
+                             :inv/color :green}
+                            [:db/add "datomic.tx" :db/txInstant #inst "2001"]]})
 ```
 
 
@@ -461,11 +461,11 @@ A datom is *redundant* with the current value of the database if there is a matc
 
 For example, imagine that SKU-42 does not exist and you transact the following:
 
-```
-<pre class="src src-clojure">(<span style="color: #483d8b;">-></span> conn
-    (d/transact {<span style="color: #008b8b;">:tx-data</span> [{<span style="color: #008b8b;">:inv/sku</span> <span style="color: #8b2252;">"SKU-42"</span>
-                            <span style="color: #008b8b;">:inv/color</span> <span style="color: #008b8b;">:green</span>}]})
-    <span style="color: #008b8b;">:tx-data</span>)
+```clojure
+(-> conn
+    (d/transact {:tx-data [{:inv/sku "SKU-42"
+                            :inv/color :green}]})
+    :tx-data)
 ```
 
 
@@ -496,32 +496,32 @@ All other keys should be namespace-qualified and all data passed to cancel must 
 
 The example below uses a transaction function to ensure that users always have a `name` and `email`. The first transaction succeeds, but the second is canceled since `:address` is passed instead of `:email`.
 
-```
-<pre class="src src-clojure"><span style="color: #b22222;">;; </span><span style="color: #b22222;">Transaction function</span>
-(<span style="color: #a020f0;">defn</span> <span style="color: #0000ff;">add-user</span> [db umap]
-  (<span style="color: #483d8b;">if</span> (<span style="color: #a0522d;">every?</span> umap [<span style="color: #008b8b;">:name</span> <span style="color: #008b8b;">:email</span>])
-    [{<span style="color: #008b8b;">:user/name</span> (<span style="color: #008b8b;">:name</span> umap)
-      <span style="color: #008b8b;">:user/email</span> (<span style="color: #008b8b;">:email</span> umap)}]
-    (datomic.ion/cancel {<span style="color: #008b8b;">:cognitect.anomalies/category</span> <span style="color: #008b8b;">:cognitect.anomalies/incorrect</span>
-                         <span style="color: #008b8b;">:cognitect.anomalies/message</span> <span style="color: #8b2252;">"User map must contain :email and :name"</span>})))
+```clojure
+;; Transaction function
+(defn add-user [db umap]
+  (if (every? umap [:name :email])
+    [{:user/name (:name umap)
+      :user/email (:email umap)}]
+    (datomic.ion/cancel {:cognitect.anomalies/category :cognitect.anomalies/incorrect
+                         :cognitect.anomalies/message "User map must contain :email and :name"})))
 ​
-(d/transact conn {<span style="color: #008b8b;">:tx-data</span> ['(datomic.sample.txfns/add-user {<span style="color: #008b8b;">:name</span> <span style="color: #8b2252;">"Marshall"</span> <span style="color: #008b8b;">:email</span> <span style="color: #8b2252;">"test@test.com"</span>})]})
+(d/transact conn {:tx-data ['(datomic.sample.txfns/add-user {:name "Marshall" :email "test@test.com"})]})
 ```
 
 
 
-```
-<pre class="src src-clojure">=> <span style="color: #b22222;">;; </span><span style="color: #b22222;">tx result map</span>
-```
-
-
-
-```
-<pre class="src src-clojure">(d/transact conn {<span style="color: #008b8b;">:tx-data</span> ['(datomic.sample.txfns/add-user {<span style="color: #008b8b;">:name</span> <span style="color: #8b2252;">"Marshall"</span> <span style="color: #008b8b;">:address</span> <span style="color: #8b2252;">"test@test.com"</span>})]})
+```clojure
+=> ;; tx result map
 ```
 
 
 
+```clojure
+(d/transact conn {:tx-data ['(datomic.sample.txfns/add-user {:name "Marshall" :address "test@test.com"})]})
 ```
-<pre class="src src-clojure">=> <span style="color: #483d8b;">Execution</span> error (<span style="color: #483d8b;">ExceptionInfo</span>) at datomic.client.api.async/ares (async.clj:58).
+
+
+
+```clojure
+=> Execution error (ExceptionInfo) at datomic.client.api.async/ares (async.clj:58).
 ```

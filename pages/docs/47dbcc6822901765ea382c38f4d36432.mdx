@@ -199,14 +199,14 @@ Ensure that you have sourced the right credentials with all necessary permission
 
 The client error:
 
-```
-<pre class="src src-clojure"><span style="color: #483d8b;">Exception</span> in thread <span style="color: #8b2252;">"main"</span> clojure.lang.ExceptionInfo: <span style="color: #483d8b;">Unable</span> to connect to system: 
-{<span style="color: #008b8b;">:cognitect.anomalies/category</span> <span style="color: #008b8b;">:cognitect.anomalies/fault</span>, <span style="color: #008b8b;">:cognitect.anomalies/message</span> <span style="color: #8b2252;">"SOCKS4 tunnel failed, connection closed"</span>, <span style="color: #008b8b;">:cognitect.http-client/throwable</span> #error {
- <span style="color: #008b8b;">:cause</span> <span style="color: #8b2252;">"SOCKS4 tunnel failed, connection closed"</span>
- <span style="color: #008b8b;">:via</span>
-  [{<span style="color: #008b8b;">:type</span> <span style="color: #483d8b;">java.io.IOException</span>
-    <span style="color: #008b8b;">:message</span> <span style="color: #8b2252;">"SOCKS4 tunnel failed, connection closed"</span>
-    <span style="color: #008b8b;">:at</span> [<span style="color: #483d8b;">org.eclipse.jetty.client.Socks4Proxy$Socks4ProxyConnection</span> <span style="color: #483d8b;">onFillable</span> <span style="color: #8b2252;">"Socks4Proxy.java"</span> 166]}] ...
+```clojure
+Exception in thread "main" clojure.lang.ExceptionInfo: Unable to connect to system: 
+{:cognitect.anomalies/category :cognitect.anomalies/fault, :cognitect.anomalies/message "SOCKS4 tunnel failed, connection closed", :cognitect.http-client/throwable #error {
+ :cause "SOCKS4 tunnel failed, connection closed"
+ :via
+  [{:type java.io.IOException
+    :message "SOCKS4 tunnel failed, connection closed"
+    :at [org.eclipse.jetty.client.Socks4Proxy$Socks4ProxyConnection onFillable "Socks4Proxy.java" 166]}] ...
 ```
 
 
@@ -246,16 +246,16 @@ As of Java 9 the `jaxb` module was removed from the default JDK. As such, you mu
 
 The following error will occur if your project has a transient dependency on a more recent version of Apache Jetty than the version used by Datomic:
 
-```
-<pre class="src src-clojure">#error {
- <span style="color: #008b8b;">:cause</span> <span style="color: #8b2252;">"org.eclipse.jetty.util.thread.Invocable$InvocationType"</span>
-  <span style="color: #008b8b;">:via</span>
-   [{<span style="color: #008b8b;">:type</span> <span style="color: #483d8b;">java.lang.NoClassDefFoundError</span>
-     <span style="color: #008b8b;">:message</span> <span style="color: #8b2252;">"org/eclipse/jetty/util/thread/Invocable$InvocationType"</span>
-     <span style="color: #008b8b;">:at</span> [<span style="color: #483d8b;">org.eclipse.jetty.io.ManagedSelector</span> <init> <span style="color: #8b2252;">"ManagedSelector.java"</span> 79]}
-    {<span style="color: #008b8b;">:type</span> <span style="color: #483d8b;">java.lang.ClassNotFoundException</span>
-     <span style="color: #008b8b;">:message</span> <span style="color: #8b2252;">"org.eclipse.jetty.util.thread.Invocable$InvocationType"</span>
-     <span style="color: #008b8b;">:at</span> [<span style="color: #483d8b;">java.net.URLClassLoader</span> <span style="color: #483d8b;">findClass</span> <span style="color: #8b2252;">"URLClassLoader.java"</span> 381]}]
+```clojure
+#error {
+ :cause "org.eclipse.jetty.util.thread.Invocable$InvocationType"
+  :via
+   [{:type java.lang.NoClassDefFoundError
+     :message "org/eclipse/jetty/util/thread/Invocable$InvocationType"
+     :at [org.eclipse.jetty.io.ManagedSelector <init> "ManagedSelector.java" 79]}
+    {:type java.lang.ClassNotFoundException
+     :message "org.eclipse.jetty.util.thread.Invocable$InvocationType"
+     :at [java.net.URLClassLoader findClass "URLClassLoader.java" 381]}]
  ...}
 ```
 
@@ -263,9 +263,9 @@ The following error will occur if your project has a transient dependency on a m
 
 The conflict can be resolved by excluding the version of Jetty used by Datomic:
 
-```
-<pre class="src src-clojure">[com.datomic/client-cloud <span style="color: #8b2252;">"0.8.54"</span>
- <span style="color: #008b8b;">:exclusions</span> [org.eclipse.jetty/jetty-client
+```clojure
+[com.datomic/client-cloud "0.8.54"
+ :exclusions [org.eclipse.jetty/jetty-client
               org.eclipse.jetty/jetty-http
               org.eclipse.jetty/jetty-util]]
 ```
@@ -280,9 +280,9 @@ The conflict can be resolved by excluding the version of Jetty used by Datomic:
 
 The "Loading database" message:
 
-```
-<pre class="src src-clojure">#<span style="color: #008b8b;">:cognitect.anomalies</span>{<span style="color: #008b8b;">:category</span> <span style="color: #008b8b;">:cognitect.anomalies/unavailable</span>,
-                      <span style="color: #008b8b;">:message</span> <span style="color: #8b2252;">"Loading database"</span>}
+```clojure
+#:cognitect.anomalies{:category :cognitect.anomalies/unavailable,
+                      :message "Loading database"}
 ```
 
 
@@ -311,23 +311,23 @@ Ions support the *synchronous* Datomic Client API
 
 The error:
 
-```
-<pre class="src src-js">{
-    <span style="color: #8b2252;">"Msg"</span>: <span style="color: #8b2252;">"IonLambdaException"</span>,
-    <span style="color: #8b2252;">"Ex"</span>: {
-        <span style="color: #8b2252;">"Cause"</span>: <span style="color: #8b2252;">":server-type must be :cloud or :peer-server"</span>,
-        <span style="color: #8b2252;">"Via"</span>: [
+```js
+{
+    "Msg": "IonLambdaException",
+    "Ex": {
+        "Cause": ":server-type must be :cloud or :peer-server",
+        "Via": [
             {
-                <span style="color: #8b2252;">"Type"</span>: <span style="color: #8b2252;">"clojure.lang.ExceptionInfo"</span>,
-                <span style="color: #8b2252;">"Message"</span>: <span style="color: #8b2252;">":server-type must be :cloud or :peer-server"</span>,
-                <span style="color: #8b2252;">"Data"</span>: {
-                    <span style="color: #8b2252;">"CognitectAnomaliesCategory"</span>: <span style="color: #8b2252;">"CognitectAnomaliesIncorrect"</span>,
-                    <span style="color: #8b2252;">"CognitectAnomaliesMessage"</span>: <span style="color: #8b2252;">":server-type must be :cloud or :peer-server"</span>
+                "Type": "clojure.lang.ExceptionInfo",
+                "Message": ":server-type must be :cloud or :peer-server",
+                "Data": {
+                    "CognitectAnomaliesCategory": "CognitectAnomaliesIncorrect",
+                    "CognitectAnomaliesMessage": ":server-type must be :cloud or :peer-server"
                 },
-                <span style="color: #8b2252;">"At"</span>: [
-                    <span style="color: #8b2252;">"clojure.core$ex_info"</span>,
-                    <span style="color: #8b2252;">"invokeStatic"</span>,
-                    <span style="color: #8b2252;">"core.clj"</span>,
+                "At": [
+                    "clojure.core$ex_info",
+                    "invokeStatic",
+                    "core.clj",
                     4739
                 ]
             }
@@ -356,14 +356,14 @@ Troubleshooting Socks Proxy Errors
 
 Symptom: The script prints a generic AWS CLI help message before failing:
 
-```
-<pre class="src src-sh">$ bash datomic-access client -r eu-central-1 good-system
+```sh
+$ bash datomic-access client -r eu-central-1 good-system
 ```
 
 
 
-```
-<pre class="src src-sh">=>
+```sh
+=>
 To see help text, you can run:
 
   aws help
@@ -387,14 +387,14 @@ aws: error: argument command: Invalid choice, valid choices are:
 
 ****Information for previous CLI tools**** - Please update to [the latest version](../releases.html#current).
 
-```
-<pre class="src src-sh">$ bash datomic-access client -r eu-central-1 good-system
+```sh
+$ bash datomic-access client -r eu-central-1 good-system
 ```
 
 
 
-```
-<pre class="src src-sh">=>
+```sh
+=>
 Unable to read bastion key, make sure your AWS creds are correct.
 ```
 
@@ -412,14 +412,14 @@ Unable to read bastion key, make sure your AWS creds are correct.
 
 ****Information for previous CLI tools**** - Please update to [the latest version](../releases.html#current).
 
-```
-<pre class="src src-sh">$ bash datomic-access client -r eu-central-1 not-a-system
+```sh
+$ bash datomic-access client -r eu-central-1 not-a-system
 ```
 
 
 
-```
-<pre class="src src-sh">=>
+```sh
+=>
 Datomic system not-a-system not found, make sure your system name and AWS creds are correct.
 ```
 
@@ -451,31 +451,31 @@ Datomic system <system-name> not found, make sure your system name and AWS creds
 
 This error will throw when the connection is unable to find a Datomic Socks proxy, if you're seeing this error while running remotely it is because the Client is expecting a proxy and you'll need to remove the proxy from your config map:
 
-```
-<pre class="src src-clojure"><span style="color: #483d8b;">CompilerException</span> clojure.lang.ExceptionInfo: <span style="color: #483d8b;">Unable</span> to connect to localhost:8182 {<span style="color: #008b8b;">:cognitect.anomalies/category</span> <span style="color: #008b8b;">:cognitect.anomalies/fault</span>, <span style="color: #008b8b;">:cognitect.anomalies/message</span> <span style="color: #8b2252;">"SOCKS4 tunnel failed, connection closed"</span>, <span style="color: #008b8b;">:cognitect.http-client/throwable</span> #error {
- <span style="color: #008b8b;">:cause</span> <span style="color: #8b2252;">"SOCKS4 tunnel failed, connection closed"</span>
- <span style="color: #008b8b;">:via</span>
-   [{<span style="color: #008b8b;">:type</span> <span style="color: #483d8b;">java.io.IOException</span>
- <span style="color: #008b8b;">:message</span> <span style="color: #8b2252;">"SOCKS4 tunnel failed, connection closed"</span>
- <span style="color: #008b8b;">:at</span> [<span style="color: #483d8b;">org.eclipse.jetty.client.Socks4Proxy$Socks4ProxyConnection</span> <span style="color: #483d8b;">onFillable</span> <span style="color: #8b2252;">"Socks4Proxy.java"</span> 166]}]
- <span style="color: #008b8b;">:trace</span>
-   [[<span style="color: #483d8b;">org.eclipse.jetty.client.Socks4Proxy$Socks4ProxyConnection</span> <span style="color: #483d8b;">onFillable</span> <span style="color: #8b2252;">"Socks4Proxy.java"</span> 166]
-   [<span style="color: #483d8b;">org.eclipse.jetty.io.AbstractConnection$ReadCallback</span> succeeded <span style="color: #8b2252;">"AbstractConnection.java"</span> 273]
-   [<span style="color: #483d8b;">org.eclipse.jetty.io.FillInterest</span> fillable <span style="color: #8b2252;">"FillInterest.java"</span> 95]
-   [<span style="color: #483d8b;">org.eclipse.jetty.io.SelectChannelEndPoint$2</span> run <span style="color: #8b2252;">"SelectChannelEndPoint.java"</span> 75]
-   [<span style="color: #483d8b;">org.eclipse.jetty.util.thread.strategy.ExecuteProduceConsume</span> <span style="color: #483d8b;">produceAndRun</span> <span style="color: #8b2252;">"ExecuteProduceConsume.java"</span> 213]
-   [<span style="color: #483d8b;">org.eclipse.jetty.util.thread.strategy.ExecuteProduceConsume</span> run <span style="color: #8b2252;">"ExecuteProduceConsume.java"</span> 147]
-   [<span style="color: #483d8b;">org.eclipse.jetty.util.thread.QueuedThreadPool</span> <span style="color: #483d8b;">runJob</span> <span style="color: #8b2252;">"QueuedThreadPool.java"</span> 654]
-   [<span style="color: #483d8b;">org.eclipse.jetty.util.thread.QueuedThreadPool$3</span> run <span style="color: #8b2252;">"QueuedThreadPool.java"</span> 572]
-   [<span style="color: #483d8b;">java.lang.Thread</span> run <span style="color: #8b2252;">"Thread.java"</span> 745]]}, <span style="color: #008b8b;">:config</span> {<span style="color: #008b8b;">:server-type</span> <span style="color: #008b8b;">:cloud</span>, <span style="color: #008b8b;">:region</span> <span style="color: #8b2252;">"us-east-1"</span>, <span style="color: #008b8b;">:system</span> <span style="color: #8b2252;">"wrong"</span>, <span style="color: #008b8b;">:query-group</span> <span style="color: #8b2252;">"wrong"</span>, <span style="color: #008b8b;">:endpoint</span> <span style="color: #8b2252;">"http://entry.wrong.us-east-1.datomic.net:8182/"</span>, <span style="color: #008b8b;">:proxy-port</span> 8182, <span style="color: #008b8b;">:endpoint-map</span> {<span style="color: #008b8b;">:headers</span> {<span style="color: #8b2252;">"host"</span> <span style="color: #8b2252;">"entry.wrong.us-east-1.datomic.net:8182"</span>}, <span style="color: #008b8b;">:scheme</span> <span style="color: #8b2252;">"http"</span>, <span style="color: #008b8b;">:server-name</span> <span style="color: #8b2252;">"entry.wrong.us-east-1.datomic.net"</span>, <span style="color: #008b8b;">:server-port</span> 8182}}}, compiling:(sync_client_test.clj:138:13) 
+```clojure
+CompilerException clojure.lang.ExceptionInfo: Unable to connect to localhost:8182 {:cognitect.anomalies/category :cognitect.anomalies/fault, :cognitect.anomalies/message "SOCKS4 tunnel failed, connection closed", :cognitect.http-client/throwable #error {
+ :cause "SOCKS4 tunnel failed, connection closed"
+ :via
+   [{:type java.io.IOException
+ :message "SOCKS4 tunnel failed, connection closed"
+ :at [org.eclipse.jetty.client.Socks4Proxy$Socks4ProxyConnection onFillable "Socks4Proxy.java" 166]}]
+ :trace
+   [[org.eclipse.jetty.client.Socks4Proxy$Socks4ProxyConnection onFillable "Socks4Proxy.java" 166]
+   [org.eclipse.jetty.io.AbstractConnection$ReadCallback succeeded "AbstractConnection.java" 273]
+   [org.eclipse.jetty.io.FillInterest fillable "FillInterest.java" 95]
+   [org.eclipse.jetty.io.SelectChannelEndPoint$2 run "SelectChannelEndPoint.java" 75]
+   [org.eclipse.jetty.util.thread.strategy.ExecuteProduceConsume produceAndRun "ExecuteProduceConsume.java" 213]
+   [org.eclipse.jetty.util.thread.strategy.ExecuteProduceConsume run "ExecuteProduceConsume.java" 147]
+   [org.eclipse.jetty.util.thread.QueuedThreadPool runJob "QueuedThreadPool.java" 654]
+   [org.eclipse.jetty.util.thread.QueuedThreadPool$3 run "QueuedThreadPool.java" 572]
+   [java.lang.Thread run "Thread.java" 745]]}, :config {:server-type :cloud, :region "us-east-1", :system "wrong", :query-group "wrong", :endpoint "http://entry.wrong.us-east-1.datomic.net:8182/", :proxy-port 8182, :endpoint-map {:headers {"host" "entry.wrong.us-east-1.datomic.net:8182"}, :scheme "http", :server-name "entry.wrong.us-east-1.datomic.net", :server-port 8182}}}, compiling:(sync_client_test.clj:138:13) 
 ```
 
 
 
 This error will throw when the config map is pointing to the wrong proxy port.
 
-```
-<pre class="src src-clojure"><span style="color: #483d8b;">CompilerException</span> clojure.lang.ExceptionInfo: <span style="color: #483d8b;">Unable</span> to connect to localhost:8188 {<span style="color: #008b8b;">:cognitect.anomalies/category</span> <span style="color: #008b8b;">:cognitect.anomalies/unavailable</span>, <span style="color: #008b8b;">:cognitect.anomalies/message</span> <span style="color: #8b2252;">"Connection refused"</span>, <span style="color: #008b8b;">:config</span> {<span style="color: #008b8b;">:server-type</span> <span style="color: #008b8b;">:cloud</span>, <span style="color: #008b8b;">:region</span> <span style="color: #8b2252;">"us-east-1"</span>, <span style="color: #008b8b;">:system</span> <span style="color: #8b2252;">"jaret-lambda-test"</span>, <span style="color: #008b8b;">:query-group</span> <span style="color: #8b2252;">"jaret-lambda-test"</span>, <span style="color: #008b8b;">:endpoint</span> <span style="color: #8b2252;">"http://entry.jaret-lambda-test.us-east-1.datomic.net:8182/"</span>, <span style="color: #008b8b;">:proxy-port</span> 8188, <span style="color: #008b8b;">:endpoint-map</span> {<span style="color: #008b8b;">:headers</span> {<span style="color: #8b2252;">"host"</span> <span style="color: #8b2252;">"entry.jaret-lambda-test.us-east-1.datomic.net:8182"</span>}, <span style="color: #008b8b;">:scheme</span> <span style="color: #8b2252;">"http"</span>, <span style="color: #008b8b;">:server-name</span> <span style="color: #8b2252;">"entry.jaret-lambda-test.us-east-1.datomic.net"</span>, <span style="color: #008b8b;">:server-port</span> 8182}}}, compiling:(form-init7068544986673255826.clj:1:13)
+```clojure
+CompilerException clojure.lang.ExceptionInfo: Unable to connect to localhost:8188 {:cognitect.anomalies/category :cognitect.anomalies/unavailable, :cognitect.anomalies/message "Connection refused", :config {:server-type :cloud, :region "us-east-1", :system "jaret-lambda-test", :query-group "jaret-lambda-test", :endpoint "http://entry.jaret-lambda-test.us-east-1.datomic.net:8182/", :proxy-port 8188, :endpoint-map {:headers {"host" "entry.jaret-lambda-test.us-east-1.datomic.net:8182"}, :scheme "http", :server-name "entry.jaret-lambda-test.us-east-1.datomic.net", :server-port 8182}}}, compiling:(form-init7068544986673255826.clj:1:13)
 ```
 
 
@@ -525,13 +525,13 @@ You must either
 
 The ion push operation pushes your code to a region-specific Datomic code bucket. If push fails to find a code bucket, it will report a message like:
 
-```
-<pre class="src src-clojure">{<span style="color: #008b8b;">:command-failed</span> <span style="color: #8b2252;">"{:op :push}"</span>,
- <span style="color: #008b8b;">:causes</span>
- ({<span style="color: #008b8b;">:message</span>
-   <span style="color: #8b2252;">"Unable to find a unique code bucket. Make sure that you are running\nDatomic Cloud in the region you are deploying to."</span>,
-   <span style="color: #008b8b;">:class</span> <span style="color: #483d8b;">ExceptionInfo</span>,
-   <span style="color: #008b8b;">:data</span> {<span style="color: #8b2252;">"datomic:code"</span> nil}})}
+```clojure
+{:command-failed "{:op :push}",
+ :causes
+ ({:message
+   "Unable to find a unique code bucket. Make sure that you are running\nDatomic Cloud in the region you are deploying to.",
+   :class ExceptionInfo,
+   :data {"datomic:code" nil}})}
 ```
 
 
@@ -546,17 +546,17 @@ The most common cause of this is that you are accidentally using the wrong AWS k
 
 The ion-dev tools are invoked via a deps.edn alias. If you have not installed the ion-dev tools, the Clojure CLI will report that the alias is undeclared when you try to push:
 
-```
-<pre class="src src-sh">clojure -A:ion-dev <span style="color: #8b2252;">'{:op :push}'</span>
+```sh
+clojure -A:ion-dev '{:op :push}'
 ```
 
 
 
-```
-<pre class="src src-clojure">=>
-WARNING: <span style="color: #483d8b;">Specified</span> aliases are undeclared: [<span style="color: #008b8b;">:ion-dev</span>]
-<span style="color: #483d8b;">Execution</span> error (<span style="color: #483d8b;">FileNotFoundException</span>) at <span style="color: #483d8b;">java.io.FileInputStream/open0</span> (FileInputStream.java:-2).
-{<span style="color: #008b8b;">:op</span> <span style="color: #008b8b;">:push</span>} (<span style="color: #483d8b;">No</span> such file or directory)
+```clojure
+=>
+WARNING: Specified aliases are undeclared: [:ion-dev]
+Execution error (FileNotFoundException) at java.io.FileInputStream/open0 (FileInputStream.java:-2).
+{:op :push} (No such file or directory)
 ```
 
 
@@ -593,16 +593,16 @@ Troubleshooting Ion deploy
 
 Failure of [Ion Deployment](ions/ions-reference.html#deploy) with the following error message in the [Datomic system CloudWatch Logs](operation/monitoring.html#searching-cloudwatch-logs):
 
-```
-<pre class="src src-js"><span style="color: #8b2252;">"Cause"</span>: <span style="color: #8b2252;">"Assert failed: cfg"</span>,
-<span style="color: #8b2252;">"Via"</span>: [
+```js
+"Cause": "Assert failed: cfg",
+"Via": [
     {
-        <span style="color: #8b2252;">"Type"</span>: <span style="color: #8b2252;">"java.lang.AssertionError"</span>,
-        <span style="color: #8b2252;">"Message"</span>: <span style="color: #8b2252;">"Assert failed: cfg"</span>,
-        <span style="color: #8b2252;">"At"</span>: [
-            <span style="color: #8b2252;">"datomic.client.impl.local$create_client"</span>,
-            <span style="color: #8b2252;">"invokeStatic"</span>,
-            <span style="color: #8b2252;">"local.clj"</span>,
+        "Type": "java.lang.AssertionError",
+        "Message": "Assert failed: cfg",
+        "At": [
+            "datomic.client.impl.local$create_client",
+            "invokeStatic",
+            "local.clj",
             97
         ]
     }

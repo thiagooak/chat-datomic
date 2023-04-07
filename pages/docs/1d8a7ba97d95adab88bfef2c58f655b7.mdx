@@ -15,16 +15,16 @@ To migrate a transactor running on EC2 to use roles, do the following:
 - If CloudWatch metrics are enabled, comment out the *aws-cloudwatch-user*, *aws-cloudwatch-access-key-id* and *aws-cloudwatch-secret-key* properties.
 - Once you've made these changes, run the *ensure-transactor* command, which will create the specified role, if necessary, and assign the policies required to access your DynamoDB table, S3 bucket and Cloudwatch:
 
-```
-<pre class="src src-sh">bin/datomic ensure-transactor my-transactor.properties my-transactor.properties
+```sh
+bin/datomic ensure-transactor my-transactor.properties my-transactor.properties
 ```
 
 
 
 - If you are using a Datomic-generated CloudFormation to start your transactor, regenerate your CloudFormation template to use a role by running this command:
 
-```
-<pre class="src src-sh">bin/datomic create-cf-template my-transactor.properties my-cf.properties cf.json
+```sh
+bin/datomic create-cf-template my-transactor.properties my-cf.properties cf.json
 ```
 
 
@@ -46,8 +46,8 @@ To migrate peers running on EC2 to use roles, do the following:
 - Comment out the *aws-dynamodb-peer-user*, *aws-dynamodb-peer-access-key-id*and *aws-dynamodb-peer-secret-key* properties.
 - Once you've made these changes, run the *ensure-transactor* command, which will create the specified role, if necessary, and assign the policy required to access your DynamoDB table:
 
-```
-<pre class="src src-sh">bin/datomic ensure-transactor my-transactor.properties my-transactor.properties
+```sh
+bin/datomic ensure-transactor my-transactor.properties my-transactor.properties
 ```
 
 

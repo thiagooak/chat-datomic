@@ -12,8 +12,8 @@ Install RStudio following the instructions from the [RStudio Download Page](http
 
 Launch RStudio and install the RPresto package <https://github.com/prestodb/RPresto> by running:
 
-```
-<pre class="src src-R">install.packages('RPresto')
+```R
+install.packages('RPresto')
 ```
 
 
@@ -29,8 +29,8 @@ Using RStudio:
 
 You can connect to Datomic Analytics following the configuration shown below:
 
-```
-<pre class="src src-R">library('DBI')
+```R
+library('DBI')
 
 con <- dbConnect(
   RPresto::Presto(),

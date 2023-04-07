@@ -31,13 +31,13 @@ In your REPL, execute:
 
 noslide
 
-```
-<pre class="src src-clojure">(<span style="color: #a0522d;">require</span> '[datomic.client.api <span style="color: #008b8b;">:as</span> d])
+```clojure
+(require '[datomic.client.api :as d])
 
-(<span style="color: #a020f0;">def</span> <span style="color: #0000ff;">cfg</span> {<span style="color: #008b8b;">:server-type</span> <span style="color: #008b8b;">:dev-local</span>
-          <span style="color: #008b8b;">:system</span> <span style="color: #8b2252;">"datomic-samples"</span>})
+(def cfg {:server-type :dev-local
+          :system "datomic-samples"})
 
-(<span style="color: #a020f0;">def</span> <span style="color: #0000ff;">client</span> (d/client cfg))
+(def client (d/client cfg))
 ```
 
 
@@ -60,16 +60,16 @@ Even though the endpoint is public, client access is securely managed by [IAM pe
 
 noslide
 
-```
-<pre class="src src-clojure">(<span style="color: #a0522d;">require</span> '[datomic.client.api <span style="color: #008b8b;">:as</span> d])
+```clojure
+(require '[datomic.client.api :as d])
 
-(<span style="color: #a020f0;">def</span> <span style="color: #0000ff;">cfg</span> {<span style="color: #008b8b;">:server-type</span> <span style="color: #008b8b;">:ion</span>
-          <span style="color: #008b8b;">:region</span> <span style="color: #8b2252;">"<your AWS Region>"</span> <span style="color: #b22222;">;; </span><span style="color: #b22222;">e.g. us-east-1</span>
-          <span style="color: #008b8b;">:system</span> <span style="color: #8b2252;">"<system name>"</span>
-          <span style="color: #008b8b;">:creds-profile</span> <span style="color: #8b2252;">"<your_aws_profile_if_not_using_the_default>"</span>
-          <span style="color: #008b8b;">:endpoint</span> <span style="color: #8b2252;">"<your endpoint>"</span>})
+(def cfg {:server-type :ion
+          :region "<your AWS Region>" ;; e.g. us-east-1
+          :system "<system name>"
+          :creds-profile "<your_aws_profile_if_not_using_the_default>"
+          :endpoint "<your endpoint>"})
 
-(<span style="color: #a020f0;">def</span> <span style="color: #0000ff;">client</span> (d/client cfg))
+(def client (d/client cfg))
 ```
 
 
@@ -89,8 +89,8 @@ Create a new database with [datomic.client.api/create-database](https://docs.dat
 
 noslide
 
-```
-<pre class="src src-clojure">(d/create-database client {<span style="color: #008b8b;">:db-name</span> <span style="color: #8b2252;">"movies"</span>})
+```clojure
+(d/create-database client {:db-name "movies"})
 ```
 
 
@@ -99,8 +99,8 @@ Now you're ready to connect to your newly created database using [dataomic.clien
 
 noslide
 
-```
-<pre class="src src-clojure">(<span style="color: #a020f0;">def</span> <span style="color: #0000ff;">conn</span> (d/connect client {<span style="color: #008b8b;">:db-name</span> <span style="color: #8b2252;">"movies"</span>}))
+```clojure
+(def conn (d/connect client {:db-name "movies"}))
 ```
 
 
@@ -122,21 +122,21 @@ Define the following small schema for a database about movies:
 
 noslide
 
-```
-<pre class="src src-clojure">(<span style="color: #a020f0;">def</span> <span style="color: #0000ff;">movie-schema</span> [{<span style="color: #008b8b;">:db/ident</span> <span style="color: #008b8b;">:movie/title</span>
-                    <span style="color: #008b8b;">:db/valueType</span> <span style="color: #008b8b;">:db.type/string</span>
-                    <span style="color: #008b8b;">:db/cardinality</span> <span style="color: #008b8b;">:db.cardinality/one</span>
-                    <span style="color: #008b8b;">:db/doc</span> <span style="color: #8b2252;">"The title of the movie"</span>}
+```clojure
+(def movie-schema [{:db/ident :movie/title
+                    :db/valueType :db.type/string
+                    :db/cardinality :db.cardinality/one
+                    :db/doc "The title of the movie"}
 
-                   {<span style="color: #008b8b;">:db/ident</span> <span style="color: #008b8b;">:movie/genre</span>
-                    <span style="color: #008b8b;">:db/valueType</span> <span style="color: #008b8b;">:db.type/string</span>
-                    <span style="color: #008b8b;">:db/cardinality</span> <span style="color: #008b8b;">:db.cardinality/one</span>
-                    <span style="color: #008b8b;">:db/doc</span> <span style="color: #8b2252;">"The genre of the movie"</span>}
+                   {:db/ident :movie/genre
+                    :db/valueType :db.type/string
+                    :db/cardinality :db.cardinality/one
+                    :db/doc "The genre of the movie"}
 
-                   {<span style="color: #008b8b;">:db/ident</span> <span style="color: #008b8b;">:movie/release-year</span>
-                    <span style="color: #008b8b;">:db/valueType</span> <span style="color: #008b8b;">:db.type/long</span>
-                    <span style="color: #008b8b;">:db/cardinality</span> <span style="color: #008b8b;">:db.cardinality/one</span>
-                    <span style="color: #008b8b;">:db/doc</span> <span style="color: #8b2252;">"The year the movie was released in theaters"</span>}])
+                   {:db/ident :movie/release-year
+                    :db/valueType :db.type/long
+                    :db/cardinality :db.cardinality/one
+                    :db/doc "The year the movie was released in theaters"}])
 ```
 
 
@@ -145,18 +145,18 @@ Now transact the schema using [datomic.client.api/transact](https://docs.datomic
 
 noslide
 
-```
-<pre class="src src-clojure">(d/transact conn {<span style="color: #008b8b;">:tx-data</span> movie-schema})
+```clojure
+(d/transact conn {:tx-data movie-schema})
 ```
 
 
 
-```
-<pre class="src src-clojure">=>
-{<span style="color: #008b8b;">:db-before</span> ..., 
- <span style="color: #008b8b;">:db-after</span> ..., 
- <span style="color: #008b8b;">:tx-data</span> [...], <span style="color: #b22222;">;; </span><span style="color: #b22222;">data added to the database</span>
- <span style="color: #008b8b;">:tempids</span> {}}
+```clojure
+=>
+{:db-before ..., 
+ :db-after ..., 
+ :tx-data [...], ;; data added to the database
+ :tempids {}}
 ```
 
 
@@ -174,16 +174,16 @@ Now you can define some movies to add to the database utilizing the [schema](../
 
 noslide
 
-```
-<pre class="src src-clojure">(<span style="color: #a020f0;">def</span> <span style="color: #0000ff;">first-movies</span> [{<span style="color: #008b8b;">:movie/title</span> <span style="color: #8b2252;">"The Goonies"</span>
-                    <span style="color: #008b8b;">:movie/genre</span> <span style="color: #8b2252;">"action/adventure"</span>
-                    <span style="color: #008b8b;">:movie/release-year</span> 1985}
-                   {<span style="color: #008b8b;">:movie/title</span> <span style="color: #8b2252;">"Commando"</span>
-                    <span style="color: #008b8b;">:movie/genre</span> <span style="color: #8b2252;">"thriller/action"</span>
-                    <span style="color: #008b8b;">:movie/release-year</span> 1985}
-                   {<span style="color: #008b8b;">:movie/title</span> <span style="color: #8b2252;">"Repo Man"</span>
-                    <span style="color: #008b8b;">:movie/genre</span> <span style="color: #8b2252;">"punk dystopia"</span>
-                    <span style="color: #008b8b;">:movie/release-year</span> 1984}])
+```clojure
+(def first-movies [{:movie/title "The Goonies"
+                    :movie/genre "action/adventure"
+                    :movie/release-year 1985}
+                   {:movie/title "Commando"
+                    :movie/genre "thriller/action"
+                    :movie/release-year 1985}
+                   {:movie/title "Repo Man"
+                    :movie/genre "punk dystopia"
+                    :movie/release-year 1984}])
 ```
 
 
@@ -192,18 +192,18 @@ noslide
 
 noslide
 
-```
-<pre class="src src-clojure">(d/transact conn {<span style="color: #008b8b;">:tx-data</span> first-movies})
+```clojure
+(d/transact conn {:tx-data first-movies})
 ```
 
 
 
-```
-<pre class="src src-clojure">=>
-{<span style="color: #008b8b;">:db-before</span> ... 
- <span style="color: #008b8b;">:db-after</span> ...
- <span style="color: #008b8b;">:tx-data</span> [...], 
- <span style="color: #008b8b;">:tempids</span> {}}
+```clojure
+=>
+{:db-before ... 
+ :db-after ...
+ :tx-data [...], 
+ :tempids {}}
 ```
 
 
@@ -221,8 +221,8 @@ Get a current value for the database with [datomic.client.api/db](https://docs.d
 
 noslide
 
-```
-<pre class="src src-clojure">(<span style="color: #a020f0;">def</span> <span style="color: #0000ff;">db</span> (d/db conn))  
+```clojure
+(def db (d/db conn))  
 ```
 
 
@@ -231,9 +231,9 @@ Now create a [query](../query/query-executing.html) for all movie titles:
 
 noslide
 
-```
-<pre class="src src-clojure">(<span style="color: #a020f0;">def</span> <span style="color: #0000ff;">all-titles-q</span> '[<span style="color: #008b8b;">:find</span> ?movie-title 
-                    <span style="color: #008b8b;">:where</span> [_ <span style="color: #008b8b;">:movie/title</span> ?movie-title]])
+```clojure
+(def all-titles-q '[:find ?movie-title 
+                    :where [_ :movie/title ?movie-title]])
 ```
 
 
@@ -242,15 +242,15 @@ And execute the query with the value of the database using [datomic.client.ap/q]
 
 noslide
 
-```
-<pre class="src src-clojure">(d/q all-titles-q db)
+```clojure
+(d/q all-titles-q db)
 ```
 
 
 
-```
-<pre class="src src-clojure">=>
-[[<span style="color: #8b2252;">"Commando"</span>] [<span style="color: #8b2252;">"The Goonies"</span>] [<span style="color: #8b2252;">"Repo Man"</span>]]
+```clojure
+=>
+[["Commando"] ["The Goonies"] ["Repo Man"]]
 ```
 
 
@@ -268,6 +268,6 @@ When you are done with this tutorial, you can use [datomic.client.api/delete-dat
 
 noslide
 
-```
-<pre class="src src-clojure">(d/delete-database client {<span style="color: #008b8b;">:db-name</span> <span style="color: #8b2252;">"movies"</span>})
+```clojure
+(d/delete-database client {:db-name "movies"})
 ```

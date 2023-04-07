@@ -21,8 +21,8 @@ The Datomic Client library includes both the synchronous and asynchronous APIs, 
 
 To use the Client library from a [Clojure CLI REPL](../operation/howto.html#clojure-cli), add the following to your [deps.edn](https://clojure.org/guides/deps_and_cli) dependencies map:
 
-```
-<pre class="src src-clojure">com.datomic/client-cloud {<span style="color: #008b8b;">:mvn/version</span> <span style="color: #8b2252;">"1.0.123"</span>}
+```clojure
+com.datomic/client-cloud {:mvn/version "1.0.123"}
 ```
 
 
@@ -35,12 +35,12 @@ To use the Client library from a [Clojure CLI REPL](../operation/howto.html#cloj
 
 To retrieve the Client library for a Maven project, add the following snippet inside the `<dependencies>` block of your pom.xml file:
 
-```
-<pre class="src src-xml"><<span style="color: #0000ff;">dependency</span>>
- <<span style="color: #0000ff;">groupId</span>>com.datomic</<span style="color: #0000ff;">groupId</span>>
- <<span style="color: #0000ff;">artifactId</span>>client-cloud</<span style="color: #0000ff;">artifactId</span>>
- <<span style="color: #0000ff;">version</span>>1.0.123</<span style="color: #0000ff;">version</span>>
-</<span style="color: #0000ff;">dependency</span>>
+```xml
+<dependency>
+ <groupId>com.datomic</groupId>
+ <artifactId>client-cloud</artifactId>
+ <version>1.0.123</version>
+</dependency>
 ```
 
 
@@ -53,8 +53,8 @@ To retrieve the Client library for a Maven project, add the following snippet in
 
 To include the Client library in a Leiningen project, add the following snippet to your [project.clj](https://github.com/technomancy/leiningen#configuration) file in the collection under :dependencies key.
 
-```
-<pre class="src src-clojure">com.datomic/client-cloud {<span style="color: #008b8b;">:mvn/version</span> <span style="color: #8b2252;">"1.0.123"</span>}
+```clojure
+com.datomic/client-cloud {:mvn/version "1.0.123"}
 ```
 
 
@@ -78,18 +78,18 @@ Synchronous API
 
 The following example shows a simple transaction using the [Synchronous API.](https://docs.datomic.com/client-api/datomic.client.api.html)
 
-```
-<pre class="src src-clojure"><span style="color: #b22222;">;; </span><span style="color: #b22222;">load the Synchronous API with prefix 'd'</span>
-(<span style="color: #a0522d;">require</span> '[datomic.client.api <span style="color: #008b8b;">:as</span> d])
+```clojure
+;; load the Synchronous API with prefix 'd'
+(require '[datomic.client.api :as d])
 
-<span style="color: #b22222;">;; </span><span style="color: #b22222;">transact a movie</span>
-(<span style="color: #a020f0;">def</span> <span style="color: #0000ff;">result</span> (d/transact conn {<span style="color: #008b8b;">:tx-data</span> [{<span style="color: #008b8b;">:db/id</span> <span style="color: #8b2252;">"goonies"</span>
-                                         <span style="color: #008b8b;">:movie/title</span> <span style="color: #8b2252;">"The Goonies"</span>
-                                         <span style="color: #008b8b;">:movie/genre</span> <span style="color: #8b2252;">"action/adventure"</span>
-                                         <span style="color: #008b8b;">:movie/release-year</span> 1985}]}))
+;; transact a movie
+(def result (d/transact conn {:tx-data [{:db/id "goonies"
+                                         :movie/title "The Goonies"
+                                         :movie/genre "action/adventure"
+                                         :movie/release-year 1985}]}))
 
-<span style="color: #b22222;">;; </span><span style="color: #b22222;">what id was assigned to The Goonies?</span>
-(<span style="color: #483d8b;">-></span> result <span style="color: #008b8b;">:tempids</span> (<span style="color: #a0522d;">get</span> <span style="color: #8b2252;">"goonies"</span>))
+;; what id was assigned to The Goonies?
+(-> result :tempids (get "goonies"))
 ```
 
 
@@ -111,21 +111,21 @@ The [Asynchronous API](https://docs.datomic.com/client-api/datomic.client.api.as
 
 You must use a channel-taking operator such as [&lt;!!](https://clojure.github.io/core.async/#clojure.core.async/%3C!!) to retrieve the result of an asynchronous operation, and you must explicitly check for anomalies:
 
-```
-<pre class="src src-clojure"><span style="color: #b22222;">;; </span><span style="color: #b22222;">load the Asynchronous API with prefix 'd', plus core.async and anomaly APIs</span>
-(<span style="color: #a0522d;">require</span> '[clojure.core.async <span style="color: #008b8b;">:refer</span> (<!!)]
-         '[cognitect.anomalies <span style="color: #008b8b;">:as</span> anom]
-         '[datomic.client.api.async <span style="color: #008b8b;">:as</span> d])
+```clojure
+;; load the Asynchronous API with prefix 'd', plus core.async and anomaly APIs
+(require '[clojure.core.async :refer (<!!)]
+         '[cognitect.anomalies :as anom]
+         '[datomic.client.api.async :as d])
 
-<span style="color: #b22222;">;; </span><span style="color: #b22222;">transact a movie</span>
-(<span style="color: #a020f0;">def</span> <span style="color: #0000ff;">result</span> (<!! (d/transact conn {<span style="color: #008b8b;">:tx-data</span> [{<span style="color: #008b8b;">:db/id</span> <span style="color: #8b2252;">"goonies"</span>
-                                              <span style="color: #008b8b;">:movie/title</span> <span style="color: #8b2252;">"The Goonies"</span>
-                                              <span style="color: #008b8b;">:movie/genre</span> <span style="color: #8b2252;">"action/adventure"</span>
-                                              <span style="color: #008b8b;">:movie/release-year</span> 1985}]})))
+;; transact a movie
+(def result (<!! (d/transact conn {:tx-data [{:db/id "goonies"
+                                              :movie/title "The Goonies"
+                                              :movie/genre "action/adventure"
+                                              :movie/release-year 1985}]})))
 
-<span style="color: #b22222;">;; </span><span style="color: #b22222;">what id was assigned to The Goonies?</span>
-(<span style="color: #483d8b;">when-not</span> (<span style="color: #008b8b;">::anom/anomaly</span> result)
-  (<span style="color: #483d8b;">-></span> result <span style="color: #008b8b;">:tempids</span> (<span style="color: #a0522d;">get</span> <span style="color: #8b2252;">"goonies"</span>)))
+;; what id was assigned to The Goonies?
+(when-not (::anom/anomaly result)
+  (-> result :tempids (get "goonies")))
 ```
 
 
@@ -202,35 +202,35 @@ If you get a *busy* response from the Client API, your request rate has temporar
 
 The query below is incorrect because the `:find` clause uses a variable name `?nomen` that is not bound by the query. The sync API will throw an exception:
 
-```
-<pre class="src src-clojure">(<span style="color: #a0522d;">require</span> '[datomic.client.api <span style="color: #008b8b;">:as</span> d])
-(d/q '[<span style="color: #008b8b;">:find</span> ?nomen
-       <span style="color: #008b8b;">:where</span> [_ <span style="color: #008b8b;">:artist/name</span> ?name]]
+```clojure
+(require '[datomic.client.api :as d])
+(d/q '[:find ?nomen
+       :where [_ :artist/name ?name]]
      db)
 ```
 
 
 
-```
-<pre class="src src-clojure">=> <span style="color: #483d8b;">ExceptionInfo</span> <span style="color: #483d8b;">Query</span> is referencing unbound variables: #{?nomen}
+```clojure
+=> ExceptionInfo Query is referencing unbound variables: #{?nomen}
 ```
 
 
 
 You can discover the category of anomaly by inspecting the `ex-data`of the exception:
 
-```
-<pre class="src src-clojure">(ex-data *e)
+```clojure
+(ex-data *e)
 ```
 
 
 
-```
-<pre class="src src-clojure">=>
-{<span style="color: #008b8b;">:cognitect.anomalies/category</span> 
- <span style="color: #008b8b;">:cognitect.anomalies/incorrect</span>, 
- <span style="color: #008b8b;">:cognitect.anomalies/message</span> 
- <span style="color: #8b2252;">"Query is referencing unbound variables: #{?nomen}"</span>, 
+```clojure
+=>
+{:cognitect.anomalies/category 
+ :cognitect.anomalies/incorrect, 
+ :cognitect.anomalies/message 
+ "Query is referencing unbound variables: #{?nomen}", 
  ...}
 ```
 
@@ -244,21 +244,21 @@ You can discover the category of anomaly by inspecting the `ex-data`of the excep
 
 With the async API, the same anomaly appears as a map on channel:
 
-```
-<pre class="src src-clojure">(<span style="color: #a0522d;">require</span> '[datomic.client.api.async <span style="color: #008b8b;">:as</span> d])
-(<!! (d/q {<span style="color: #008b8b;">:query</span> '[<span style="color: #008b8b;">:find</span> ?nomen
-                    <span style="color: #008b8b;">:where</span> [_ <span style="color: #008b8b;">:artist/name</span> ?name]]
-           <span style="color: #008b8b;">:args</span> [db]}))
+```clojure
+(require '[datomic.client.api.async :as d])
+(<!! (d/q {:query '[:find ?nomen
+                    :where [_ :artist/name ?name]]
+           :args [db]}))
 ```
 
 
 
-```
-<pre class="src src-clojure">=>
-{<span style="color: #008b8b;">:cognitect.anomalies/category</span> 
- <span style="color: #008b8b;">:cognitect.anomalies/incorrect</span>, 
- <span style="color: #008b8b;">:cognitect.anomalies/message</span> 
- <span style="color: #8b2252;">"Query is referencing unbound variables: #{?nomen}"</span>, 
+```clojure
+=>
+{:cognitect.anomalies/category 
+ :cognitect.anomalies/incorrect, 
+ :cognitect.anomalies/message 
+ "Query is referencing unbound variables: #{?nomen}", 
  ...}
 ```
 
@@ -279,20 +279,20 @@ KeyMeaningDefault:timeoutmax msec wait before giving up60000The call to create a
 
 API timeouts cause an anomaly with category `::anom/unavailable`, as shown below:
 
-```
-<pre class="src src-clojure">(d/q {<span style="color: #008b8b;">:query</span> '[<span style="color: #008b8b;">:find</span> (<span style="color: #a0522d;">count</span> ?name)
-               <span style="color: #008b8b;">:where</span> [_ <span style="color: #008b8b;">:artist/name</span> ?name]]
-      <span style="color: #008b8b;">:args</span> [db]
-      <span style="color: #008b8b;">:timeout</span> 1})
+```clojure
+(d/q {:query '[:find (count ?name)
+               :where [_ :artist/name ?name]]
+      :args [db]
+      :timeout 1})
 (ex-data *e)
 ```
 
 
 
-```
-<pre class="src src-clojure">=>
-#<span style="color: #008b8b;">:cognitect.anomalies</span>{<span style="color: #008b8b;">:category</span> <span style="color: #008b8b;">:cognitect.anomalies/unavailable</span>, 
-                      <span style="color: #008b8b;">:message</span> <span style="color: #8b2252;">"Total timeout elapsed"</span>} 
+```clojure
+=>
+#:cognitect.anomalies{:category :cognitect.anomalies/unavailable, 
+                      :message "Total timeout elapsed"} 
 ```
 
 
@@ -328,100 +328,100 @@ The [Asynchronous API](https://docs.datomic.com/client-api/datomic.client.api.as
 
 If you wanted to know the average length of an artist name in the mbrainz data set, you could use the following async transduction to process all the names in chunks of 10,000.
 
-```
-<pre class="src src-clojure">(<span style="color: #a020f0;">defn</span> <span style="color: #0000ff;">averager</span>
-  <span style="color: #8b2252;">"Reducing fn that calculates average of its inputs"</span>
-  ([] [0 0])                  <span style="color: #b22222;">;; </span><span style="color: #b22222;">init</span>
-  ([[n total]]                <span style="color: #b22222;">;; </span><span style="color: #b22222;">complete</span>
-     (<span style="color: #a0522d;">/</span> total (<span style="color: #a0522d;">double</span> n)))
-  ([[n total] count]          <span style="color: #b22222;">;; </span><span style="color: #b22222;">step</span>
-     [(<span style="color: #a0522d;">inc</span> n) (<span style="color: #a0522d;">+</span> total count)]))
+```clojure
+(defn averager
+  "Reducing fn that calculates average of its inputs"
+  ([] [0 0])                  ;; init
+  ([[n total]]                ;; complete
+     (/ total (double n)))
+  ([[n total] count]          ;; step
+     [(inc n) (+ total count)]))
 
-(<span style="color: #a020f0;">defn</span> <span style="color: #0000ff;">nth-counter</span>
-  <span style="color: #8b2252;">"Transform for chunked query results that gets the count of</span>
-<span style="color: #8b2252;">the nth item from each result tuple."</span>
+(defn nth-counter
+  "Transform for chunked query results that gets the count of
+the nth item from each result tuple."
   [n]
-  (<span style="color: #a0522d;">comp</span> (halt-when <span style="color: #008b8b;">:anom/category</span>)  <span style="color: #b22222;">;; </span><span style="color: #b22222;">fail fast</span>
-        cat                         <span style="color: #b22222;">;; </span><span style="color: #b22222;">flatten the chunks</span>
-        (<span style="color: #a0522d;">map</span> #(<span style="color: #a0522d;">nth</span> % n))            <span style="color: #b22222;">;; </span><span style="color: #b22222;">nth of chunk</span>
-        (<span style="color: #a0522d;">map</span> count)))
+  (comp (halt-when :anom/category)  ;; fail fast
+        cat                         ;; flatten the chunks
+        (map #(nth % n))            ;; nth of chunk
+        (map count)))
 
-(<span style="color: #a020f0;">def</span> <span style="color: #0000ff;">datoms-query</span> {<span style="color: #008b8b;">:limit</span> -1
-                   <span style="color: #008b8b;">:chunk</span> 10000
-                   <span style="color: #008b8b;">:index</span> <span style="color: #008b8b;">:aevt</span>
-                   <span style="color: #008b8b;">:components</span> [<span style="color: #008b8b;">:artist/name</span>]})
-(<span style="color: #483d8b;">->></span> (async/datoms db datoms-query)
+(def datoms-query {:limit -1
+                   :chunk 10000
+                   :index :aevt
+                   :components [:artist/name]})
+(->> (async/datoms db datoms-query)
      (a/transduce (nth-counter 2) averager (averager))
      <!!)
 ```
 
 
 
-```
-<pre class="src src-clojure">=> 13.893066724625081
+```clojure
+=> 13.893066724625081
 ```
 
 
 
 The decomposition of async programs into named reducing fns and transforms such as `averager` and `nth-counter` makes it easy to test the parts of an async program entirely synchronously, and without the need for mocking and stubbing:
 
-```
-<pre class="src src-clojure"><span style="color: #b22222;">;; </span><span style="color: #b22222;">check that averager actually averages</span>
+```clojure
+;; check that averager actually averages
 (transduce identity averager [5 4])
 ```
 
 
 
-```
-<pre class="src src-clojure">=> 4.5
+```clojure
+=> 4.5
 ```
 
 
 
 noslide
 
-```
-<pre class="src src-clojure"><span style="color: #b22222;">;; </span><span style="color: #b22222;">check that nth-counter returns count of nth element in chunk of tuples</span>
-(<span style="color: #a020f0;">def</span> <span style="color: #0000ff;">chunks</span> [[[<span style="color: #008b8b;">:person-1</span> <span style="color: #008b8b;">:name</span> <span style="color: #8b2252;">"Flintstone"</span>]
-              [<span style="color: #008b8b;">:person-2</span> <span style="color: #008b8b;">:name</span> <span style="color: #8b2252;">"Rubble"</span>]]])
-(<span style="color: #a0522d;">sequence</span> (nth-counter 2) chunks)
-```
-
-
-
-```
-<pre class="src src-clojure">=> (10 6)
+```clojure
+;; check that nth-counter returns count of nth element in chunk of tuples
+(def chunks [[[:person-1 :name "Flintstone"]
+              [:person-2 :name "Rubble"]]])
+(sequence (nth-counter 2) chunks)
 ```
 
 
 
+```clojure
+=> (10 6)
 ```
-<pre class="src src-clojure"><span style="color: #b22222;">;; </span><span style="color: #b22222;">check that the reducing fn and xform compose</span>
+
+
+
+```clojure
+;; check that the reducing fn and xform compose
 (transduce (nth-counter 2) averager chunks)
 ```
 
 
 
-```
-<pre class="src src-clojure">=> 8.0
+```clojure
+=> 8.0
 ```
 
 
 
 You should add async transductions to your program when you have e.g. a measured performance need. For this simple example, all the code above could be replaced by a simple API query:
 
-```
-<pre class="src src-clojure">(d/q '[<span style="color: #008b8b;">:find</span> (avg ?ct)
-       <span style="color: #008b8b;">:with</span> ?artist
-       <span style="color: #008b8b;">:where</span> [?artist <span style="color: #008b8b;">:artist/name</span> ?name]
-              [(<span style="color: #a0522d;">count</span> ?name) ?ct]]
+```clojure
+(d/q '[:find (avg ?ct)
+       :with ?artist
+       :where [?artist :artist/name ?name]
+              [(count ?name) ?ct]]
      db)
 ```
 
 
 
-```
-<pre class="src src-clojure">=> [[13.893066724625081]]
+```clojure
+=> [[13.893066724625081]]
 ```
 
 
@@ -445,19 +445,19 @@ KeyMeaningDefault:offsetnumber of results to omit from the beginning0:limitmaxim
 
 The full [mbrainz example](https://github.com/Datomic/mbrainz-importer) has over 600,000 names. The following query uses `:offset` and `:limit` to return 2 names starting with the 10th item in the query result.
 
-```
-<pre class="src src-clojure"><span style="color: #b22222;">;; </span><span style="color: #b22222;">query</span>
-{<span style="color: #008b8b;">:query</span> '[<span style="color: #008b8b;">:find</span> ?name
-          <span style="color: #008b8b;">:where</span> [_ <span style="color: #008b8b;">:artist/name</span> ?name]]
-          <span style="color: #008b8b;">:args</span> [db]
-          <span style="color: #008b8b;">:offset</span> 10
-          <span style="color: #008b8b;">:limit</span> 2}
+```clojure
+;; query
+{:query '[:find ?name
+          :where [_ :artist/name ?name]]
+          :args [db]
+          :offset 10
+          :limit 2}
 ```
 
 
 
-```
-<pre class="src src-clojure">=>
-[[<span style="color: #8b2252;">"Kenneth Ishak & The Freedom Machines"</span>] 
- [<span style="color: #8b2252;">"The Plastik"</span>]]
+```clojure
+=>
+[["Kenneth Ishak & The Freedom Machines"] 
+ ["The Plastik"]]
 ```

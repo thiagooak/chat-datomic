@@ -29,8 +29,8 @@ Datomic's embedded JDBC storage has two passwords: an 'admin' password used by t
 
 Set the passwords by setting the following transactor properties:
 
-```
-<pre class="src src-java">storage-admin-password=
+```java
+storage-admin-password=
 storage-datomic-password=
 ```
 
@@ -44,8 +44,8 @@ storage-datomic-password=
 
 To enable remote access to Datomic's embedded storage, set the following transactor property:
 
-```
-<pre class="src src-java">storage-access=remote
+```java
+storage-access=remote
 ```
 
 
@@ -60,8 +60,8 @@ New transactor properties will take effect on the next transactor start.
 
 After you set `storage-datomic-password`, peers must include the 'datomic' password in the [connection URI](https://docs.datomic.com/on-prem/clojure/index.html#datomic.api/connect), e.g.
 
-```
-<pre class="src src-sh">datomic:dev://my-host:4334/my-db?<span style="color: #a0522d;">password</span>=my-secret
+```sh
+datomic:dev://my-host:4334/my-db?password=my-secret
 ```
 
 

@@ -5,8 +5,8 @@ First, don't forget to acquire the latest value of the database, **after** the t
 
 noslide
 
-```
-<pre class="src src-clojure">(<span style="color: #a020f0;">def</span> <span style="color: #0000ff;">db</span> (d/db conn))
+```clojure
+(def db (d/db conn))
 ```
 
 
@@ -25,21 +25,21 @@ Parameters enter query via additional arguments to `q`, and they are named by a 
 
 noslide
 
-```
-<pre class="src src-clojure">(d/q '[<span style="color: #008b8b;">:find</span> ?sku
-       <span style="color: #008b8b;">:in</span> $ ?inv
-       <span style="color: #008b8b;">:where</span> [?item <span style="color: #008b8b;">:item/id</span> ?inv]
-              [?order <span style="color: #008b8b;">:order/items</span> ?item]
-              [?order <span style="color: #008b8b;">:order/items</span> ?other-item]
-              [?other-item <span style="color: #008b8b;">:item/id</span> ?other-inv]
-              [?other-inv <span style="color: #008b8b;">:inv/sku</span> ?sku]]
-     db [<span style="color: #008b8b;">:inv/sku</span> <span style="color: #8b2252;">"SKU-25"</span>])
+```clojure
+(d/q '[:find ?sku
+       :in $ ?inv
+       :where [?item :item/id ?inv]
+              [?order :order/items ?item]
+              [?order :order/items ?other-item]
+              [?other-item :item/id ?other-inv]
+              [?other-inv :inv/sku ?sku]]
+     db [:inv/sku "SKU-25"])
 ```
 
 
 
-```
-<pre class="src src-clojure">=> [[<span style="color: #8b2252;">"SKU-25"</span>] [<span style="color: #8b2252;">"SKU-26"</span>]]
+```clojure
+=> [["SKU-25"] ["SKU-26"]]
 ```
 
 
@@ -64,31 +64,31 @@ The "related items" feature is so nice that we would like to use it in a bunch o
 
 Create a rule named *ordered-together* that binds two variables *?inv*and *?other-inv* if they have ever appeared in the same order:
 
-```
-<pre class="src src-clojure">(<span style="color: #a020f0;">def</span> <span style="color: #0000ff;">rules</span>
+```clojure
+(def rules
   '[[(ordered-together ?inv ?other-inv)
-     [?item <span style="color: #008b8b;">:item/id</span> ?inv]
-     [?order <span style="color: #008b8b;">:order/items</span> ?item]
-     [?order <span style="color: #008b8b;">:order/items</span> ?other-item]
-     [?other-item <span style="color: #008b8b;">:item/id</span> ?other-inv]]])
+     [?item :item/id ?inv]
+     [?order :order/items ?item]
+     [?order :order/items ?other-item]
+     [?other-item :item/id ?other-inv]]])
 ```
 
 
 
 Now you can pass these *rules* to a query, using the special *:in* name *%*, and then refer to the rules by name:
 
-```
-<pre class="src src-clojure">(d/q '[<span style="color: #008b8b;">:find</span> ?sku
-       <span style="color: #008b8b;">:in</span> $ % ?inv
-       <span style="color: #008b8b;">:where</span> (ordered-together ?inv ?other-inv)
-              [?other-inv <span style="color: #008b8b;">:inv/sku</span> ?sku]]
-     db rules [<span style="color: #008b8b;">:inv/sku</span> <span style="color: #8b2252;">"SKU-25"</span>])
+```clojure
+(d/q '[:find ?sku
+       :in $ % ?inv
+       :where (ordered-together ?inv ?other-inv)
+              [?other-inv :inv/sku ?sku]]
+     db rules [:inv/sku "SKU-25"])
 ```
 
 
 
-```
-<pre class="src src-clojure">=> [[<span style="color: #8b2252;">"SKU-25"</span>] [<span style="color: #8b2252;">"SKU-26"</span>]]
+```clojure
+=> [["SKU-25"] ["SKU-26"]]
 ```
 
 

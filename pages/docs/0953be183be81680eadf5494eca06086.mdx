@@ -18,45 +18,45 @@ A Datomic Administrator has permission to use all Client API and CLI functions. 
 
 All Datomic permissions are implemented via S3 read and write permissions on a System's S3 buckets. The IAM policy below demonstrates all the permissions needed to be administrator on a Datomic system:
 
-```
-<pre class="src src-javascript">{
-    <span style="color: #8b2252;">"Version"</span>: <span style="color: #8b2252;">"2012-10-17"</span>,
-    <span style="color: #8b2252;">"Statement"</span>: [
+```javascript
+{
+    "Version": "2012-10-17",
+    "Statement": [
         {
-            <span style="color: #8b2252;">"Action"</span>: [
-                <span style="color: #8b2252;">"s3:GetObject"</span>
+            "Action": [
+                "s3:GetObject"
             ],
-            <span style="color: #8b2252;">"Resource"</span>: [
-                <span style="color: #8b2252;">"$(S3DatomicArn)/$(SystemName)/datomic/access/*"</span>
+            "Resource": [
+                "$(S3DatomicArn)/$(SystemName)/datomic/access/*"
             ],
-            <span style="color: #8b2252;">"Effect"</span>: <span style="color: #8b2252;">"Allow"</span>
+            "Effect": "Allow"
         },
         {
-            <span style="color: #8b2252;">"Action"</span>: [
-                <span style="color: #8b2252;">"s3:PutObject"</span>,
-                <span style="color: #8b2252;">"s3:DeleteObject"</span>
+            "Action": [
+                "s3:PutObject",
+                "s3:DeleteObject"
             ],
-            <span style="color: #8b2252;">"Resource"</span>: [
-                <span style="color: #8b2252;">"$(S3DatomicArn)/$(SystemName)/datomic/access/public-keys/*"</span>
+            "Resource": [
+                "$(S3DatomicArn)/$(SystemName)/datomic/access/public-keys/*"
             ],
-            <span style="color: #8b2252;">"Effect"</span>: <span style="color: #8b2252;">"Allow"</span>
+            "Effect": "Allow"
         },
         {
-            <span style="color: #8b2252;">"Action"</span>: [
-                <span style="color: #8b2252;">"ec2:DescribeInstances"</span>,
+            "Action": [
+                "ec2:DescribeInstances",
             ],
-            <span style="color: #8b2252;">"Resource"</span>: <span style="color: #8b2252;">"*"</span>,
-            <span style="color: #8b2252;">"Effect"</span>: <span style="color: #8b2252;">"Allow"</span>
+            "Resource": "*",
+            "Effect": "Allow"
         },
         {
-            <span style="color: #8b2252;">"Action"</span>: [
-                <span style="color: #8b2252;">"ec2:RebootInstances"</span>
+            "Action": [
+                "ec2:RebootInstances"
             ],
-            <span style="color: #8b2252;">"Resource"</span>: <span style="color: #8b2252;">"*"</span>,
-            <span style="color: #8b2252;">"Effect"</span>: <span style="color: #8b2252;">"Allow"</span>,
-            <span style="color: #8b2252;">"Condition"</span>: {
-              <span style="color: #8b2252;">"StringEquals"</span>: {
-                <span style="color: #8b2252;">"ec2:ResourceTag/datomic:system"</span>: <span style="color: #8b2252;">"$(SystemName)"</span>
+            "Resource": "*",
+            "Effect": "Allow",
+            "Condition": {
+              "StringEquals": {
+                "ec2:ResourceTag/datomic:system": "$(SystemName)"
               }
            }
         }

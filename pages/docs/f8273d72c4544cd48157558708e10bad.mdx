@@ -42,8 +42,8 @@ Storage client dependencies
 
 Datomic depends on various storage client libraries. You can find the recommended versions of all storage client libraries in the `provided`scope of the Datomic pom.xml file:
 
-```
-<pre class="src src-sh">mvn dependency:list -DincludeScope=provided
+```sh
+mvn dependency:list -DincludeScope=provided
 ```
 
 
@@ -83,8 +83,8 @@ For example, for Postgres at the command line:
 
 noslide
 
-```
-<pre class="src src-sh">psql -f bin/sql/postgres-db.sql -U postgres
+```sh
+psql -f bin/sql/postgres-db.sql -U postgres
 
 psql -f bin/sql/postgres-table.sql -U postgres -d datomic
 
@@ -109,20 +109,20 @@ In a maven based build, add the following snippet to the dependencies section of
 
 noslide
 
-```
-<pre class="src src-xml"><<span style="color: #0000ff;">dependency</span>>
-  <<span style="color: #0000ff;">groupId</span>>org.postgresql</<span style="color: #0000ff;">groupId</span>>
-  <<span style="color: #0000ff;">artifactId</span>>postgresql</<span style="color: #0000ff;">artifactId</span>>
-  <<span style="color: #0000ff;">version</span>>42.5.1</<span style="color: #0000ff;">version</span>>
-</<span style="color: #0000ff;">dependency</span>>
+```xml
+<dependency>
+  <groupId>org.postgresql</groupId>
+  <artifactId>postgresql</artifactId>
+  <version>42.5.1</version>
+</dependency>
 ```
 
 
 
 In a leiningen project, add the following to the dependencies section of your *project.clj* in collection under `:dependencies` key:
 
-```
-<pre class="src src-clojure">[org.postgresql/postgresql <span style="color: #8b2252;">"42.5.1"</span>]
+```clojure
+[org.postgresql/postgresql "42.5.1"]
 ```
 
 
@@ -139,8 +139,8 @@ Datomic uses a query to validate JDBC connections. By default this query is:
 
 noslide
 
-```
-<pre class="src src-sql"><span style="color: #a020f0;">select</span> 1 <span style="color: #a020f0;">from</span> dual
+```sql
+select 1 from dual
 ```
 
 
@@ -149,8 +149,8 @@ for Oracle JDBC URIs and
 
 noslide
 
-```
-<pre class="src src-sql"><span style="color: #a020f0;">select</span> 1
+```sql
+select 1
 ```
 
 
@@ -203,8 +203,8 @@ There is an example in the *provided* scope of the *pom.xml* in the Datomic dire
 
 noslide
 
-```
-<pre class="src src-clojure">[com.amazonaws/aws-java-sdk-dynamodb <span style="color: #8b2252;">"1.11.600"</span>]
+```clojure
+[com.amazonaws/aws-java-sdk-dynamodb "1.11.600"]
 ```
 
 
@@ -224,10 +224,10 @@ There is an automated process to create the necessary DynamoDB table, IAM roles,
 
 noslide
 
-```
-<pre class="src src-sh"><span style="color: #483d8b;">export</span> <span style="color: #a0522d;">AWS_ACCESS_KEY_ID</span>=<aws-access-key-id>
+```sh
+export AWS_ACCESS_KEY_ID=<aws-access-key-id>
 
-<span style="color: #483d8b;">export</span> <span style="color: #a0522d;">AWS_SECRET_KEY</span>=<aws-secret-key>
+export AWS_SECRET_KEY=<aws-secret-key>
 ```
 
 
@@ -236,8 +236,8 @@ noslide
 
 noslide
 
-```
-<pre class="src src-sh">bin/datomic ensure-transactor my-transactor.properties my-transactor.properties
+```sh
+bin/datomic ensure-transactor my-transactor.properties my-transactor.properties
 ```
 
 
@@ -258,20 +258,20 @@ If you are unable to run the *ensure-transactor* command or wish to customize yo
 
 The DynamoDB table schema requires an "id" attribute of type String as primary key with 'Keytype' "HASH":
 
-```
-<pre class="src src-js">{
-  <span style="color: #8b2252;">"Table"</span>:
+```js
+{
+  "Table":
     {
-      <span style="color: #8b2252;">"AttributeDefinitions"</span>: [
-          {<span style="color: #8b2252;">"AttributeName"</span>: <span style="color: #8b2252;">"id"</span>,
-            <span style="color: #8b2252;">"AttributeType"</span>: <span style="color: #8b2252;">"S"</span>}
+      "AttributeDefinitions": [
+          {"AttributeName": "id",
+            "AttributeType": "S"}
       ],
 
     ...
 
-     <span style="color: #8b2252;">"KeySchema"</span>: [
-       {<span style="color: #8b2252;">"KeyType"</span>: <span style="color: #8b2252;">"HASH"</span>,
-        <span style="color: #8b2252;">"AttributeName"</span>: <span style="color: #8b2252;">"id"</span>}
+     "KeySchema": [
+       {"KeyType": "HASH",
+        "AttributeName": "id"}
       ]
 
     ...
@@ -309,11 +309,11 @@ This policy is required for the transactor to run. Replace &lt;AWS-ACCOUNT-ID&gt
 
 noslide
 
-```
-<pre class="src src-js">{<span style="color: #8b2252;">"Statement"</span>:
- [{<span style="color: #8b2252;">"Effect"</span>: <span style="color: #8b2252;">"Allow"</span>,
-   <span style="color: #8b2252;">"Action"</span>: [<span style="color: #8b2252;">"dynamodb:*"</span>],
-   <span style="color: #8b2252;">"Resource"</span>: <span style="color: #8b2252;">"arn:aws:dynamodb:*:<AWS-ACCOUNT-ID>:table/<TABLE-NAME>"</span>}]}
+```js
+{"Statement":
+ [{"Effect": "Allow",
+   "Action": ["dynamodb:*"],
+   "Resource": "arn:aws:dynamodb:*:<AWS-ACCOUNT-ID>:table/<TABLE-NAME>"}]}
 ```
 
 
@@ -328,11 +328,11 @@ This policy is optional - it enables S3 log rotation. The policy below includes 
 
 noslide
 
-```
-<pre class="src src-js">{<span style="color: #8b2252;">"Statement"</span>:
- [{<span style="color: #8b2252;">"Effect"</span>: <span style="color: #8b2252;">"Allow"</span>,
-   <span style="color: #8b2252;">"Action"</span>: [<span style="color: #8b2252;">"s3:PutObject"</span>],
-   <span style="color: #8b2252;">"Resource"</span>: [<span style="color: #8b2252;">"arn:aws:s3:::<S3-LOG-BUCKET>"</span>, <span style="color: #8b2252;">"arn:aws:s3:::<S3-LOG-BUCKET>/*"</span>]}]}
+```js
+{"Statement":
+ [{"Effect": "Allow",
+   "Action": ["s3:PutObject"],
+   "Resource": ["arn:aws:s3:::<S3-LOG-BUCKET>", "arn:aws:s3:::<S3-LOG-BUCKET>/*"]}]}
 ```
 
 
@@ -347,12 +347,12 @@ This policy is optional - it enables the transactor to report metrics to CloudWa
 
 noslide
 
-```
-<pre class="src src-js">{<span style="color: #8b2252;">"Statement"</span>:
- [{<span style="color: #8b2252;">"Effect"</span>:<span style="color: #8b2252;">"Allow"</span>,
-   <span style="color: #8b2252;">"Resource"</span>:<span style="color: #8b2252;">"*"</span>,
-   <span style="color: #8b2252;">"Condition"</span>:{<span style="color: #8b2252;">"Bool"</span>:{<span style="color: #8b2252;">"aws:SecureTransport"</span>:<span style="color: #8b2252;">"true"</span>}},
-   <span style="color: #8b2252;">"Action"</span>: [<span style="color: #8b2252;">"cloudwatch:PutMetricData"</span>, <span style="color: #8b2252;">"cloudwatch:PutMetricDataBatch"</span>]}]}
+```js
+{"Statement":
+ [{"Effect":"Allow",
+   "Resource":"*",
+   "Condition":{"Bool":{"aws:SecureTransport":"true"}},
+   "Action": ["cloudwatch:PutMetricData", "cloudwatch:PutMetricDataBatch"]}]}
 ```
 
 
@@ -365,12 +365,12 @@ noslide
 
 You will need to grant the peer a few read access permissions on the DynamoDB table. Replace &lt;AWS-ACCOUNT-ID&gt; and &lt;TABLE-NAME&gt;.
 
-```
-<pre class="src src-js">{<span style="color: #8b2252;">"Statement"</span>:
- [{<span style="color: #8b2252;">"Effect"</span>:<span style="color: #8b2252;">"Allow"</span>,
-   <span style="color: #8b2252;">"Action"</span>: [<span style="color: #8b2252;">"dynamodb:GetItem"</span>, <span style="color: #8b2252;">"dynamodb:BatchGetItem"</span>, <span style="color: #8b2252;">"dynamodb:Scan"</span>, <span style="color: #8b2252;">"dynamodb:Query"</span>],
-   <span style="color: #8b2252;">"Resource"</span>:
-   <span style="color: #8b2252;">"arn:aws:dynamodb:*:<AWS-ACCOUNT-ID>:table/<TABLE-NAME>"</span>}]}
+```js
+{"Statement":
+ [{"Effect":"Allow",
+   "Action": ["dynamodb:GetItem", "dynamodb:BatchGetItem", "dynamodb:Scan", "dynamodb:Query"],
+   "Resource":
+   "arn:aws:dynamodb:*:<AWS-ACCOUNT-ID>:table/<TABLE-NAME>"}]}
 ```
 
 
@@ -393,9 +393,9 @@ The DynamoDB transactor properties file must be configured so that the hostname 
 
 noslide
 
-```
-<pre class="src src-shell-script"><span style="color: #a0522d;">host</span>=<FINAL-HOST-NAME>
-<span style="color: #b22222;"># </span><span style="color: #b22222;">e.g., ec2-ip-with-hyphens.compute-1.amazonaws.com</span>
+```shell-script
+host=<FINAL-HOST-NAME>
+# e.g., ec2-ip-with-hyphens.compute-1.amazonaws.com
 ...
 aws-dynamodb-table=<TABLE-NAME>
 ...
@@ -469,16 +469,16 @@ Once a cluster is configured, you must provision a keyspace and table (column fa
 
 noslide
 
-```
-<pre class="src src-sh">cqlsh -f bin/cql/cassandra-keyspace.cql -u cassandra -p cassandra
+```sh
+cqlsh -f bin/cql/cassandra-keyspace.cql -u cassandra -p cassandra
 ```
 
 
 
 noslide
 
-```
-<pre class="src src-sh">cqlsh -f bin/cql/cassandra-table.cql -u cassandra -p cassandra
+```sh
+cqlsh -f bin/cql/cassandra-table.cql -u cassandra -p cassandra
 ```
 
 
@@ -487,8 +487,8 @@ Datomic provides optional support for Cassandra's internal username/password mec
 
 noslide
 
-```
-<pre class="src src-sh">cqlsh -f bin/cql/cassandra-user.cql -u cassandra -p cassandra
+```sh
+cqlsh -f bin/cql/cassandra-user.cql -u cassandra -p cassandra
 ```
 
 
@@ -499,8 +499,8 @@ Note that if you are using Cassandra 3.X the cqlsh tool may require you to expli
 
 noslide
 
-```
-<pre class="src src-sh">--cqlversion=3.4.0
+```sh
+--cqlversion=3.4.0
 ```
 
 
@@ -514,23 +514,23 @@ Next, setup your transactor properties file:
 - If your Cassandra cluster is configured with the necessary certificates to support SSL, and verified it works with a simple client (e.g., *cqlsh*), you can configure the transactor to use SSL by setting *cassandra-ssl* to true. See the [Cassandra docs](https://docs.datastax.com/en/security/6.0/security/encryptClientNodeSSL.html) for more information.
 - You can optionally provide *cassandra-cluster-callback*, whose value is a name identifying either a Java static method (e.g. my.app.Cassandra.buildCluster), or a clojure function (e.g. my.app/build-cluster). This method/function takes as its single argument a map containing the above parameters, and which returns an instance of [Cassandra Cluster](https://docs.datastax.com/en/drivers/java/2.0/com/datastax/driver/core/Cluster.html). Note that the argument type for this method is Object, e.g.
 
-```
-<pre class="src src-java"><span style="color: #a020f0;">import</span> <span style="color: #008b8b;">com</span>.<span style="color: #008b8b;">datastax</span>.<span style="color: #008b8b;">driver</span>.<span style="color: #008b8b;">core</span>.<span style="color: #228b22;">Cluster</span>;
-<span style="color: #a020f0;">import</span> <span style="color: #008b8b;">datomic</span>.<span style="color: #228b22;">Util</span>;
-<span style="color: #a020f0;">import</span> <span style="color: #008b8b;">java</span>.<span style="color: #008b8b;">util</span>.<span style="color: #228b22;">Map</span>;
+```java
+import com.datastax.driver.core.Cluster;
+import datomic.Util;
+import java.util.Map;
 
-<span style="color: #a020f0;">public</span> <span style="color: #a020f0;">class</span> <span style="color: #228b22;">DatomicCassandra</span> {
-  <span style="color: #a020f0;">public</span> <span style="color: #a020f0;">static</span> <span style="color: #228b22;">Cluster</span> <span style="color: #0000ff;">build</span>(<span style="color: #228b22;">Object</span> <span style="color: #a0522d;">args</span>) {
-    <span style="color: #228b22;">Map</span> <<span style="color: #228b22;">Object</span>, <span style="color: #228b22;">Object</span>> <span style="color: #a0522d;">params</span> = (<span style="color: #228b22;">Map</span><<span style="color: #228b22;">Object</span>,<span style="color: #228b22;">Object</span>>) args;
-    <span style="color: #008b8b;">Cluster</span>.<span style="color: #228b22;">Builder</span> <span style="color: #a0522d;">cluster</span> = Cluster.builder();
-    cluster.addContactPoint((<span style="color: #228b22;">String</span>)params.get(Util.read(<span style="color: #8b2252;">":host"</span>)));
-    cluster.withPort((<span style="color: #228b22;">Integer</span>)(params.get(Util.read(<span style="color: #8b2252;">":port"</span>))));
-    cluster.withCredentials((<span style="color: #228b22;">String</span>)params.get(Util.read(<span style="color: #8b2252;">":user"</span>)),
-                            (<span style="color: #228b22;">String</span>)params.get(Util.read(<span style="color: #8b2252;">":password"</span>)));
+public class DatomicCassandra {
+  public static Cluster build(Object args) {
+    Map <Object, Object> params = (Map<Object,Object>) args;
+    Cluster.Builder cluster = Cluster.builder();
+    cluster.addContactPoint((String)params.get(Util.read(":host")));
+    cluster.withPort((Integer)(params.get(Util.read(":port"))));
+    cluster.withCredentials((String)params.get(Util.read(":user")),
+                            (String)params.get(Util.read(":password")));
 
-    <span style="color: #b22222;">// </span><span style="color: #b22222;">Set other cluster options here</span>
+    // Set other cluster options here
 
-    <span style="color: #a020f0;">return</span> cluster.build();
+    return cluster.build();
   }
 }
 ```
@@ -543,12 +543,12 @@ In a maven based build, add the following snippet to the dependencies section of
 
 noslide noslide
 
-```
-<pre class="src src-xml"><<span style="color: #0000ff;">dependency</span>>
-  <<span style="color: #0000ff;">groupId</span>>com.datastax.cassandra</<span style="color: #0000ff;">groupId</span>>
-  <<span style="color: #0000ff;">artifactId</span>>cassandra-driver-core</<span style="color: #0000ff;">artifactId</span>>
-  <<span style="color: #0000ff;">version</span>>3.1.0</<span style="color: #0000ff;">version</span>>
-</<span style="color: #0000ff;">dependency</span>>
+```xml
+<dependency>
+  <groupId>com.datastax.cassandra</groupId>
+  <artifactId>cassandra-driver-core</artifactId>
+  <version>3.1.0</version>
+</dependency>
 ```
 
 
@@ -557,9 +557,9 @@ In a leiningen project, add the following to the dependencies section of your *p
 
 noslide
 
-```
-<pre class="src src-clojure"><span style="color: #b22222;">;; </span><span style="color: #b22222;">in collection under :dependencies key</span>
-[com.datastax.cassandra/cassandra-driver-core <span style="color: #8b2252;">"3.1.0"</span>]
+```clojure
+;; in collection under :dependencies key
+[com.datastax.cassandra/cassandra-driver-core "3.1.0"]
 ```
 
 
@@ -608,8 +608,8 @@ Once you have your key, you can install it by pasting the key into the value of 
 
 noslide
 
-```
-<pre class="src src-sh">license-key=XXXXXXXX...
+```sh
+license-key=XXXXXXXX...
 ```
 
 
@@ -638,8 +638,8 @@ To start the Transactor, run the following command, passing in your properties f
 
 noslide
 
-```
-<pre class="src src-sh">bin/transactor my-transactor.properties
+```sh
+bin/transactor my-transactor.properties
 ```
 
 
@@ -648,8 +648,8 @@ If you are accessing Cassandra via SSL, you must provide a Java [TrustStore](htt
 
 noslide
 
-```
-<pre class="src src-sh">bin/transactor -Djavax.net.ssl.trustStore=path-to-truststore
+```sh
+bin/transactor -Djavax.net.ssl.trustStore=path-to-truststore
 -Djavax.net.ssl.trustStorePassword=password-for-truststore
 -Djavax.net.ssl.keyStore=path-to-keystore
 -Djavax.net.ssl.keyStorePassword=password-for-keystore my-transactor.properties
@@ -689,8 +689,8 @@ If you are accessing Cassandra via SSL, you must provide a Java [TrustStore](htt
 
 noslide
 
-```
-<pre class="src src-sh">-Djavax.net.ssl.trustStore=path-to-truststore
+```sh
+-Djavax.net.ssl.trustStore=path-to-truststore
 -Djavax.net.ssl.trustStorePassword=password-for-truststore
 ```
 
@@ -702,26 +702,26 @@ If you are not using SSL to access Cassandra, Datomic configures a KeyStore for 
 
 The code below shows how to create and connect to a database using the Datomic shell.
 
-```
-<pre class="src src-java">bin/shell
-```
-
-
-
-```
-<pre class="src src-java">datomic % uri = <uri-<span style="color: #a020f0;">for</span>-storage-service>;
+```java
+bin/shell
 ```
 
 
 
-```
-<pre class="src src-java">datomic % Peer.createDatabase(uri);
+```java
+datomic % uri = <uri-for-storage-service>;
 ```
 
 
 
+```java
+datomic % Peer.createDatabase(uri);
 ```
-<pre class="src src-java">datomic % conn = Peer.connect(uri);
+
+
+
+```java
+datomic % conn = Peer.connect(uri);
 ```
 
 

@@ -12,16 +12,16 @@ With Datomic, you can make a database query as-of any previous point in time, wh
 
 noslide
 
-```
-<pre class="src src-clojure">(d/q '[<span style="color: #008b8b;">:find</span> (<span style="color: #a0522d;">max</span> 3 ?tx)
-       <span style="color: #008b8b;">:where</span> [?tx <span style="color: #008b8b;">:db/txInstant</span>]]
+```clojure
+(d/q '[:find (max 3 ?tx)
+       :where [?tx :db/txInstant]]
      db)
 ```
 
 
 
-```
-<pre class="src src-clojure">=> [[[13194139534402 13194139534401 13194139534400]]]
+```clojure
+=> [[[13194139534402 13194139534401 13194139534400]]]
 ```
 
 
@@ -30,28 +30,28 @@ The *max* in find limits the results to the three highest valued (most recent) t
 
 noslide
 
-```
-<pre class="src src-clojure">(<span style="color: #a020f0;">def</span> <span style="color: #0000ff;">txid</span> (<span style="color: #483d8b;">->></span> (d/q '[<span style="color: #008b8b;">:find</span> (<span style="color: #a0522d;">max</span> 3 ?tx)
-                      <span style="color: #008b8b;">:where</span> [?tx <span style="color: #008b8b;">:db/txInstant</span>]]
+```clojure
+(def txid (->> (d/q '[:find (max 3 ?tx)
+                      :where [?tx :db/txInstant]]
                     db)
                first first last))
 
-(<span style="color: #a020f0;">def</span> <span style="color: #0000ff;">db-before</span> (d/as-of db txid))
+(def db-before (d/as-of db txid))
 ```
 
 
 
-```
-<pre class="src src-clojure">(d/q '[<span style="color: #008b8b;">:find</span> ?sku ?count
-       <span style="color: #008b8b;">:where</span> [?inv <span style="color: #008b8b;">:inv/sku</span> ?sku]
-              [?inv <span style="color: #008b8b;">:inv/count</span> ?count]]
+```clojure
+(d/q '[:find ?sku ?count
+       :where [?inv :inv/sku ?sku]
+              [?inv :inv/count ?count]]
      db-before)
 ```
 
 
 
-```
-<pre class="src src-clojure">=> [[<span style="color: #8b2252;">"SKU-42"</span> 100] [<span style="color: #8b2252;">"SKU-21"</span> 7] [<span style="color: #8b2252;">"SKU-22"</span> 7]]
+```clojure
+=> [["SKU-42" 100] ["SKU-21" 7] ["SKU-22" 7]]
 ```
 
 
@@ -67,31 +67,31 @@ In addition to point-in-time auditing, you can also review the entire history of
 
 noslide
 
-```
-<pre class="src src-clojure">(<span style="color: #a0522d;">require</span> '[clojure.pprint <span style="color: #008b8b;">:as</span> pp])
-(<span style="color: #a020f0;">def</span> <span style="color: #0000ff;">db-hist</span> (d/history db))
+```clojure
+(require '[clojure.pprint :as pp])
+(def db-hist (d/history db))
 ```
 
 
 
-```
-<pre class="src src-clojure">(<span style="color: #483d8b;">->></span> (d/q '[<span style="color: #008b8b;">:find</span> ?tx ?sku ?val ?op
-            <span style="color: #008b8b;">:where</span> [?inv <span style="color: #008b8b;">:inv/count</span> ?val ?tx ?op]
-                   [?inv <span style="color: #008b8b;">:inv/sku</span> ?sku]]
+```clojure
+(->> (d/q '[:find ?tx ?sku ?val ?op
+            :where [?inv :inv/count ?val ?tx ?op]
+                   [?inv :inv/sku ?sku]]
           db-hist)
-     (<span style="color: #a0522d;">sort-by</span> first)
+     (sort-by first)
      (pp/pprint))
 ```
 
 
 
-```
-<pre class="src src-clojure">=> ([13194139534399 <span style="color: #8b2252;">"SKU-21"</span> 7 true]
-    [13194139534399 <span style="color: #8b2252;">"SKU-42"</span> 100 true]
-    [13194139534399 <span style="color: #8b2252;">"SKU-22"</span> 7 true]
-    [13194139534400 <span style="color: #8b2252;">"SKU-22"</span> 7 false]
-    [13194139534402 <span style="color: #8b2252;">"SKU-42"</span> 1000 true]
-    [13194139534402 <span style="color: #8b2252;">"SKU-42"</span> 100 false])
+```clojure
+=> ([13194139534399 "SKU-21" 7 true]
+    [13194139534399 "SKU-42" 100 true]
+    [13194139534399 "SKU-22" 7 true]
+    [13194139534400 "SKU-22" 7 false]
+    [13194139534402 "SKU-42" 1000 true]
+    [13194139534402 "SKU-42" 100 false])
 ```
 
 

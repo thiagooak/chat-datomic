@@ -59,35 +59,35 @@ All other keys should be namespace-qualified and all data passed to cancel must 
 
 The example below uses a transaction function to ensure that users always have a `name` and `email`. The first transaction succeeds, but the second is canceled since `:address` is passed instead of `:email`.
 
-```
-<pre class="src src-clojure">(<span style="color: #a020f0;">def</span> <span style="color: #0000ff;">add-user-code</span>
-  '(<span style="color: #483d8b;">if</span> (<span style="color: #a0522d;">every?</span> umap [<span style="color: #008b8b;">:name</span> <span style="color: #008b8b;">:email</span>])
-     [{<span style="color: #008b8b;">:user/name</span> (<span style="color: #008b8b;">:name</span> umap)
-       <span style="color: #008b8b;">:user/email</span> (<span style="color: #008b8b;">:email</span> umap)}]
-     (datomic.api/cancel {<span style="color: #008b8b;">:cognitect.anomalies/category</span> <span style="color: #008b8b;">:cognitect.anomalies/incorrect</span>
-                          <span style="color: #008b8b;">:cognitect.anomalies/message</span> <span style="color: #8b2252;">"User map must contain :email and :name"</span>})))
+```clojure
+(def add-user-code
+  '(if (every? umap [:name :email])
+     [{:user/name (:name umap)
+       :user/email (:email umap)}]
+     (datomic.api/cancel {:cognitect.anomalies/category :cognitect.anomalies/incorrect
+                          :cognitect.anomalies/message "User map must contain :email and :name"})))
 
-<span style="color: #b22222;">;; </span><span style="color: #b22222;">Install transaction function:</span>
-@(d/transact conn [{<span style="color: #008b8b;">:db/ident</span> <span style="color: #008b8b;">:add-user</span>
-                    <span style="color: #008b8b;">:db/fn</span> (d/function {<span style="color: #008b8b;">:lang</span> <span style="color: #8b2252;">"clojure"</span> <span style="color: #008b8b;">:params</span> '[db umap] <span style="color: #008b8b;">:code</span> add-user-code})}])
+;; Install transaction function:
+@(d/transact conn [{:db/ident :add-user
+                    :db/fn (d/function {:lang "clojure" :params '[db umap] :code add-user-code})}])
 
-<span style="color: #b22222;">;; </span><span style="color: #b22222;">Success:</span>
-@(d/transact conn [[<span style="color: #008b8b;">:add-user</span> {<span style="color: #008b8b;">:name</span> <span style="color: #8b2252;">"Marshall"</span> <span style="color: #008b8b;">:email</span> <span style="color: #8b2252;">"test@test.com"</span>}]])
-```
-
-
-
-```
-<pre class="src src-clojure">=> <span style="color: #b22222;">;; </span><span style="color: #b22222;">tx result map</span>
-<span style="color: #b22222;">;; </span><span style="color: #b22222;">Failure:</span>
-@(d/transact conn [[<span style="color: #008b8b;">:add-user</span> {<span style="color: #008b8b;">:name</span> <span style="color: #8b2252;">"Marshall"</span> <span style="color: #008b8b;">:address</span> <span style="color: #8b2252;">"test@test.com"</span>}]])
+;; Success:
+@(d/transact conn [[:add-user {:name "Marshall" :email "test@test.com"}]])
 ```
 
 
 
+```clojure
+=> ;; tx result map
+;; Failure:
+@(d/transact conn [[:add-user {:name "Marshall" :address "test@test.com"}]])
 ```
-<pre class="src src-clojure">=> <span style="color: #483d8b;">Execution</span> error (<span style="color: #483d8b;">ExceptionInfo</span>) at datomic.error/deserialize-exception (error.clj:175).
-<span style="color: #483d8b;">User</span> map must contain <span style="color: #008b8b;">:email</span> and <span style="color: #008b8b;">:name</span>
+
+
+
+```clojure
+=> Execution error (ExceptionInfo) at datomic.error/deserialize-exception (error.clj:175).
+User map must contain :email and :name
 ```
 
 
@@ -105,8 +105,8 @@ A classpath function is an ordinary Clojure function added to the classpath of a
 
 To add a classpath function for use by transactors, set the `DATOMIC_EXT_CLASSPATH` environment variable before launching the transactor, e.g. if you added your code in `mylibs/mylib.jar`:
 
-```
-<pre class="src src-example">export DATOMIC_EXT_CLASSPATH=mylibs/mylib.jar
+```example
+export DATOMIC_EXT_CLASSPATH=mylibs/mylib.jar
 bin/transactor my-config.properties
 ```
 
@@ -142,31 +142,31 @@ A transaction function call is a vector whose first element is the name of the t
 
 The following example installs and invokes a trivial database transaction function:
 
-```
-<pre class="src src-clojure"><span style="color: #b22222;">;; </span><span style="color: #b22222;">tx-data to install the function</span>
-[{<span style="color: #008b8b;">:db/ident</span> <span style="color: #008b8b;">:add-doc</span>
-  <span style="color: #008b8b;">:db/fn</span> (d/function
-                {<span style="color: #008b8b;">:lang</span> <span style="color: #8b2252;">"clojure"</span>
-                 <span style="color: #008b8b;">:params</span> '[db e doc]
-                 <span style="color: #008b8b;">:code</span> [[<span style="color: #008b8b;">:db/add</span> 'e <span style="color: #008b8b;">:db/doc</span> 'doc]]})}]
+```clojure
+;; tx-data to install the function
+[{:db/ident :add-doc
+  :db/fn (d/function
+                {:lang "clojure"
+                 :params '[db e doc]
+                 :code [[:db/add 'e :db/doc 'doc]]})}]
 
-<span style="color: #b22222;">;; </span><span style="color: #b22222;">tx-data to call the function</span>
-[[<span style="color: #008b8b;">:add-doc</span> <span style="color: #8b2252;">"foo"</span> <span style="color: #8b2252;">"this is foo's doc"</span>]]
+;; tx-data to call the function
+[[:add-doc "foo" "this is foo's doc"]]
 ```
 
 
 
 The example below installs and invokes an equivalent classpath transaction function:
 
-```
-<pre class="src src-clojure"><span style="color: #b22222;">;; </span><span style="color: #b22222;">put this on the transactor's classpath</span>
-(<span style="color: #483d8b;">ns</span> my.fns)
-(<span style="color: #a020f0;">defn</span> <span style="color: #0000ff;">add-doc</span>
+```clojure
+;; put this on the transactor's classpath
+(ns my.fns)
+(defn add-doc
   [db e doc]
-  [[<span style="color: #008b8b;">:db/add</span> e <span style="color: #008b8b;">:db/doc</span> doc]])
+  [[:db/add e :db/doc doc]])
 
-<span style="color: #b22222;">;; </span><span style="color: #b22222;">and then put this tx-data in a transaction</span>
-[[my.fns/add-doc <span style="color: #8b2252;">"foo"</span> <span style="color: #8b2252;">"this is foo's doc"</span>]]
+;; and then put this tx-data in a transaction
+[[my.fns/add-doc "foo" "this is foo's doc"]]
 ```
 
 

@@ -8,8 +8,8 @@ tx-range
 
  You can access the log via the [tx-range API function](https://docs.datomic.com/client-api/datomic.client.api.async.html#var-tx-range).
 
-```
-<pre class="src src-clojure">(d/tx-range conn {<span style="color: #008b8b;">:start</span> 1000 <span style="color: #008b8b;">:end</span> 1020})
+```clojure
+(d/tx-range conn {:start 1000 :end 1020})
 ```
 
 

@@ -111,11 +111,11 @@ If your application VPC does not contain any AZ-matching subnets, you will need 
 
 Datomic clients must use the VPC Endpoint DNS (or Route53 entry if you created one) and port 8182 for the `:endpoint` parameter in your Datomic [client configuration](https://docs.datomic.com/client-api/datomic.client.api.html#var-client)when connecting from your VPC:
 
-```
-<pre class="src src-clojure">(<span style="color: #a020f0;">def</span> <span style="color: #0000ff;">cfg</span> {<span style="color: #008b8b;">:server-type</span> <span style="color: #008b8b;">:ion</span>
-          <span style="color: #008b8b;">:region</span> <span style="color: #8b2252;">"<your AWS Region>"</span> <span style="color: #b22222;">;; </span><span style="color: #b22222;">e.g. us-east-1</span>
-          <span style="color: #008b8b;">:system</span> <span style="color: #8b2252;">"<system-name>"</span>
-          <span style="color: #008b8b;">:endpoint</span> <span style="color: #8b2252;">"http://<VpcEndpointDns>:8182"</span>})
+```clojure
+(def cfg {:server-type :ion
+          :region "<your AWS Region>" ;; e.g. us-east-1
+          :system "<system-name>"
+          :endpoint "http://<VpcEndpointDns>:8182"})
 ```
 
 

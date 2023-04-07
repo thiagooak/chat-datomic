@@ -19,8 +19,8 @@ The Datomic Peer Server provides an interface for Datomic [clients](#repl) to ac
 
 Navigate to the root of your Datomic distribution directory then run:
 
-```
-<pre class="src src-sh">bin/run -m datomic.peer-server -h localhost -p 8998 -a myaccesskey,mysecret -d hello,datomic:mem://hello
+```sh
+bin/run -m datomic.peer-server -h localhost -p 8998 -a myaccesskey,mysecret -d hello,datomic:mem://hello
 ```
 
 
@@ -66,64 +66,64 @@ Creating a client requires several important parameters:
 
 [`datomic.client.api/client`](../../client-api/datomic.client.api.html#var-connect) takes a map with your client configuration.
 
-```
-<pre class="src src-clojure">(<span style="color: #a020f0;">def</span> <span style="color: #0000ff;">cfg</span> {<span style="color: #008b8b;">:server-type</span> <span style="color: #008b8b;">:peer-server</span>
-          <span style="color: #008b8b;">:access-key</span> <span style="color: #8b2252;">"myaccesskey"</span>
-          <span style="color: #008b8b;">:secret</span> <span style="color: #8b2252;">"mysecret"</span>
-          <span style="color: #008b8b;">:endpoint</span> <span style="color: #8b2252;">"localhost:8998"</span>
-          <span style="color: #008b8b;">:validate-hostnames</span> false})
+```clojure
+(def cfg {:server-type :peer-server
+          :access-key "myaccesskey"
+          :secret "mysecret"
+          :endpoint "localhost:8998"
+          :validate-hostnames false})
 ```
 
 
 
-```
-<pre class="src src-clojure">=> #'user/cfg
+```clojure
+=> #'user/cfg
 ```
 
 
 
 Create a client:
 
-```
-<pre class="src src-clojure">(<span style="color: #a020f0;">def</span> <span style="color: #0000ff;">client</span> (d/client cfg))
+```clojure
+(def client (d/client cfg))
 ```
 
 
 
-```
-<pre class="src src-clojure">=> #'user/client
+```clojure
+=> #'user/client
 ```
 
 
 
 Create a connection with that client:
 
-```
-<pre class="src src-clojure">(<span style="color: #a020f0;">def</span> <span style="color: #0000ff;">conn</span> (d/connect client {<span style="color: #008b8b;">:db-name</span> <span style="color: #8b2252;">"hello"</span>}))
+```clojure
+(def conn (d/connect client {:db-name "hello"}))
 ```
 
 
 
-```
-<pre class="src src-clojure">=> #'user/conn
+```clojure
+=> #'user/conn
 ```
 
 
 
 You should see that a var was created called "`conn`" which is holding your database connection. You can inspect it:
 
-```
-<pre class="src src-clojure">conn
+```clojure
+conn
 ```
 
 
 
-```
-<pre class="src src-clojure">=> {<span style="color: #008b8b;">:db-name</span> <span style="color: #8b2252;">"hello"</span>, 
-    <span style="color: #008b8b;">:database-id</span> <span style="color: #8b2252;">"5a381758-6e47-4504-aa08-07067b5c241a"</span>, 
-    <span style="color: #008b8b;">:t</span> 1008, 
-    <span style="color: #008b8b;">:next-t</span> 1009, 
-    <span style="color: #008b8b;">:type</span> <span style="color: #008b8b;">:datomic.client/conn</span>}
+```clojure
+=> {:db-name "hello", 
+    :database-id "5a381758-6e47-4504-aa08-07067b5c241a", 
+    :t 1008, 
+    :next-t 1009, 
+    :type :datomic.client/conn}
 ```
 
 
@@ -189,39 +189,39 @@ The Client library's `transact` function takes the transaction data in a map und
 
 > `movie-schema` is defined in the Peer [Getting Started](../getting-started/get-datomic.html) section. Follow that guide, starting from "[Transacting Schema](../getting-started/transact-schema.html)" with these modifications to learn about using Client.
 
-```
-<pre class="src src-clojure">(d/transact conn {<span style="color: #008b8b;">:tx-data</span> movie-schema})
+```clojure
+(d/transact conn {:tx-data movie-schema})
 ```
 
 
 
-```
-<pre class="src src-clojure">=>
-{<span style="color: #008b8b;">:db-before</span> {<span style="color: #008b8b;">:database-id</span> <span style="color: #8b2252;">"58a47389-f1ab-4d81-85b6-715cecde9bac"</span>, 
-             <span style="color: #008b8b;">:t</span> 63, 
-             <span style="color: #008b8b;">:next-t</span> 1000, 
-             <span style="color: #008b8b;">:history</span> false}, 
- <span style="color: #008b8b;">:db-after</span> {<span style="color: #008b8b;">:database-id</span> <span style="color: #8b2252;">"58a47389-f1ab-4d81-85b6-715cecde9bac"</span>, 
-            <span style="color: #008b8b;">:t</span> 1000, 
-            <span style="color: #008b8b;">:next-t</span> 1001, 
-            <span style="color: #008b8b;">:history</span> false}, 
- <span style="color: #008b8b;">:tx-data</span> [ #datom[13194139534312 50 #inst <span style="color: #8b2252;">"2017-02-15T15:28:31.174-00:00"</span> 13194139534312 true] 
-            #datom[63 10 <span style="color: #008b8b;">:movie/title</span> 13194139534312 true] 
+```clojure
+=>
+{:db-before {:database-id "58a47389-f1ab-4d81-85b6-715cecde9bac", 
+             :t 63, 
+             :next-t 1000, 
+             :history false}, 
+ :db-after {:database-id "58a47389-f1ab-4d81-85b6-715cecde9bac", 
+            :t 1000, 
+            :next-t 1001, 
+            :history false}, 
+ :tx-data [ #datom[13194139534312 50 #inst "2017-02-15T15:28:31.174-00:00" 13194139534312 true] 
+            #datom[63 10 :movie/title 13194139534312 true] 
             #datom[63 40 23 13194139534312 true] 
             #datom[63 41 35 13194139534312 true] 
-            #datom[63 62 <span style="color: #8b2252;">"The title of the movie"</span> 13194139534312 true] 
-            #datom[64 10 <span style="color: #008b8b;">:movie/genre</span> 13194139534312 true] 
+            #datom[63 62 "The title of the movie" 13194139534312 true] 
+            #datom[64 10 :movie/genre 13194139534312 true] 
             #datom[64 40 23 13194139534312 true] 
             #datom[64 41 35 13194139534312 true] 
-            #datom[64 62 <span style="color: #8b2252;">"The genre of the movie"</span> 13194139534312 true] 
-            #datom[65 10 <span style="color: #008b8b;">:movie/release-year</span> 13194139534312 true] 
+            #datom[64 62 "The genre of the movie" 13194139534312 true] 
+            #datom[65 10 :movie/release-year 13194139534312 true] 
             #datom[65 40 22 13194139534312 true] 
             #datom[65 41 35 13194139534312 true] 
-            #datom[65 62 <span style="color: #8b2252;">"The year the movie was released in theaters"</span> 13194139534312 true] 
+            #datom[65 62 "The year the movie was released in theaters" 13194139534312 true] 
             #datom[0 13 65 13194139534312 true] 
             #datom[0 13 64 13194139534312 true] 
             #datom[0 13 63 13194139534312 true]], 
- <span style="color: #008b8b;">:tempids</span> {-9223301668109598144 63, -9223301668109598143 64, -9223301668109598142 65}}
+ :tempids {-9223301668109598144 63, -9223301668109598143 64, -9223301668109598142 65}}
 ```
 
 

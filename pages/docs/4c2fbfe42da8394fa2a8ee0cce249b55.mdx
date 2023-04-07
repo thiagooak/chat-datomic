@@ -14,9 +14,9 @@ The *:db/retractEntity* function takes an entity id as an argument. It retracts 
 
 The following example transaction data retracts two entities, specifying one of the entities by id, and the other by a [lookup ref](../transactions/transaction-data-reference.html#lookup-ref).
 
-```
-<pre class="src src-clojure">[[<span style="color: #008b8b;">:db/retractEntity</span> id-of-jane]
- [<span style="color: #008b8b;">:db/retractEntity</span> [<span style="color: #008b8b;">:person/email</span> <span style="color: #8b2252;">"jdoe@example.com"</span>]]]
+```clojure
+[[:db/retractEntity id-of-jane]
+ [:db/retractEntity [:person/email "jdoe@example.com"]]]
 ```
 
 
@@ -33,8 +33,8 @@ You can use *nil* for the old value to specify that the new value should be asse
 
 The following example transaction data sets entity 42's *:account/balance* to 110, if and only if *:account/balance* is 100 at the time the transaction executes:
 
-```
-<pre class="src src-clojure">[[<span style="color: #008b8b;">:db/cas</span> 42 <span style="color: #008b8b;">:account/balance</span> 100 110]]
+```clojure
+[[:db/cas 42 :account/balance 100 110]]
 ```
 
 
@@ -69,13 +69,13 @@ Transaction functions have the following characteristics:
 
 For example, the following transaction function finds the value of an `attr` of `entity`, and returns transaction data that adds `amount` to the value:
 
-```
-<pre class="src src-clojure">(<span style="color: #a020f0;">defn</span> <span style="color: #0000ff;">inc-attr</span>
-  <span style="color: #8b2252;">"Transaction function that increments the value of entity's card-1</span>
-<span style="color: #8b2252;">attr by amount, treating a missing value as 0."</span>
+```clojure
+(defn inc-attr
+  "Transaction function that increments the value of entity's card-1
+attr by amount, treating a missing value as 0."
   [db entity attr amount]
-  (<span style="color: #483d8b;">let</span> [m (d/pull db {<span style="color: #008b8b;">:eid</span> entity <span style="color: #008b8b;">:selector</span> [<span style="color: #008b8b;">:db/id</span> attr]})]
-    [[<span style="color: #008b8b;">:db/add</span> (<span style="color: #008b8b;">:db/id</span> m) attr (<span style="color: #a0522d;">+</span> (<span style="color: #483d8b;">or</span> (attr m) 0) amount)]]))
+  (let [m (d/pull db {:eid entity :selector [:db/id attr]})]
+    [[:db/add (:db/id m) attr (+ (or (attr m) 0) amount)]]))
 ```
 
 
@@ -88,21 +88,21 @@ For example, the following transaction function finds the value of an `attr` of 
 
 You can test a transaction function interactively at the REPL or in a test suite. Given a database value, simply invoke the function:
 
+```clojure
+;; get a connection from somewhere
+(def db (d/db conn))
+
+(datomic.ion.starter/create-item db [:inv/sku "SKU-42"] :large :green :hat)
 ```
-<pre class="src src-clojure"><span style="color: #b22222;">;; </span><span style="color: #b22222;">get a connection from somewhere</span>
-(<span style="color: #a020f0;">def</span> <span style="color: #0000ff;">db</span> (d/db conn))
-
-(datomic.ion.starter/create-item db [<span style="color: #008b8b;">:inv/sku</span> <span style="color: #8b2252;">"SKU-42"</span>] <span style="color: #008b8b;">:large</span> <span style="color: #008b8b;">:green</span> <span style="color: #008b8b;">:hat</span>)
-```
 
 
 
-```
-<pre class="src src-clojure">=>
-[#<span style="color: #008b8b;">:inv</span>{<span style="color: #008b8b;">:sku</span> [<span style="color: #008b8b;">:inv/sku</span> <span style="color: #8b2252;">"SKU-42"</span>],
-       <span style="color: #008b8b;">:color</span> <span style="color: #008b8b;">:green</span>,
-       <span style="color: #008b8b;">:size</span> <span style="color: #008b8b;">:large</span>,
-       <span style="color: #008b8b;">:type</span> <span style="color: #008b8b;">:hat</span>}]
+```clojure
+=>
+[#:inv{:sku [:inv/sku "SKU-42"],
+       :color :green,
+       :size :large,
+       :type :hat}]
 ```
 
 
@@ -130,9 +130,9 @@ Calls to your transaction functions are just ordinary transaction lists, with th
 
 For example:
 
-```
-<pre class="src src-clojure">(<span style="color: #a020f0;">def</span> <span style="color: #0000ff;">tx-data</span> ['(datomic.ion.starter/create-item [<span style="color: #008b8b;">:inv/sku</span> <span style="color: #8b2252;">"SKU-42"</span>] <span style="color: #008b8b;">:large</span> <span style="color: #008b8b;">:green</span> <span style="color: #008b8b;">:hat</span>)]
-(d/transact conn {<span style="color: #008b8b;">:tx-data</span> tx-data})
+```clojure
+(def tx-data ['(datomic.ion.starter/create-item [:inv/sku "SKU-42"] :large :green :hat)]
+(d/transact conn {:tx-data tx-data})
 ```
 
 

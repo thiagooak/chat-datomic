@@ -30,8 +30,8 @@ To configure Valcache you need to set properties in your [transactor](../overvie
 
 transactor propertysystem propertyvaluevalcache-pathdatomic.valcachePathdirectory on an SSD that meets [prerequisites](#prerequisites)valcache-max-gbdatomic.valcacheMaxGbmaximum space valcache will try to useTransactor example:
 
-```
-<pre class="src src-example">valcache-path=/opt/valcache
+```example
+valcache-path=/opt/valcache
 valcache-max-gb=100
 ```
 
@@ -39,8 +39,8 @@ valcache-max-gb=100
 
 Peer example:
 
-```
-<pre class="src src-example">java -Ddatomic.valcachePath=/opt/valcache/ -Ddatomic.valcacheMaxGb=100 {your-args}
+```example
+java -Ddatomic.valcachePath=/opt/valcache/ -Ddatomic.valcacheMaxGb=100 {your-args}
 ```
 
 

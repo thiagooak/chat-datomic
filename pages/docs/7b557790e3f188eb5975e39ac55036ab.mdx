@@ -24,52 +24,52 @@ The examples below refer to the following example datoms concerning entity 42, a
 
 The *Database.entity* method will return an *Entity*, given an entity id or lookup ref:
 
-```
-<pre class="src src-java">jane = db.entity(42)
+```java
+jane = db.entity(42)
 ```
 
 
 
 Given an entity, you can then navigate to any of that entity's attributes:
 
-```
-<pre class="src src-java"><span style="color: #b22222;">// </span><span style="color: #b22222;">returns "Jane"</span>
-firstName = jane.get(<span style="color: #8b2252;">":person/firstName"</span>)
+```java
+// returns "Jane"
+firstName = jane.get(":person/firstName")
 ```
 
 
 
 The special attribute *:db/id* provides access to the entity's own id:
 
-```
-<pre class="src src-java"><span style="color: #b22222;">// </span><span style="color: #b22222;">returns 42</span>
-id = jane.get(<span style="color: #8b2252;">":db/id"</span>)
+```java
+// returns 42
+id = jane.get(":db/id")
 ```
 
 
 
 If an attribute points to another entity through a cardinality-one attribute, *get* will return another *Entity* instance:
 
-```
-<pre class="src src-java">address = jane.get(<span style="color: #8b2252;">":person/address"</span>)
+```java
+address = jane.get(":person/address")
 ```
 
 
 
 If an attributes points to another entity through a cardinality-many attribute, *get* will return a *Set* of entity instances. The following example returns all the entities that Jane likes:
 
-```
-<pre class="src src-java"><span style="color: #b22222;">// </span><span style="color: #b22222;">empty, given the example data</span>
-peopleJaneLikes = jane.get(<span style="color: #8b2252;">":person/likes"</span>)
+```java
+// empty, given the example data
+peopleJaneLikes = jane.get(":person/likes")
 ```
 
 
 
 If you precede an attribute's local name with an underscore (\_), *get*will navigate backwards, returning the *Set* of entities that point to the current entity. The following example returns all the entities who like Jane:
 
-```
-<pre class="src src-java"><span style="color: #b22222;">// </span><span style="color: #b22222;">returns set containing John</span>
-peopleWhoLikeJane = jane.get(<span style="color: #8b2252;">":person/_likes"</span>)
+```java
+// returns set containing John
+peopleWhoLikeJane = jane.get(":person/_likes")
 ```
 
 
@@ -104,8 +104,8 @@ Entities and Time
 
 Entities know the point in time on which they are based. Given an entity, you can access the database on which the entity is based
 
-```
-<pre class="src src-java">db = entity.db()
+```java
+db = entity.db()
 ```
 
 

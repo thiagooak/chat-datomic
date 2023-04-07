@@ -41,25 +41,25 @@ Idents
 
 Idents associate a programmatic name (a keyword) with an entity id, by setting a value for the *:db/ident* attribute:
 
-```
-<pre class="src src-clojure"><span style="color: #b22222;">;; </span><span style="color: #b22222;">elided for brevity</span>
-{<span style="color: #008b8b;">:db/ident</span> <span style="color: #008b8b;">:person/loves</span>}
+```clojure
+;; elided for brevity
+{:db/ident :person/loves}
 ```
 
 
 
 When an entity has an ident, you can use that ident in place of the numeric identifier, e.g.
 
-```
-<pre class="src src-clojure">[42 <span style="color: #008b8b;">:person/loves</span> <span style="color: #008b8b;">:pizza</span>]
+```clojure
+[42 :person/loves :pizza]
 ```
 
 
 
 instead of
 
-```
-<pre class="src src-clojure">[42 1007 1124]
+```clojure
+[42 1007 1124]
 ```
 
 
@@ -91,11 +91,11 @@ Unique Identities
 
 Unique identity is specified through an attribute with *:db/unique* set to *:db.unique/identity*. For example, this schema asserts that a *:inv/sku* is unique:
 
-```
-<pre class="src src-clojure"><span style="color: #b22222;">;; </span><span style="color: #b22222;">elided for brevity</span>
-{<span style="color: #008b8b;">:db/ident</span> <span style="color: #008b8b;">:inv/sku</span>
- <span style="color: #008b8b;">:db/valueType</span> <span style="color: #008b8b;">:db.type/string</span>
- <span style="color: #008b8b;">:db/unique</span> <span style="color: #008b8b;">:db.unique/identity</span>
+```clojure
+;; elided for brevity
+{:db/ident :inv/sku
+ :db/valueType :db.type/string
+ :db/unique :db.unique/identity
  ...}
 ```
 
@@ -148,8 +148,8 @@ Lookup Refs
 
 In many databases, entities have unique identifiers from the problem domain like an email address or an order number. Applications often need to find entities based on these external keys. You can do this with query, but it's easier to use a *lookup ref*. A lookup ref is a *java.util.List* containing an attribute and a value. It identifies the entity with the given unique attribute value. For example, this lookup ref:
 
-```
-<pre class="src src-clojure">[<span style="color: #008b8b;">:person/email</span> <span style="color: #8b2252;">"joe@example.com"</span>]
+```clojure
+[:person/email "joe@example.com"]
 ```
 
 
@@ -160,9 +160,9 @@ You can use lookup refs to retrieve entities using the *entity* and datoms using
 
 You can also use lookup refs to refer to existing entities in transactions, avoiding extra lookup code:
 
-```
-<pre class="src src-clojure">{<span style="color: #008b8b;">:db/id</span> [<span style="color: #008b8b;">:person/email</span> <span style="color: #8b2252;">"joe@example.com"</span>]
- <span style="color: #008b8b;">:person/loves</span> <span style="color: #008b8b;">:pizza</span>}
+```clojure
+{:db/id [:person/email "joe@example.com"]
+ :person/loves :pizza}
 ```
 
 

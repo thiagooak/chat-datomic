@@ -26,7 +26,7 @@ lookup (keyword) access via :e :a :v :t :added.
 
 All errors are reported via ex-info exceptions, with map contents
 as specified by cognitect.anomalies.
-See <a href="https://github.com/cognitect-labs/anomalies">https://github.com/cognitect-labs/anomalies</a>.
+See https://github.com/cognitect-labs/anomalies.
 ```
 
 
@@ -60,7 +60,7 @@ Returns a diganostic value on success, throws on failure.
 ```
 <pre class="plaintext">Returns the value of the database as of some time-point.
 
-See <a href="https://docs.datomic.com/cloud/time/filters.html">https://docs.datomic.com/cloud/time/filters.html</a>.
+See https://docs.datomic.com/cloud/time/filters.html.
 ```
 
 
@@ -85,7 +85,7 @@ For a cloud system, arg-map requires:
 Optionally, a cloud system arg-map accepts:
 
   :creds-provider  - instance of com.amazonaws.auth.AWSCredentialsProvider. Defaults to DefaultAWSCredentialsProviderChain
-  :creds-profile   - name of an AWS Named Profile. See <a href="http://docs.aws.amazon.com/cli/latest/userguide/cli-multiple-profiles.html">http://docs.aws.amazon.com/cli/latest/userguide/cli-multiple-profiles.html</a>
+  :creds-profile   - name of an AWS Named Profile. See http://docs.aws.amazon.com/cli/latest/userguide/cli-multiple-profiles.html
   :proxy-port      - local port for SSH tunnel to bastion 
 
   Note: :creds-provider and :creds-profile are mutually exclusive, providing both will result in an error.
@@ -176,7 +176,7 @@ Key     Index        Value
 :added  4            boolean add/retract
 
 For a description of Datomic indexes, see
-<a href="https://docs.datomic.com/cloud/query/raw-index-access.html">https://docs.datomic.com/cloud/query/raw-index-access.html</a>.
+https://docs.datomic.com/cloud/query/raw-index-access.html.
 
 See namespace doc for timeout, offset/limit, and error handling.
 ```
@@ -252,7 +252,7 @@ as well as assertions. Retractions can be identified by the fifth
 datom field ':added', which is true for asserts and false for
 retracts.
 
-See <a href="https://docs.datomic.com/cloud/time/filters.html">https://docs.datomic.com/cloud/time/filters.html</a>.
+See https://docs.datomic.com/cloud/time/filters.html.
 ```
 
 
@@ -303,7 +303,7 @@ See namespace doc for timeout, offset/limit, and error handling.
           range, defaultin to the end of the index.
 
 For a description of Datomic indexes, see
-<a href="https://docs.datomic.com/cloud/query/raw-index-access.html">https://docs.datomic.com/cloud/query/raw-index-access.html</a>.
+https://docs.datomic.com/cloud/query/raw-index-access.html.
 
 Returns an Iterable of datoms. See namespace doc for
 offset/limit, timeout, and error handling.
@@ -339,7 +339,7 @@ Returns collection of database names.
  :eid        entity id
 
 For a complete decription of the selector syntax, see
-<a href="https://docs.datomic.com/cloud/query/query-pull.html">https://docs.datomic.com/cloud/query/query-pull.html</a>.
+https://docs.datomic.com/cloud/query/query-pull.html.
 
 Returns a map.
 
@@ -375,7 +375,7 @@ also supports :timeout. See namespace doc.
   :where limits the result returned
 
 For a complete description of the query syntax, see
-<a href="https://docs.datomic.com/cloud/query/query-data-reference.html">https://docs.datomic.com/cloud/query/query-data-reference.html</a>.
+https://docs.datomic.com/cloud/query/query-data-reference.html.
 
 Returns a collection of tuples.
 
@@ -415,7 +415,7 @@ namespace doc.
 ```
 <pre class="plaintext">Returns the value of the database since some time-point.
 
-See <a href="https://docs.datomic.com/cloud/time/filters.html">https://docs.datomic.com/cloud/time/filters.html</a>.
+See https://docs.datomic.com/cloud/time/filters.html.
 ```
 
 
@@ -445,7 +445,7 @@ value with basis :t >= t. Does *not* make a remote call.
  :tx-data    a collection of list forms or map forms
 
 For a complete specification of the tx-data format, see
-<a href="https://docs.datomic.com/cloud/transactions/transaction-data-reference.html">https://docs.datomic.com/cloud/transactions/transaction-data-reference.html</a>.
+https://docs.datomic.com/cloud/transactions/transaction-data-reference.html.
 
 Returns a map with the following keys:
 

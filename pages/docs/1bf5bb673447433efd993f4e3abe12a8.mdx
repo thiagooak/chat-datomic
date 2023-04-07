@@ -21,11 +21,11 @@ You should also supply the optional `:db/doc` attribute, which stores a docstrin
 
 Attribute definitions are defined as maps of data. Our first attribute, "title", would be defined as:
 
-```
-<pre class="src src-clojure">{<span style="color: #008b8b;">:db/ident</span> <span style="color: #008b8b;">:movie/title</span>
- <span style="color: #008b8b;">:db/valueType</span> <span style="color: #008b8b;">:db.type/string</span>
- <span style="color: #008b8b;">:db/cardinality</span> <span style="color: #008b8b;">:db.cardinality/one</span>
- <span style="color: #008b8b;">:db/doc</span> <span style="color: #8b2252;">"The title of the movie"</span>}
+```clojure
+{:db/ident :movie/title
+ :db/valueType :db.type/string
+ :db/cardinality :db.cardinality/one
+ :db/doc "The title of the movie"}
 ```
 
 
@@ -34,43 +34,43 @@ Attribute definitions are defined as maps of data. Our first attribute, "title",
 
 Similarly, "genre" would be:
 
-```
-<pre class="src src-clojure">{<span style="color: #008b8b;">:db/ident</span> <span style="color: #008b8b;">:movie/genre</span>
- <span style="color: #008b8b;">:db/valueType</span> <span style="color: #008b8b;">:db.type/string</span>
- <span style="color: #008b8b;">:db/cardinality</span> <span style="color: #008b8b;">:db.cardinality/one</span>
- <span style="color: #008b8b;">:db/doc</span> <span style="color: #8b2252;">"The genre of the movie"</span>}
+```clojure
+{:db/ident :movie/genre
+ :db/valueType :db.type/string
+ :db/cardinality :db.cardinality/one
+ :db/doc "The genre of the movie"}
 ```
 
 
 
 Since "year" will be stored as a number, we'll have to change the :db.type for it:
 
-```
-<pre class="src src-clojure">{<span style="color: #008b8b;">:db/ident</span> <span style="color: #008b8b;">:movie/release-year</span>
- <span style="color: #008b8b;">:db/valueType</span> <span style="color: #008b8b;">:db.type/long</span>
- <span style="color: #008b8b;">:db/cardinality</span> <span style="color: #008b8b;">:db.cardinality/one</span>
- <span style="color: #008b8b;">:db/doc</span> <span style="color: #8b2252;">"The year the movie was released in theaters"</span>}
+```clojure
+{:db/ident :movie/release-year
+ :db/valueType :db.type/long
+ :db/cardinality :db.cardinality/one
+ :db/doc "The year the movie was released in theaters"}
 ```
 
 
 
 You could choose to send each of these attributes to the database in individual transactions. We'll batch them up into a single transaction to be more efficient and combine the three maps into a single vector of maps. Let's bind our schema vector to a var called `movie-schema`:
 
-```
-<pre class="src src-clojure">(<span style="color: #a020f0;">def</span> <span style="color: #0000ff;">movie-schema</span> [{<span style="color: #008b8b;">:db/ident</span> <span style="color: #008b8b;">:movie/title</span>
-                    <span style="color: #008b8b;">:db/valueType</span> <span style="color: #008b8b;">:db.type/string</span>
-                    <span style="color: #008b8b;">:db/cardinality</span> <span style="color: #008b8b;">:db.cardinality/one</span>
-                    <span style="color: #008b8b;">:db/doc</span> <span style="color: #8b2252;">"The title of the movie"</span>}
+```clojure
+(def movie-schema [{:db/ident :movie/title
+                    :db/valueType :db.type/string
+                    :db/cardinality :db.cardinality/one
+                    :db/doc "The title of the movie"}
 
-                   {<span style="color: #008b8b;">:db/ident</span> <span style="color: #008b8b;">:movie/genre</span>
-                    <span style="color: #008b8b;">:db/valueType</span> <span style="color: #008b8b;">:db.type/string</span>
-                    <span style="color: #008b8b;">:db/cardinality</span> <span style="color: #008b8b;">:db.cardinality/one</span>
-                    <span style="color: #008b8b;">:db/doc</span> <span style="color: #8b2252;">"The genre of the movie"</span>}
+                   {:db/ident :movie/genre
+                    :db/valueType :db.type/string
+                    :db/cardinality :db.cardinality/one
+                    :db/doc "The genre of the movie"}
 
-                   {<span style="color: #008b8b;">:db/ident</span> <span style="color: #008b8b;">:movie/release-year</span>
-                    <span style="color: #008b8b;">:db/valueType</span> <span style="color: #008b8b;">:db.type/long</span>
-                    <span style="color: #008b8b;">:db/cardinality</span> <span style="color: #008b8b;">:db.cardinality/one</span>
-                    <span style="color: #008b8b;">:db/doc</span> <span style="color: #8b2252;">"The year the movie was released in theaters"</span>}])
+                   {:db/ident :movie/release-year
+                    :db/valueType :db.type/long
+                    :db/cardinality :db.cardinality/one
+                    :db/doc "The year the movie was released in theaters"}])
 ```
 
 
@@ -82,33 +82,33 @@ Now that we have our attribute definitions ready to go, we have to issue a trans
 
 Go ahead and transact the schema:
 
-```
-<pre class="src src-clojure">@(d/transact conn movie-schema)
+```clojure
+@(d/transact conn movie-schema)
 ```
 
 
 
-```
-<pre class="src src-clojure">=>
-  {<span style="color: #008b8b;">:db-before</span> datomic.db.Db@624b73ed, <span style="color: #008b8b;">:db-after</span> datomic.db.Db@f0d17d2a,
-   <span style="color: #008b8b;">:tx-data</span>
-    [#datom[13194139534312 50 #inst <span style="color: #8b2252;">"2017-02-16T16:24:50.487-00:00"</span> 13194139534312 true] 
-     #datom[63 10 <span style="color: #008b8b;">:movie/title</span> 13194139534312 true] 
+```clojure
+=>
+  {:db-before datomic.db.Db@624b73ed, :db-after datomic.db.Db@f0d17d2a,
+   :tx-data
+    [#datom[13194139534312 50 #inst "2017-02-16T16:24:50.487-00:00" 13194139534312 true] 
+     #datom[63 10 :movie/title 13194139534312 true] 
      #datom[63 40 23 13194139534312 true] 
      #datom[63 41 35 13194139534312 true] 
-     #datom[63 62 <span style="color: #8b2252;">"The title of the movie"</span> 13194139534312 true]
-     #datom[64 10 <span style="color: #008b8b;">:movie/genre</span> 13194139534312 true]
+     #datom[63 62 "The title of the movie" 13194139534312 true]
+     #datom[64 10 :movie/genre 13194139534312 true]
      #datom[64 40 23 13194139534312 true] 
      #datom[64 41 35 13194139534312 true] 
-     #datom[64 62 <span style="color: #8b2252;">"The genre of the movie"</span> 13194139534312 true] 
-     #datom[65 10 <span style="color: #008b8b;">:movie/release-year</span> 13194139534312 true] 
+     #datom[64 62 "The genre of the movie" 13194139534312 true] 
+     #datom[65 10 :movie/release-year 13194139534312 true] 
      #datom[65 40 22 13194139534312 true] 
      #datom[65 41 35 13194139534312 true] 
-     #datom[65 62 <span style="color: #8b2252;">"The year the movie was released in theaters"</span> 13194139534312 true]
+     #datom[65 62 "The year the movie was released in theaters" 13194139534312 true]
      #datom[0 13 65 13194139534312 true]
      #datom[0 13 64 13194139534312 true]
      #datom[0 13 63 13194139534312 true]],
-   <span style="color: #008b8b;">:tempids</span> {-9223301668109598144 63, -9223301668109598143 64, -9223301668109598142 65}}
+   :tempids {-9223301668109598144 63, -9223301668109598143 64, -9223301668109598142 65}}
 ```
 
 

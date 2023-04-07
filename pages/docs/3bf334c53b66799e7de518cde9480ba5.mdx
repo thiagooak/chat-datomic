@@ -24,16 +24,16 @@ The core of the tutorial application lives in the [starter.clj](https://github.c
 
 First, load some namespace aliases:
 
-```
-<pre class="src src-clojure">(<span style="color: #a0522d;">load-file</span> <span style="color: #8b2252;">"siderail/user.repl"</span>)
+```clojure
+(load-file "siderail/user.repl")
 ```
 
 
 
 Verify that you can get a client object:
 
-```
-<pre class="src src-clojure">(<span style="color: #a020f0;">def</span> <span style="color: #0000ff;">client</span> (starter/get-client))
+```clojure
+(def client (starter/get-client))
 ```
 
 
@@ -50,14 +50,14 @@ The `ensure-sample-dataset` function idempotently creates a database and loads t
 
 [Review the `ensure-sample-dataset` function](https://github.com/Datomic/ion-starter/blob/master/src/datomic/ion/starter.clj#L39), and then run it at the REPL:
 
-```
-<pre class="src src-clojure">(starter/ensure-sample-dataset)
+```clojure
+(starter/ensure-sample-dataset)
 ```
 
 
 
-```
-<pre class="src src-clojure">=> <span style="color: #008b8b;">:loaded</span>
+```clojure
+=> :loaded
 ```
 
 
@@ -72,45 +72,45 @@ The inventory application exposes two simple data functions: `get-schema` return
 
 [Review the data functions](https://github.com/Datomic/ion-starter/blob/master/src/datomic/ion/starter.clj), and then test that these functions work at the REPL:
 
-```
-<pre class="src src-clojure">(<span style="color: #a020f0;">def</span> <span style="color: #0000ff;">conn</span> (starter/get-connection))
+```clojure
+(def conn (starter/get-connection))
 
 
-@(<span style="color: #a020f0;">def</span> <span style="color: #0000ff;">db</span> (d/db conn))
-```
-
-
-
-```
-<pre class="src src-clojure">=> {<span style="color: #008b8b;">:t</span> 16, <span style="color: #008b8b;">:next-t</span> 17, <span style="color: #008b8b;">:db-name</span> <span style="color: #8b2252;">"datomic-docs-tutorial"</span>, <span style="color: #008b8b;">:database-id</span> <span style="color: #8b2252;">"ab481fe5-b6eb-4c97-8997-7d6a11809b6d"</span>, <span style="color: #008b8b;">:type</span> <span style="color: #008b8b;">:datomic.client/db</span>}
-<span style="color: #b22222;">;; </span><span style="color: #b22222;">Your result may differ</span>
+@(def db (d/db conn))
 ```
 
 
 
-```
-<pre class="src src-clojure">(starter/get-schema db)
-```
-
-
-
-```
-<pre class="src src-clojure">=>
-(#<span style="color: #008b8b;">:db</span>{<span style="color: #008b8b;">:id</span> 39, <span style="color: #008b8b;">:ident</span> <span style="color: #008b8b;">:fressian/tag</span>, <span style="color: #008b8b;">:valueType</span> <span style="color: #008b8b;">:db.type/keyword</span>, <span style="color: #008b8b;">:cardinality</span> <span style="color: #008b8b;">:db.cardinality/one</span>, <span style="color: #008b8b;">:doc</span> <span style="color: #8b2252;">"Keyword-valued attribute of a value type that specifies the underlying fressian type used for serialization."</span>} #<span style="color: #008b8b;">:db</span>{<span style="color: #008b8b;">:id</span> 73, <span style="color: #008b8b;">:ident</span> <span style="color: #008b8b;">:inv/sku</span>, <span style="color: #008b8b;">:valueType</span> <span style="color: #008b8b;">:db.type/string</span>, <span style="color: #008b8b;">:cardinality</span> <span style="color: #008b8b;">:db.cardinality/one</span>, <span style="color: #008b8b;">:unique</span> #<span style="color: #008b8b;">:db</span>{<span style="color: #008b8b;">:id</span> 38, <span style="color: #008b8b;">:ident</span> <span style="color: #008b8b;">:db.unique/identity</span>}} #<span style="color: #008b8b;">:db</span>{<span style="color: #008b8b;">:id</span> 74, <span style="color: #008b8b;">:ident</span> <span style="color: #008b8b;">:inv/color</span>, <span style="color: #008b8b;">:valueType</span> <span style="color: #008b8b;">:db.type/keyword</span>, <span style="color: #008b8b;">:cardinality</span> <span style="color: #008b8b;">:db.cardinality/one</span>} #<span style="color: #008b8b;">:db</span>{<span style="color: #008b8b;">:id</span> 75, <span style="color: #008b8b;">:ident</span> <span style="color: #008b8b;">:inv/size</span>, <span style="color: #008b8b;">:valueType</span> <span style="color: #008b8b;">:db.type/keyword</span>, <span style="color: #008b8b;">:cardinality</span> <span style="color: #008b8b;">:db.cardinality/one</span>} #<span style="color: #008b8b;">:db</span>{<span style="color: #008b8b;">:id</span> 76, <span style="color: #008b8b;">:ident</span> <span style="color: #008b8b;">:inv/type</span>, <span style="color: #008b8b;">:valueType</span> <span style="color: #008b8b;">:db.type/keyword</span>, <span style="color: #008b8b;">:cardinality</span> <span style="color: #008b8b;">:db.cardinality/one</span>} #<span style="color: #008b8b;">:db</span>{<span style="color: #008b8b;">:id</span> 77, <span style="color: #008b8b;">:ident</span> <span style="color: #008b8b;">:order/items</span>, <span style="color: #008b8b;">:valueType</span> <span style="color: #008b8b;">:db.type/ref</span>, <span style="color: #008b8b;">:cardinality</span> <span style="color: #008b8b;">:db.cardinality/many</span>, <span style="color: #008b8b;">:isComponent</span> true} #<span style="color: #008b8b;">:db</span>{<span style="color: #008b8b;">:id</span> 78, <span style="color: #008b8b;">:ident</span> <span style="color: #008b8b;">:item/id</span>, <span style="color: #008b8b;">:valueType</span> <span style="color: #008b8b;">:db.type/ref</span>, <span style="color: #008b8b;">:cardinality</span> <span style="color: #008b8b;">:db.cardinality/one</span>} #<span style="color: #008b8b;">:db</span>{<span style="color: #008b8b;">:id</span> 79, <span style="color: #008b8b;">:ident</span> <span style="color: #008b8b;">:item/count</span>, <span style="color: #008b8b;">:valueType</span> <span style="color: #008b8b;">:db.type/long</span>, <span style="color: #008b8b;">:cardinality</span> <span style="color: #008b8b;">:db.cardinality/one</span>} #<span style="color: #008b8b;">:db</span>{<span style="color: #008b8b;">:id</span> 80, <span style="color: #008b8b;">:ident</span> <span style="color: #008b8b;">:inv/count</span>, <span style="color: #008b8b;">:valueType</span> <span style="color: #008b8b;">:db.type/long</span>, <span style="color: #008b8b;">:cardinality</span> <span style="color: #008b8b;">:db.cardinality/one</span>})
-<span style="color: #b22222;">;; </span><span style="color: #b22222;">Your result may differ</span>
+```clojure
+=> {:t 16, :next-t 17, :db-name "datomic-docs-tutorial", :database-id "ab481fe5-b6eb-4c97-8997-7d6a11809b6d", :type :datomic.client/db}
+;; Your result may differ
 ```
 
 
 
-```
-<pre class="src src-clojure">(starter/get-items-by-type db <span style="color: #008b8b;">:shirt</span> '[<span style="color: #008b8b;">:inv/sku</span> <span style="color: #008b8b;">:inv/color</span> <span style="color: #008b8b;">:inv/size</span>])
+```clojure
+(starter/get-schema db)
 ```
 
 
 
+```clojure
+=>
+(#:db{:id 39, :ident :fressian/tag, :valueType :db.type/keyword, :cardinality :db.cardinality/one, :doc "Keyword-valued attribute of a value type that specifies the underlying fressian type used for serialization."} #:db{:id 73, :ident :inv/sku, :valueType :db.type/string, :cardinality :db.cardinality/one, :unique #:db{:id 38, :ident :db.unique/identity}} #:db{:id 74, :ident :inv/color, :valueType :db.type/keyword, :cardinality :db.cardinality/one} #:db{:id 75, :ident :inv/size, :valueType :db.type/keyword, :cardinality :db.cardinality/one} #:db{:id 76, :ident :inv/type, :valueType :db.type/keyword, :cardinality :db.cardinality/one} #:db{:id 77, :ident :order/items, :valueType :db.type/ref, :cardinality :db.cardinality/many, :isComponent true} #:db{:id 78, :ident :item/id, :valueType :db.type/ref, :cardinality :db.cardinality/one} #:db{:id 79, :ident :item/count, :valueType :db.type/long, :cardinality :db.cardinality/one} #:db{:id 80, :ident :inv/count, :valueType :db.type/long, :cardinality :db.cardinality/one})
+;; Your result may differ
 ```
-<pre class="src src-clojure">=>
-[[#<span style="color: #008b8b;">:inv</span>{<span style="color: #008b8b;">:sku</span> <span style="color: #8b2252;">"SKU-0"</span>, <span style="color: #008b8b;">:color</span> <span style="color: #008b8b;">:red</span>, <span style="color: #008b8b;">:size</span> <span style="color: #008b8b;">:small</span>}] [#<span style="color: #008b8b;">:inv</span>{<span style="color: #008b8b;">:sku</span> <span style="color: #8b2252;">"SKU-4"</span>, <span style="color: #008b8b;">:color</span> <span style="color: #008b8b;">:red</span>, <span style="color: #008b8b;">:size</span> <span style="color: #008b8b;">:medium</span>}] [#<span style="color: #008b8b;">:inv</span>{<span style="color: #008b8b;">:sku</span> <span style="color: #8b2252;">"SKU-8"</span>, <span style="color: #008b8b;">:color</span> <span style="color: #008b8b;">:red</span>, <span style="color: #008b8b;">:size</span> <span style="color: #008b8b;">:large</span>}] [#<span style="color: #008b8b;">:inv</span>{<span style="color: #008b8b;">:sku</span> <span style="color: #8b2252;">"SKU-12"</span>, <span style="color: #008b8b;">:color</span> <span style="color: #008b8b;">:red</span>, <span style="color: #008b8b;">:size</span> <span style="color: #008b8b;">:xlarge</span>}] [#<span style="color: #008b8b;">:inv</span>{<span style="color: #008b8b;">:sku</span> <span style="color: #8b2252;">"SKU-16"</span>, <span style="color: #008b8b;">:color</span> <span style="color: #008b8b;">:green</span>, <span style="color: #008b8b;">:size</span> <span style="color: #008b8b;">:small</span>}] [#<span style="color: #008b8b;">:inv</span>{<span style="color: #008b8b;">:sku</span> <span style="color: #8b2252;">"SKU-20"</span>, <span style="color: #008b8b;">:color</span> <span style="color: #008b8b;">:green</span>, <span style="color: #008b8b;">:size</span> <span style="color: #008b8b;">:medium</span>}] [#<span style="color: #008b8b;">:inv</span>{<span style="color: #008b8b;">:sku</span> <span style="color: #8b2252;">"SKU-24"</span>, <span style="color: #008b8b;">:color</span> <span style="color: #008b8b;">:green</span>, <span style="color: #008b8b;">:size</span> <span style="color: #008b8b;">:large</span>}] [#<span style="color: #008b8b;">:inv</span>{<span style="color: #008b8b;">:sku</span> <span style="color: #8b2252;">"SKU-28"</span>, <span style="color: #008b8b;">:color</span> <span style="color: #008b8b;">:green</span>, <span style="color: #008b8b;">:size</span> <span style="color: #008b8b;">:xlarge</span>}] [#<span style="color: #008b8b;">:inv</span>{<span style="color: #008b8b;">:sku</span> <span style="color: #8b2252;">"SKU-32"</span>, <span style="color: #008b8b;">:color</span> <span style="color: #008b8b;">:blue</span>, <span style="color: #008b8b;">:size</span> <span style="color: #008b8b;">:small</span>}] [#<span style="color: #008b8b;">:inv</span>{<span style="color: #008b8b;">:sku</span> <span style="color: #8b2252;">"SKU-36"</span>, <span style="color: #008b8b;">:color</span> <span style="color: #008b8b;">:blue</span>, <span style="color: #008b8b;">:size</span> <span style="color: #008b8b;">:medium</span>}] [#<span style="color: #008b8b;">:inv</span>{<span style="color: #008b8b;">:sku</span> <span style="color: #8b2252;">"SKU-40"</span>, <span style="color: #008b8b;">:color</span> <span style="color: #008b8b;">:blue</span>, <span style="color: #008b8b;">:size</span> <span style="color: #008b8b;">:large</span>}] [#<span style="color: #008b8b;">:inv</span>{<span style="color: #008b8b;">:sku</span> <span style="color: #8b2252;">"SKU-44"</span>, <span style="color: #008b8b;">:color</span> <span style="color: #008b8b;">:blue</span>, <span style="color: #008b8b;">:size</span> <span style="color: #008b8b;">:xlarge</span>}] [#<span style="color: #008b8b;">:inv</span>{<span style="color: #008b8b;">:sku</span> <span style="color: #8b2252;">"SKU-48"</span>, <span style="color: #008b8b;">:color</span> <span style="color: #008b8b;">:yellow</span>, <span style="color: #008b8b;">:size</span> <span style="color: #008b8b;">:small</span>}] [#<span style="color: #008b8b;">:inv</span>{<span style="color: #008b8b;">:sku</span> <span style="color: #8b2252;">"SKU-52"</span>, <span style="color: #008b8b;">:color</span> <span style="color: #008b8b;">:yellow</span>, <span style="color: #008b8b;">:size</span> <span style="color: #008b8b;">:medium</span>}] [#<span style="color: #008b8b;">:inv</span>{<span style="color: #008b8b;">:sku</span> <span style="color: #8b2252;">"SKU-56"</span>, <span style="color: #008b8b;">:color</span> <span style="color: #008b8b;">:yellow</span>, <span style="color: #008b8b;">:size</span> <span style="color: #008b8b;">:large</span>}] [#<span style="color: #008b8b;">:inv</span>{<span style="color: #008b8b;">:sku</span> <span style="color: #8b2252;">"SKU-60"</span>, <span style="color: #008b8b;">:color</span> <span style="color: #008b8b;">:yellow</span>, <span style="color: #008b8b;">:size</span> <span style="color: #008b8b;">:xlarge</span>}]]
+
+
+
+```clojure
+(starter/get-items-by-type db :shirt '[:inv/sku :inv/color :inv/size])
+```
+
+
+
+```clojure
+=>
+[[#:inv{:sku "SKU-0", :color :red, :size :small}] [#:inv{:sku "SKU-4", :color :red, :size :medium}] [#:inv{:sku "SKU-8", :color :red, :size :large}] [#:inv{:sku "SKU-12", :color :red, :size :xlarge}] [#:inv{:sku "SKU-16", :color :green, :size :small}] [#:inv{:sku "SKU-20", :color :green, :size :medium}] [#:inv{:sku "SKU-24", :color :green, :size :large}] [#:inv{:sku "SKU-28", :color :green, :size :xlarge}] [#:inv{:sku "SKU-32", :color :blue, :size :small}] [#:inv{:sku "SKU-36", :color :blue, :size :medium}] [#:inv{:sku "SKU-40", :color :blue, :size :large}] [#:inv{:sku "SKU-44", :color :blue, :size :xlarge}] [#:inv{:sku "SKU-48", :color :yellow, :size :small}] [#:inv{:sku "SKU-52", :color :yellow, :size :medium}] [#:inv{:sku "SKU-56", :color :yellow, :size :large}] [#:inv{:sku "SKU-60", :color :yellow, :size :xlarge}]]
 ```
 
 
@@ -127,28 +127,28 @@ The lambda entry points are in a separate `lambdas` namespace, so that you can e
 
 [Review the lambda entry points](https://github.com/Datomic/ion-starter/blob/master/src/datomic/ion/starter/lambdas.clj), and then try them from the REPL.
 
-```
-<pre class="src src-clojure">(lambdas/get-schema nil)
-```
-
-
-
-```
-<pre class="src src-clojure">=>
-(#<span style="color: #008b8b;">:db</span>{<span style="color: #008b8b;">:id</span> 39,\n      <span style="color: #008b8b;">:ident</span> <span style="color: #008b8b;">:fressian/tag</span>,\n      <span style="color: #008b8b;">:valueType</span> <span style="color: #008b8b;">:db.type/keyword</span>,\n      <span style="color: #008b8b;">:cardinality</span> <span style="color: #008b8b;">:db.cardinality/one</span>,\n      <span style="color: #008b8b;">:doc</span>\n      \"Keyword-valued attribute of a value type that specifies the underlying fressian type used for serialization.\"}\n #<span style="color: #008b8b;">:db</span>{<span style="color: #008b8b;">:id</span> 73,\n      <span style="color: #008b8b;">:ident</span> <span style="color: #008b8b;">:inv/sku</span>,\n      <span style="color: #008b8b;">:valueType</span> <span style="color: #008b8b;">:db.type/string</span>,\n      <span style="color: #008b8b;">:cardinality</span> <span style="color: #008b8b;">:db.cardinality/one</span>,\n      <span style="color: #008b8b;">:unique</span> #<span style="color: #008b8b;">:db</span>{<span style="color: #008b8b;">:id</span> 38, <span style="color: #008b8b;">:ident</span> <span style="color: #008b8b;">:db.unique/identity</span>}}\n #<span style="color: #008b8b;">:db</span>{<span style="color: #008b8b;">:id</span> 74,\n      <span style="color: #008b8b;">:ident</span> <span style="color: #008b8b;">:inv/color</span>,\n      <span style="color: #008b8b;">:valueType</span> <span style="color: #008b8b;">:db.type/keyword</span>,\n      <span style="color: #008b8b;">:cardinality</span> <span style="color: #008b8b;">:db.cardinality/one</span>}\n #<span style="color: #008b8b;">:db</span>{<span style="color: #008b8b;">:id</span> 75,\n      <span style="color: #008b8b;">:ident</span> <span style="color: #008b8b;">:inv/size</span>,\n      <span style="color: #008b8b;">:valueType</span> <span style="color: #008b8b;">:db.type/keyword</span>,\n      <span style="color: #008b8b;">:cardinality</span> <span style="color: #008b8b;">:db.cardinality/one</span>}\n #<span style="color: #008b8b;">:db</span>{<span style="color: #008b8b;">:id</span> 76,\n      <span style="color: #008b8b;">:ident</span> <span style="color: #008b8b;">:inv/type</span>,\n      <span style="color: #008b8b;">:valueType</span> <span style="color: #008b8b;">:db.type/keyword</span>,\n      <span style="color: #008b8b;">:cardinality</span> <span style="color: #008b8b;">:db.cardinality/one</span>}\n #<span style="color: #008b8b;">:db</span>{<span style="color: #008b8b;">:id</span> 77,\n      <span style="color: #008b8b;">:ident</span> <span style="color: #008b8b;">:order/items</span>,\n      <span style="color: #008b8b;">:valueType</span> <span style="color: #008b8b;">:db.type/ref</span>,\n      <span style="color: #008b8b;">:cardinality</span> <span style="color: #008b8b;">:db.cardinality/many</span>,\n      <span style="color: #008b8b;">:isComponent</span> true}\n #<span style="color: #008b8b;">:db</span>{<span style="color: #008b8b;">:id</span> 78,\n      <span style="color: #008b8b;">:ident</span> <span style="color: #008b8b;">:item/id</span>,\n      <span style="color: #008b8b;">:valueType</span> <span style="color: #008b8b;">:db.type/ref</span>,\n      <span style="color: #008b8b;">:cardinality</span> <span style="color: #008b8b;">:db.cardinality/one</span>}\n #<span style="color: #008b8b;">:db</span>{<span style="color: #008b8b;">:id</span> 79,\n      <span style="color: #008b8b;">:ident</span> <span style="color: #008b8b;">:item/count</span>,\n      <span style="color: #008b8b;">:valueType</span> <span style="color: #008b8b;">:db.type/long</span>,\n      <span style="color: #008b8b;">:cardinality</span> <span style="color: #008b8b;">:db.cardinality/one</span>}\n #<span style="color: #008b8b;">:db</span>{<span style="color: #008b8b;">:id</span> 80,\n      <span style="color: #008b8b;">:ident</span> <span style="color: #008b8b;">:inv/count</span>,\n      <span style="color: #008b8b;">:valueType</span> <span style="color: #008b8b;">:db.type/long</span>,\n      <span style="color: #008b8b;">:cardinality</span> <span style="color: #008b8b;">:db.cardinality/one</span>})
+```clojure
+(lambdas/get-schema nil)
 ```
 
 
 
-```
-<pre class="src src-clojure">(lambdas/get-items-by-type {<span style="color: #008b8b;">:input</span> (json/write-str <span style="color: #8b2252;">"shirt"</span>)})
+```clojure
+=>
+(#:db{:id 39,\n      :ident :fressian/tag,\n      :valueType :db.type/keyword,\n      :cardinality :db.cardinality/one,\n      :doc\n      \"Keyword-valued attribute of a value type that specifies the underlying fressian type used for serialization.\"}\n #:db{:id 73,\n      :ident :inv/sku,\n      :valueType :db.type/string,\n      :cardinality :db.cardinality/one,\n      :unique #:db{:id 38, :ident :db.unique/identity}}\n #:db{:id 74,\n      :ident :inv/color,\n      :valueType :db.type/keyword,\n      :cardinality :db.cardinality/one}\n #:db{:id 75,\n      :ident :inv/size,\n      :valueType :db.type/keyword,\n      :cardinality :db.cardinality/one}\n #:db{:id 76,\n      :ident :inv/type,\n      :valueType :db.type/keyword,\n      :cardinality :db.cardinality/one}\n #:db{:id 77,\n      :ident :order/items,\n      :valueType :db.type/ref,\n      :cardinality :db.cardinality/many,\n      :isComponent true}\n #:db{:id 78,\n      :ident :item/id,\n      :valueType :db.type/ref,\n      :cardinality :db.cardinality/one}\n #:db{:id 79,\n      :ident :item/count,\n      :valueType :db.type/long,\n      :cardinality :db.cardinality/one}\n #:db{:id 80,\n      :ident :inv/count,\n      :valueType :db.type/long,\n      :cardinality :db.cardinality/one})
 ```
 
 
 
+```clojure
+(lambdas/get-items-by-type {:input (json/write-str "shirt")})
 ```
-<pre class="src src-clojure">=>
-[[#<span style="color: #008b8b;">:inv</span>{<span style="color: #008b8b;">:sku</span> \"SKU-0\", <span style="color: #008b8b;">:size</span> <span style="color: #008b8b;">:small</span>, <span style="color: #008b8b;">:color</span> <span style="color: #008b8b;">:red</span>}]\n [#<span style="color: #008b8b;">:inv</span>{<span style="color: #008b8b;">:sku</span> \"SKU-4\", <span style="color: #008b8b;">:size</span> <span style="color: #008b8b;">:medium</span>, <span style="color: #008b8b;">:color</span> <span style="color: #008b8b;">:red</span>}]\n [#<span style="color: #008b8b;">:inv</span>{<span style="color: #008b8b;">:sku</span> \"SKU-8\", <span style="color: #008b8b;">:size</span> <span style="color: #008b8b;">:large</span>, <span style="color: #008b8b;">:color</span> <span style="color: #008b8b;">:red</span>}]\n [#<span style="color: #008b8b;">:inv</span>{<span style="color: #008b8b;">:sku</span> \"SKU-12\", <span style="color: #008b8b;">:size</span> <span style="color: #008b8b;">:xlarge</span>, <span style="color: #008b8b;">:color</span> <span style="color: #008b8b;">:red</span>}]\n [#<span style="color: #008b8b;">:inv</span>{<span style="color: #008b8b;">:sku</span> \"SKU-16\", <span style="color: #008b8b;">:size</span> <span style="color: #008b8b;">:small</span>, <span style="color: #008b8b;">:color</span> <span style="color: #008b8b;">:green</span>}]\n [#<span style="color: #008b8b;">:inv</span>{<span style="color: #008b8b;">:sku</span> \"SKU-20\", <span style="color: #008b8b;">:size</span> <span style="color: #008b8b;">:medium</span>, <span style="color: #008b8b;">:color</span> <span style="color: #008b8b;">:green</span>}]\n [#<span style="color: #008b8b;">:inv</span>{<span style="color: #008b8b;">:sku</span> \"SKU-24\", <span style="color: #008b8b;">:size</span> <span style="color: #008b8b;">:large</span>, <span style="color: #008b8b;">:color</span> <span style="color: #008b8b;">:green</span>}]\n [#<span style="color: #008b8b;">:inv</span>{<span style="color: #008b8b;">:sku</span> \"SKU-28\", <span style="color: #008b8b;">:size</span> <span style="color: #008b8b;">:xlarge</span>, <span style="color: #008b8b;">:color</span> <span style="color: #008b8b;">:green</span>}]\n [#<span style="color: #008b8b;">:inv</span>{<span style="color: #008b8b;">:sku</span> \"SKU-32\", <span style="color: #008b8b;">:size</span> <span style="color: #008b8b;">:small</span>, <span style="color: #008b8b;">:color</span> <span style="color: #008b8b;">:blue</span>}]\n [#<span style="color: #008b8b;">:inv</span>{<span style="color: #008b8b;">:sku</span> \"SKU-36\", <span style="color: #008b8b;">:size</span> <span style="color: #008b8b;">:medium</span>, <span style="color: #008b8b;">:color</span> <span style="color: #008b8b;">:blue</span>}]\n [#<span style="color: #008b8b;">:inv</span>{<span style="color: #008b8b;">:sku</span> \"SKU-40\", <span style="color: #008b8b;">:size</span> <span style="color: #008b8b;">:large</span>, <span style="color: #008b8b;">:color</span> <span style="color: #008b8b;">:blue</span>}]\n [#<span style="color: #008b8b;">:inv</span>{<span style="color: #008b8b;">:sku</span> \"SKU-44\", <span style="color: #008b8b;">:size</span> <span style="color: #008b8b;">:xlarge</span>, <span style="color: #008b8b;">:color</span> <span style="color: #008b8b;">:blue</span>}]\n [#<span style="color: #008b8b;">:inv</span>{<span style="color: #008b8b;">:sku</span> \"SKU-48\", <span style="color: #008b8b;">:size</span> <span style="color: #008b8b;">:small</span>, <span style="color: #008b8b;">:color</span> <span style="color: #008b8b;">:yellow</span>}]\n [#<span style="color: #008b8b;">:inv</span>{<span style="color: #008b8b;">:sku</span> \"SKU-52\", <span style="color: #008b8b;">:size</span> <span style="color: #008b8b;">:medium</span>, <span style="color: #008b8b;">:color</span> <span style="color: #008b8b;">:yellow</span>}]\n [#<span style="color: #008b8b;">:inv</span>{<span style="color: #008b8b;">:sku</span> \"SKU-56\", <span style="color: #008b8b;">:size</span> <span style="color: #008b8b;">:large</span>, <span style="color: #008b8b;">:color</span> <span style="color: #008b8b;">:yellow</span>}]\n [#<span style="color: #008b8b;">:inv</span>{<span style="color: #008b8b;">:sku</span> \"SKU-60\", <span style="color: #008b8b;">:size</span> <span style="color: #008b8b;">:xlarge</span>, <span style="color: #008b8b;">:color</span> <span style="color: #008b8b;">:yellow</span>}]]
+
+
+
+```clojure
+=>
+[[#:inv{:sku \"SKU-0\", :size :small, :color :red}]\n [#:inv{:sku \"SKU-4\", :size :medium, :color :red}]\n [#:inv{:sku \"SKU-8\", :size :large, :color :red}]\n [#:inv{:sku \"SKU-12\", :size :xlarge, :color :red}]\n [#:inv{:sku \"SKU-16\", :size :small, :color :green}]\n [#:inv{:sku \"SKU-20\", :size :medium, :color :green}]\n [#:inv{:sku \"SKU-24\", :size :large, :color :green}]\n [#:inv{:sku \"SKU-28\", :size :xlarge, :color :green}]\n [#:inv{:sku \"SKU-32\", :size :small, :color :blue}]\n [#:inv{:sku \"SKU-36\", :size :medium, :color :blue}]\n [#:inv{:sku \"SKU-40\", :size :large, :color :blue}]\n [#:inv{:sku \"SKU-44\", :size :xlarge, :color :blue}]\n [#:inv{:sku \"SKU-48\", :size :small, :color :yellow}]\n [#:inv{:sku \"SKU-52\", :size :medium, :color :yellow}]\n [#:inv{:sku \"SKU-56\", :size :large, :color :yellow}]\n [#:inv{:sku \"SKU-60\", :size :xlarge, :color :yellow}]]
 ```
 
 
@@ -163,15 +163,15 @@ An HTTP entry point is just a function with an [HTTP-compatible signature](../io
 
 The HTTP entry points are in separate `http` namespace. Review the HTTP entry points, and then try them from the REPL.
 
-```
-<pre class="src src-clojure">(http/get-items-by-type {<span style="color: #008b8b;">:body</span> (s-edn/input-stream <span style="color: #008b8b;">:shirt</span>)})
+```clojure
+(http/get-items-by-type {:body (s-edn/input-stream :shirt)})
 ```
 
 
 
-```
-<pre class="src src-clojure">=>
-{<span style="color: #008b8b;">:status</span> 200, <span style="color: #008b8b;">:headers</span> {<span style="color: #8b2252;">"Content-Type"</span> <span style="color: #8b2252;">"application/edn"</span>}, <span style="color: #008b8b;">:body</span> <span style="color: #8b2252;">"[[#:inv{:sku \"SKU-0\", :size :small, :color :red}]\n [#:inv{:sku \"SKU-4\", :size :medium, :color :red}]\n [#:inv{:sku \"SKU-8\", :size :large, :color :red}]\n [#:inv{:sku \"SKU-12\", :size :xlarge, :color :red}]\n [#:inv{:sku \"SKU-16\", :size :small, :color :green}]\n [#:inv{:sku \"SKU-20\", :size :medium, :color :green}]\n [#:inv{:sku \"SKU-24\", :size :large, :color :green}]\n [#:inv{:sku \"SKU-28\", :size :xlarge, :color :green}]\n [#:inv{:sku \"SKU-32\", :size :small, :color :blue}]\n [#:inv{:sku \"SKU-36\", :size :medium, :color :blue}]\n [#:inv{:sku \"SKU-40\", :size :large, :color :blue}]\n [#:inv{:sku \"SKU-44\", :size :xlarge, :color :blue}]\n [#:inv{:sku \"SKU-48\", :size :small, :color :yellow}]\n [#:inv{:sku \"SKU-52\", :size :medium, :color :yellow}]\n [#:inv{:sku \"SKU-56\", :size :large, :color :yellow}]\n [#:inv{:sku \"SKU-60\", :size :xlarge, :color :yellow}]]\n"</span>}
+```clojure
+=>
+{:status 200, :headers {"Content-Type" "application/edn"}, :body "[[#:inv{:sku \"SKU-0\", :size :small, :color :red}]\n [#:inv{:sku \"SKU-4\", :size :medium, :color :red}]\n [#:inv{:sku \"SKU-8\", :size :large, :color :red}]\n [#:inv{:sku \"SKU-12\", :size :xlarge, :color :red}]\n [#:inv{:sku \"SKU-16\", :size :small, :color :green}]\n [#:inv{:sku \"SKU-20\", :size :medium, :color :green}]\n [#:inv{:sku \"SKU-24\", :size :large, :color :green}]\n [#:inv{:sku \"SKU-28\", :size :xlarge, :color :green}]\n [#:inv{:sku \"SKU-32\", :size :small, :color :blue}]\n [#:inv{:sku \"SKU-36\", :size :medium, :color :blue}]\n [#:inv{:sku \"SKU-40\", :size :large, :color :blue}]\n [#:inv{:sku \"SKU-44\", :size :xlarge, :color :blue}]\n [#:inv{:sku \"SKU-48\", :size :small, :color :yellow}]\n [#:inv{:sku \"SKU-52\", :size :medium, :color :yellow}]\n [#:inv{:sku \"SKU-56\", :size :large, :color :yellow}]\n [#:inv{:sku \"SKU-60\", :size :xlarge, :color :yellow}]]\n"}
 ```
 
 

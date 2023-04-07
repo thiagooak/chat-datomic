@@ -80,17 +80,17 @@ The [datoms API](../javadoc/datomic/Database.html#datoms-java.lang.Object-java.l
 
 Datom components are specified in the same order as the index. The example below refers to *AVET*, so the first component *:account/balance* specifies the *A* component, and will return an iterator over all balances in the system.
 
-```
-<pre class="src src-java">db.datoms(<span style="color: #228b22;">AVET</span>, <span style="color: #8b2252;">":account/balance"</span>);
+```java
+db.datoms(AVET, ":account/balance");
 ```
 
 
 
 A call to datoms with no components will return the entire index. Because EAVT and AEVT include every datom in the database, either of these indexes could be used to walk the entire database:
 
-```
-<pre class="src src-java"><span style="color: #b22222;">// </span><span style="color: #b22222;">lazily iterate the entire database!</span>
-db.datoms(<span style="color: #228b22;">EAVT</span>);
+```java
+// lazily iterate the entire database!
+db.datoms(EAVT);
 ```
 
 

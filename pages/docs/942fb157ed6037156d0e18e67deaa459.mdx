@@ -10,14 +10,14 @@ Creating a database
 
 Include the Peer API:
 
-```
-<pre class="src src-clojure">(<span style="color: #a0522d;">require</span> '[datomic.api <span style="color: #008b8b;">:as</span> d])
+```clojure
+(require '[datomic.api :as d])
 ```
 
 
 
-```
-<pre class="src src-clojure">=>
+```clojure
+=>
 nil
 ```
 
@@ -35,18 +35,18 @@ If you [ran a transactor to use local storage](dev-setup.html#run-dev-transactor
 
 Bind a var, `db-uri`, to the value of the URI:
 
+```clojure
+(def db-uri "datomic:mem://hello")
+
+;; If you're using local dev storage, use the db uri you created earlier.
+;; replace <DB-NAME> with your database name. It will look similar to:
+;; (def db-uri "datomic:dev://localhost:4334/hello")
 ```
-<pre class="src src-clojure">(<span style="color: #a020f0;">def</span> <span style="color: #0000ff;">db-uri</span> <span style="color: #8b2252;">"datomic:mem://hello"</span>)
-
-<span style="color: #b22222;">;; </span><span style="color: #b22222;">If you're using local dev storage, use the db uri you created earlier.</span>
-<span style="color: #b22222;">;; </span><span style="color: #b22222;">replace <DB-NAME> with your database name. It will look similar to:</span>
-<span style="color: #b22222;">;; </span><span style="color: #b22222;">(def db-uri "datomic:dev://localhost:4334/hello")</span>
-```
 
 
 
-```
-<pre class="src src-clojure">=>
+```clojure
+=>
 #'user/db-uri
 ```
 
@@ -54,14 +54,14 @@ Bind a var, `db-uri`, to the value of the URI:
 
 Create the "hello" database using the `create-database` function:
 
-```
-<pre class="src src-clojure">(d/create-database db-uri)
+```clojure
+(d/create-database db-uri)
 ```
 
 
 
-```
-<pre class="src src-clojure">=>
+```clojure
+=>
 true
 ```
 
@@ -78,14 +78,14 @@ Once you have [created a database](#create-db), you can use the Datomic Peer Lib
 
 Connect to the transactor in the same REPL that you used to create your database:
 
-```
-<pre class="src src-clojure">(<span style="color: #a020f0;">def</span> <span style="color: #0000ff;">conn</span> (d/connect db-uri))
+```clojure
+(def conn (d/connect db-uri))
 ```
 
 
 
-```
-<pre class="src src-clojure">=>
+```clojure
+=>
 #'user/conn
 ```
 
@@ -93,14 +93,14 @@ Connect to the transactor in the same REPL that you used to create your database
 
 You should see that a var was created called `conn` which is holding your database connection. You can inspect it:
 
-```
-<pre class="src src-clojure">conn
+```clojure
+conn
 ```
 
 
 
-```
-<pre class="src src-clojure">=> #object[<span style="color: #483d8b;">datomic.peer.LocalConnection</span> 0x6ca372ef <span style="color: #8b2252;">"datomic.peer.LocalConnection@6ca372ef"</span>]
+```clojure
+=> #object[datomic.peer.LocalConnection 0x6ca372ef "datomic.peer.LocalConnection@6ca372ef"]
 ```
 
 
@@ -109,15 +109,15 @@ Any transactions submitted to the connection will be persisted to the storage th
 
 Try adding a new entity with the `:db/doc` value "Hello world".
 
-```
-<pre class="src src-clojure">@(d/transact conn [{<span style="color: #008b8b;">:db/doc</span> <span style="color: #8b2252;">"Hello world"</span>}])
+```clojure
+@(d/transact conn [{:db/doc "Hello world"}])
 ```
 
 
 
-```
-<pre class="src src-clojure">=>
-{<span style="color: #008b8b;">:db-before</span> datomic.db.Db@33e08f8b, <span style="color: #008b8b;">:db-after</span> datomic.db.Db@7957bcc8, <span style="color: #008b8b;">:tx-data</span> [#datom[13194139534312 50 #inst <span style="color: #8b2252;">"2022-03-18T09:33:18.156-00:00"</span> 13194139534312 true] #datom[17592186045417 62 <span style="color: #8b2252;">"Hello world"</span> 13194139534312 true]], <span style="color: #008b8b;">:tempids</span> {-9223301668109598134 17592186045417}}
+```clojure
+=>
+{:db-before datomic.db.Db@33e08f8b, :db-after datomic.db.Db@7957bcc8, :tx-data [#datom[13194139534312 50 #inst "2022-03-18T09:33:18.156-00:00" 13194139534312 true] #datom[17592186045417 62 "Hello world" 13194139534312 true]], :tempids {-9223301668109598134 17592186045417}}
 ```
 
 

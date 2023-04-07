@@ -12,7 +12,7 @@ take an arg-map with the following optional keys:
 
 Asynchronous functions return a core.async channel. In the case of an
 error, the channel will get an error map with contents specified by
-cognitect.anomalies. See <a href="https://github.com/cognitect-labs/anomalies">https://github.com/cognitect-labs/anomalies</a>.
+cognitect.anomalies. See https://github.com/cognitect-labs/anomalies.
 
 Functions that return chunked results will return a succession of
 vectors of values in a channel. The channel will be closed when the
@@ -63,7 +63,7 @@ Returns a diganostic value on success, throws on failure.
 ```
 <pre class="plaintext">Returns the value of the database as of some time-point.
 
-See <a href="https://docs.datomic.com/cloud/time/filters.html">https://docs.datomic.com/cloud/time/filters.html</a>.
+See https://docs.datomic.com/cloud/time/filters.html.
 ```
 
 
@@ -88,7 +88,7 @@ For a cloud system, arg-map requires:
 Optionally, a cloud system arg-map accepts:
 
   :creds-provider  - instance of com.amazonaws.auth.AWSCredentialsProvider. Defaults to DefaultAWSCredentialsProviderChain
-  :creds-profile   - name of an AWS Named Profile. See <a href="http://docs.aws.amazon.com/cli/latest/userguide/cli-multiple-profiles.html">http://docs.aws.amazon.com/cli/latest/userguide/cli-multiple-profiles.html</a>
+  :creds-profile   - name of an AWS Named Profile. See http://docs.aws.amazon.com/cli/latest/userguide/cli-multiple-profiles.html
   :proxy-port      - local port for SSH tunnel to bastion 
 
   Note: :creds-provider and :creds-profile are mutually exclusive, providing both will result in an error.
@@ -181,7 +181,7 @@ Key     Index        Value
 :added  4            boolean add/retract
 
 For a description of Datomic indexes, see
-<a href="https://docs.datomic.com/cloud/query/raw-index-access.html">https://docs.datomic.com/cloud/query/raw-index-access.html</a>.
+https://docs.datomic.com/cloud/query/raw-index-access.html.
 
 See namespace doc for timeout, offset/limit, and error handling.
 ```
@@ -257,7 +257,7 @@ as well as assertions. Retractions can be identified by the fifth
 datom field ':added', which is true for asserts and false for
 retracts.
 
-See <a href="https://docs.datomic.com/cloud/time/filters.html">https://docs.datomic.com/cloud/time/filters.html</a>.
+See https://docs.datomic.com/cloud/time/filters.html.
 ```
 
 
@@ -303,7 +303,7 @@ Returns a channel of a map
           range, defaultin to the end of the index.
 
 For a description of Datomic indexes, see
-<a href="https://docs.datomic.com/cloud/query/raw-index-access.html">https://docs.datomic.com/cloud/query/raw-index-access.html</a>.
+https://docs.datomic.com/cloud/query/raw-index-access.html.
 
 Returns a channel of collections of datoms.
 
@@ -340,7 +340,7 @@ Returns a channel of a collection of database names.
  :eid        entity id
 
 For a complete description of the selector syntax, see
-<a href="https://docs.datomic.com/cloud/query/query-pull.html">https://docs.datomic.com/cloud/query/query-pull.html</a>.
+https://docs.datomic.com/cloud/query/query-pull.html.
 
 Returns a channel of a map.
 ```
@@ -373,7 +373,7 @@ Returns a channel of a map.
   :where limits the result returned
 
 For a complete description of the query syntax, see
-<a href="https://docs.datomic.com/cloud/query/query-data-reference.html">https://docs.datomic.com/cloud/query/query-data-reference.html</a>.
+https://docs.datomic.com/cloud/query/query-data-reference.html.
 
 Returns a channel of collections of tuples that closes when all results
 are returned.
@@ -423,7 +423,7 @@ See namespace doc for chunk, offset/limit, timeout, and error handling.
 ```
 <pre class="plaintext">Returns the value of the database since some time-point.
 
-See <a href="https://docs.datomic.com/cloud/time/filters.html">https://docs.datomic.com/cloud/time/filters.html</a>.
+See https://docs.datomic.com/cloud/time/filters.html.
 ```
 
 
@@ -455,7 +455,7 @@ Does *not* make a remote call.
  :tx-data    a collection of list forms or map forms
 
 For a complete specification of the tx-data format, see
-<a href="https://docs.datomic.com/cloud/transactions/transaction-data-reference.html">https://docs.datomic.com/cloud/transactions/transaction-data-reference.html</a>.
+https://docs.datomic.com/cloud/transactions/transaction-data-reference.html.
 
 Returns a channel of a map with the following keys:
 

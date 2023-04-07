@@ -43,8 +43,8 @@ An event is an ordinary occurrence that is of interest to an operator, such as s
 
 For example, the `event` call below logs the raw JSON sent to an AWS Lambda ion:
 
-```
-<pre class="src src-clojure">(cast/event {<span style="color: #008b8b;">:msg</span> <span style="color: #8b2252;">"CodeDeployEvent"</span> <span style="color: #008b8b;">::json</span> input})
+```clojure
+(cast/event {:msg "CodeDeployEvent" ::json input})
 ```
 
 
@@ -72,8 +72,8 @@ An alert is an extraordinary occurrence that requires operator intervention, suc
 
 For example, the `alert` call below is used in the catch block of a web service ion to report an unexpected server failure:
 
-```
-<pre class="src src-clojure">(cast/alert {<span style="color: #008b8b;">:msg</span> <span style="color: #8b2252;">"SlackHandlerFailed"</span> <span style="color: #008b8b;">:ex</span> t})
+```clojure
+(cast/alert {:msg "SlackHandlerFailed" :ex t})
 ```
 
 
@@ -99,8 +99,8 @@ A metric is a numeric value in a named time series, such as the latency for an o
 
 For example, the `metric` call below is used to record the occurrence of a CodeDeployEvent:
 
-```
-<pre class="src src-clojure">(cast/metric {<span style="color: #008b8b;">:name</span> <span style="color: #008b8b;">:CodeDeployEvent</span> <span style="color: #008b8b;">:value</span> 1 <span style="color: #008b8b;">:units</span> <span style="color: #008b8b;">:count</span>})
+```clojure
+(cast/metric {:name :CodeDeployEvent :value 1 :units :count})
 ```
 
 
@@ -120,8 +120,8 @@ Dev
 
 The `cast/dev` function takes an arbitrary map. In the example below, `cast/dev` shows the channel and text of a slack post (presumably so that a developer can verify that a function is being called correctly):
 
-```
-<pre class="src src-clojure">(cast/dev {<span style="color: #008b8b;">:msg</span> <span style="color: #8b2252;">"PostingToSlack"</span> <span style="color: #008b8b;">::channel</span> channel <span style="color: #008b8b;">::text</span> text})
+```clojure
+(cast/dev {:msg "PostingToSlack" ::channel channel ::text text})
 ```
 
 

@@ -138,8 +138,8 @@ Register the callback for the peer with the command line argument:
 
 Java callbacks must be static public methods, taking a single *Object*argument, named as my.pkg.CallbackClass.handler, e.g.
 
-```
-<pre class="src src-sh">metrics-callback=my.pkg.CallbackClass.handler
+```sh
+metrics-callback=my.pkg.CallbackClass.handler
 ```
 
 
@@ -152,8 +152,8 @@ Java callbacks must be static public methods, taking a single *Object*argument, 
 
 Clojure callbacks must be functions that can take a single argument, named as my.ns/handler, e.g.
 
-```
-<pre class="src src-sh">metrics-callback=my.ns/handler
+```sh
+metrics-callback=my.ns/handler
 ```
 
 
@@ -168,8 +168,8 @@ The callback argument format is alpha, and is subject to change. Currently, the 
 
 The example below shows `:HeatbeatMsec` with a map value, and `:AvailableMB` with a numeric value.
 
-```
-<pre class="src src-clojure">{<span style="color: #008b8b;">:HeartbeatMsec</span> {<span style="color: #008b8b;">:lo</span> 5000, <span style="color: #008b8b;">:hi</span> 5001, <span style="color: #008b8b;">:sum</span> 55009, <span style="color: #008b8b;">:count</span> 11}, <span style="color: #008b8b;">:AvailableMB</span> 921.0}
+```clojure
+{:HeartbeatMsec {:lo 5000, :hi 5001, :sum 55009, :count 11}, :AvailableMB 921.0}
 ```
 
 
