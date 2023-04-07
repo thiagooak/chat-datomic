@@ -1,0 +1,435 @@
+Transactions
+============
+
+All writes to Datomic databases are protected by ACID transactions. Transactions are submitted to the system's Transactor component, which processes them serially and reflects changes out to all connected peers. This document describes transactions in detail.
+
+Topics covered in this page include:
+
+- [Transaction structure](../transactions/transactions.html#transaction-structure)
+- [Identifying entities](../transactions/transactions.html#identify-entities)
+- [Building transactions](../transactions/transactions.html#building-transactions)
+- [Built-in Transaction Functions](../transactions/transaction-functions.html)
+- [Processing transactions](../transactions/transaction-processing.html)
+
+Transaction structure
+---------------------
+
+Datomic represents transaction requests as [data structures](../overview/data-structure-literals.html). This is a significant difference from SQL database, where requests are submitted as strings. Using data instead of strings makes it easier to build requests programmatically.
+
+A transaction is simply a list of lists and/or maps, each of which is a statement in the transaction.
+
+
+
+### List forms
+
+Each list a transaction contains represents either the addition or retraction of a specific fact about an entity, attribute, and value, or the invocation of a data function, as shown below.
+
+```
+<pre class="src src-clojure">[<span style="color: #008b8b;">:db/add</span> entity-id attribute value]
+
+[<span style="color: #008b8b;">:db/retract</span> entity-id attribute value]
+[<span style="color: #008b8b;">:db/retract</span> entity-id attribute]
+[data-fn args*]
+```
+
+
+
+
+
+
+
+### Map forms
+
+Each map a transaction contains is equivalent to a set of one or more *:db/add* operations. The map may include a *:db/id* key identifying the entity data that the map refers to. It may additionally include any number of attribute, value pairs.
+
+```
+<pre class="src src-clojure">{<span style="color: #008b8b;">:db/id</span> entity-id
+ attribute value
+ attribute value
+ ... }
+```
+
+
+
+Internally, the map structure gets transformed to the list structure. Each attribute/value pair becomes a *:db/add* list. If you did not provide an entity-id, Datomic will generate a temporary entity-id for you.
+
+```
+<pre class="src src-clojure">[<span style="color: #008b8b;">:db/add</span> entity-id attribute value]
+[<span style="color: #008b8b;">:db/add</span> entity-id attribute value]
+...
+```
+
+
+
+The map structure is supported as a convenience when adding data. As a further convenience, the attribute keys in the map may be either keywords or strings.
+
+
+
+
+
+
+
+Identifying entities
+--------------------
+
+There are three ways to specify an entity id:
+
+- a temporary id for a new entity being added to the database
+- an existing id for an entity that's already in the database
+- an identifier for an entity that's already in the database
+
+They are described in the sections below.
+
+
+
+### Temporary ids
+
+When you are adding data to a new entity, you identify it using a temporary id. Temporary ids get resolved to actual entity ids when a transaction is processed.
+
+
+
+#### Creating tempids
+
+The simplest kind of temporary id is a string that follows these rules:
+
+- a temporary id cannot begin with a colon (*:*) character
+- the temporary id "datomic.tx" always identifies the current transaction
+- other strings beginning with "datomic" are reserved for future use by Datomic
+
+In the transaction data below, the temporary id "jdoe" is used to indicate that the two datoms are both about the same entity:
+
+```
+<pre class="src src-clojure">[[<span style="color: #008b8b;">:db/add</span> <span style="color: #8b2252;">"jdoe"</span> <span style="color: #008b8b;">:person/first</span> <span style="color: #8b2252;">"Jan"</span>]
+ [<span style="color: #008b8b;">:db/add</span> <span style="color: #8b2252;">"jdoe"</span> <span style="color: #008b8b;">:person/last</span> <span style="color: #8b2252;">"Doe"</span>]]
+```
+
+
+
+
+
+
+
+#### Temporary id resolution
+
+When a transaction containing temporary ids is processed, each unique temporary id is mapped to an actual entity id. If a given temporary id is used more than once in a given transaction, all instances are mapped to the same actual entity id.
+
+In general, unique temporary ids are mapped to new entity ids. However, there is one exception. When you add a fact about a new entity with a temporary id, and one of the attributes you specify is defined as *:db/unique* *:db.unique/identity*, the system will map your temporary id to an existing entity if one exists with the same attribute and value (update) or will make a new entity if one does not exist (insert). All further adds in the transaction that apply to that same temporary id are applied to the "upserted" entity.
+
+
+
+
+
+
+
+### Existing entity ids
+
+To add, modify or retract data about existing entities in a transaction, you must know the entity id. You can retrieve a specific entity id by querying the database for an external key (see [Schema](../schema/schema.html) for information about external keys).
+
+For example, this query retrieves the id of an existing entity based on an email address.
+
+```
+<pre class="src src-clojure">[<span style="color: #008b8b;">:find</span> ?e <span style="color: #008b8b;">:in</span> $ ?email <span style="color: #008b8b;">:where</span> [?e <span style="color: #008b8b;">:person/email</span> ?email]]
+```
+
+
+
+If the entity id returned by the query is 17592186046416, the following transaction data will set the entity's customer status:
+
+```
+<pre class="src src-clojure">{<span style="color: #008b8b;">:db/id</span> 17592186046416
+ <span style="color: #008b8b;">:customer/status</span> <span style="color: #008b8b;">:active</span>}
+```
+
+
+
+If the entity in question has a unique identifier, you can specify the entity id by using a [lookup ref](../schema/identity.html#lookup-refs). Rather than querying the database, you can provide the unique attribute, value pair corresponding to the entity you want to assert or retract a fact for. Note that a lookup ref specified in a transaction will be resolved by the transactor.
+
+```
+<pre class="src src-clojure">{<span style="color: #008b8b;">:db/id</span> [<span style="color: #008b8b;">:customer/email</span> <span style="color: #8b2252;">"joe@example.com"</span>]
+ <span style="color: #008b8b;">:customer/status</span> <span style="color: #008b8b;">:active</span>}
+```
+
+
+
+
+
+
+
+### Entity identifiers
+
+The system defines a special attribute, *:db/ident*, that can be used to assign an keyword identifier to a given entity. If an entity has a *:db/ident* attribute, its value can be used in place of the entity's id.
+
+This mechanism is what allows you to refer to attributes, partitions, types, etc., by specifying keywords.
+
+You can also use *:db/ident* to define entities representing enumerated values that can then be referred to by name (as described in [Schema](../schema/schema.html)).
+
+In the example below, the entity is specified by the ident *:person/name*:
+
+```
+<pre class="src src-clojure">[<span style="color: #008b8b;">:db/add</span> <span style="color: #008b8b;">:person/name</span> <span style="color: #008b8b;">:db/doc</span> <span style="color: #8b2252;">"A person's full name"</span>]
+```
+
+
+
+
+
+
+
+
+
+Building transactions
+---------------------
+
+This section explains how to build transactions to add, modify and retract facts. Each example shows a single transaction, but you can combine adding and retracting in a single transaction if desired.
+
+
+
+### Adding data to a new entity
+
+To add data to a new entity, build a transaction using *:db/add*implicitly with the map structure (or explicitly with the list structure), a temporary id, and the attributes and values being added.
+
+This example builds a transaction that creates a new entity with two attributes, *:person/name* and *:person/email*.
+
+```
+<pre class="src src-clojure">[{<span style="color: #008b8b;">:person/name</span> <span style="color: #8b2252;">"Bob"</span>
+  <span style="color: #008b8b;">:person/email</span> <span style="color: #8b2252;">"bob@example.com"</span>}]
+```
+
+
+
+This code constructs the same transaction programmatically.
+
+```
+<pre class="src src-java">tx = Util.list(Util.map(<span style="color: #8b2252;">":person/name"</span>, <span style="color: #8b2252;">"Bob"</span>, <span style="color: #8b2252;">":person/email"</span>, <span style="color: #8b2252;">"bob@example.com"</span>));
+```
+
+
+
+Note that there is no requirement about which attributes are added to which entities, this is left entirely up to your application. This provides a great deal of flexibility as your system evolves.
+
+
+
+
+
+### Adding data to an existing entity
+
+To add data to an existing entity, build a transaction using *:db/add*implicitly with the map structure (or explicitly with the list structure), an existing entity id or entity identifier, and the attributes and values being added.
+
+This example queries for an existing entity id and uses it in a new transaction to change the value of the entity's *:person/name*attribute to "Robert".
+
+```
+<pre class="src src-java">bob_id = Peer.query(
+  <span style="color: #8b2252;">"[:find ?e . :in $ ?email :where [?e :person/email ?email]]"</span>,
+  conn.db(),
+  <span style="color: #8b2252;">"bob@example.com"</span>);
+
+tx = Util.list(Util.map(<span style="color: #8b2252;">":db/id"</span>, bob_id, <span style="color: #8b2252;">":person/name"</span>, <span style="color: #8b2252;">"Robert"</span>));
+```
+
+
+
+The following example uses a lookup ref to perform the same transaction.
+
+```
+<pre class="src src-java">tx = Util.list(Util.map(<span style="color: #8b2252;">":db/id"</span>, Util.list(<span style="color: #8b2252;">":person/email"</span>, <span style="color: #8b2252;">"bob@example.com"</span>),
+                        <span style="color: #8b2252;">":person/name"</span>, <span style="color: #8b2252;">"Robert"</span>));
+```
+
+
+
+
+
+
+
+### Adding entity references
+
+Attributes of reference type allow entities to refer to other entities. When a transaction adds an attribute of reference type to an entity, it must specify an entity id as the attribute's value. The entity id specified for the value may be a temporary id (if the entity being referred to is being created by the same transaction) or a real entity id (if the entity being referred to already exists in the database).
+
+This example shows the literal representation of a transaction that creates two new entities, people named "Bob" and "Alice". Each entity has a reference to the other, connected using temporary ids, "bobid" and "aliceid", respectively. All instances of a given temporary id within a transaction will resolve to a single entity id.
+
+```
+<pre class="src src-clojure">[{<span style="color: #008b8b;">:db/id</span> <span style="color: #8b2252;">"bobid"</span>
+  <span style="color: #008b8b;">:person/name</span> <span style="color: #8b2252;">"Bob"</span>
+  <span style="color: #008b8b;">:person/spouse</span> <span style="color: #8b2252;">"aliceid"</span>}
+ {<span style="color: #008b8b;">:db/id</span> <span style="color: #8b2252;">"aliceid"</span>
+  <span style="color: #008b8b;">:person/name</span> <span style="color: #8b2252;">"Alice"</span>
+  <span style="color: #008b8b;">:person/spouse</span> <span style="color: #8b2252;">"bobid"</span>}]
+```
+
+
+
+This example shows constructing the same transaction from code.
+
+```
+<pre class="src src-java">tx = <span style="color: #008b8b;">Util</span>.List(
+       Util.map(<span style="color: #8b2252;">":db/id"</span>, <span style="color: #8b2252;">"bobid"</span>,
+                <span style="color: #8b2252;">":person/name"</span>, <span style="color: #8b2252;">"Bob"</span>,
+                <span style="color: #8b2252;">":person/spouse"</span>, <span style="color: #8b2252;">"aliceid"</span>),
+       Util.map(<span style="color: #8b2252;">":db/id"</span>, <span style="color: #8b2252;">"aliceid"</span>,
+                <span style="color: #8b2252;">":person/name"</span>, <span style="color: #8b2252;">"Alice"</span>,
+                <span style="color: #8b2252;">":person/spouse"</span>, <span style="color: #8b2252;">"bobid"</span>));
+```
+
+
+
+
+
+
+
+### Cardinality many transactions
+
+You can transact multiple values for a *:db.cardinality/many* attribute at one time using a list. The following example transacts a person named "Bob" with multiple aliases:
+
+```
+<pre class="src src-clojure">[{<span style="color: #008b8b;">:db/id</span> #db/id[<span style="color: #008b8b;">:db.part/user</span>]
+  <span style="color: #008b8b;">:person/name</span> <span style="color: #8b2252;">"Bob"</span>
+  <span style="color: #008b8b;">:person/email</span> <span style="color: #8b2252;">"bob@example.com"</span>
+  <span style="color: #008b8b;">:person/aliases</span> [<span style="color: #8b2252;">"Robert"</span> <span style="color: #8b2252;">"Bert"</span> <span style="color: #8b2252;">"Bobby"</span> <span style="color: #8b2252;">"Curly"</span>]}]
+```
+
+
+
+
+
+
+
+### Nested maps in transactions
+
+Often, a group of related entities are created or modified in the same transaction. Nested maps allow you to specify these related entities together in a single map. If an entity map contains a nested map as a value for a reference attribute, Datomic will expand the nested map into its own entity. Nested map expansion is governed by two rules:
+
+- If the nested map does not include a *:db/id*, Datomic will assign a *:db/id* automatically, using the same partition as the *:db/id* of the outer entity.
+- Either the reference to the nested map must be a [component attribute](../schema/schema.html#component), or the nested map must include a [unique](../schema/identity.html) attribute. This constraint prevents the accidental creation of easily-orphaned entities that have no identity or relation to other entities.
+
+As an example, the following data uses nested maps to specify two line items belonging to an order:
+
+```
+<pre class="src src-clojure">[{<span style="color: #008b8b;">:db/id</span> order-id
+  <span style="color: #008b8b;">:order/lineItems</span> [{<span style="color: #008b8b;">:lineItem/product</span> chocolate
+                     <span style="color: #008b8b;">:lineItem/quantity</span> 1}
+                    {<span style="color: #008b8b;">:lineItem/product</span> whisky
+                     <span style="color: #008b8b;">:lineItem/quantity</span> 2}]}]
+```
+
+
+
+Notice that
+
+- The two line items do not need to specify a *:db/id*, and will automatically get ids in the same partition as the *order-id* entity.
+- Since the line items do not have unique ids, you can infer that *:order/lineItems* must be a component attribute. (This is sensible given the domain. Line items have no independent existence outside orders.)
+
+Nested maps are often much more convenient than their equivalent flat expansions. The data below shows the same information order and line items as three independent entity maps.
+
+```
+<pre class="src src-clojure">[{<span style="color: #008b8b;">:db/id</span> order-id
+  <span style="color: #008b8b;">:order/lineItems</span> [item-1-id, item-2-id]}
+ {<span style="color: #008b8b;">:db/id</span> item-1-id
+  <span style="color: #008b8b;">:lineItem/product</span> chocolate
+  <span style="color: #008b8b;">:lineItem/quantity</span> 1}
+ {<span style="color: #008b8b;">:db/id</span> item-2-id
+  <span style="color: #008b8b;">:lineItem/product</span> whisky
+  <span style="color: #008b8b;">:lineItem/quantity</span> 2}]
+```
+
+
+
+In addition to being more verbose, this form requires additional work to explicitly manage *item-1-id* and *item-2-id* and their connections to the containing order.
+
+
+
+
+
+### Retracting data
+
+To retract data from an existing entity, build a transaction using *:db/retract*, an existing entity id or entity identifier, the attribute, and optionally value being retracted. If a value is not provided, all values for the provided entity and attribute will be retracted.
+
+This example queries for an existing entity id and uses it in a new transaction to retract the value of the entity's *:person/name*attribute.
+
+```
+<pre class="src src-java">bob_id = Peer.query(
+  <span style="color: #8b2252;">"[:find ?e . :in $ ?email :where [?e :person/email ?email]]"</span>,
+  conn.db(),
+  <span style="color: #8b2252;">"bob@example.com"</span>);
+
+tx = Util.list(Util.list(<span style="color: #8b2252;">":db/retract"</span>, bob_id, <span style="color: #8b2252;">":person/name"</span>, <span style="color: #8b2252;">"Robert"</span>));
+```
+
+
+
+The following example accomplishes the same thing with a lookup ref.
+
+```
+<pre class="src src-java">tx = Util.list(Util.list(<span style="color: #8b2252;">":db/retract"</span>, Util.list(<span style="color: #8b2252;">":person/email"</span> <span style="color: #8b2252;">"bob@example.com"</span>),
+                         <span style="color: #8b2252;">":person/name"</span>, <span style="color: #8b2252;">"Robert"</span>));
+```
+
+
+
+And the following retracts all values of the entity's *:person/name* attribute.
+
+```
+<pre class="src src-java">tx = Util.list(Util.list(<span style="color: #8b2252;">":db/retract"</span>, Util.list(<span style="color: #8b2252;">":person/email"</span> <span style="color: #8b2252;">"bob@example.com"</span>),
+                         <span style="color: #8b2252;">":person/name"</span>));
+```
+
+
+
+Datomic keeps the values of data over time and allows you to query the value of the database as of a point in time. That means it's possible to recover data even after it has been retracted, simply by querying a database value from the past.
+
+
+
+
+
+
+
+The Tempid Data Structure
+-------------------------
+
+As an alternative to string tempids, peers (but not clients) can choose to make a structural tempid, allowing them to explicitly specify a partition for the entity.
+
+You can make a temporary id by calling the *datomic.Peer.tempid*method. The first argument to *Peer.tempid* is the name of the partition where the new entity will reside as an argument. There are three partitions built into Datomic.
+
+PartitionPurpose:db.part/dbSchema partition, used only for attributes and partition entities:db.part/txTransaction partition, used only for transaction entities:db.part/userUser partition, for application entitiesThe *:db.part/db* partition should only be used for schema entities, like attributes and partitions, not for application data.
+
+The *:db.part/tx* partition should only be used for transaction entities, which are created automatically for each committed transaction.
+
+You should use *:db.part/user* for your application's entities, or you should create one or more partitions of your own, as described in [Schemas](../schema/schema.html).
+
+This code gets a new temporary id in the *:db.part/user* partition.
+
+```
+<pre class="src src-java">temp_id = Peer.tempid(<span style="color: #8b2252;">":db.part/user"</span>);
+```
+
+
+
+Each call to *tempid* produces a unique temporary id.
+
+There is an overloaded version of *tempid* that takes a negative number as a second argument. This version of *tempid* creates a temporary id based on the number you pass as input. If you invoke it multiple times with the same partition and negative number, each invocation will return the same temporary id. This can be useful when constructing transactions that add references between entities, as explained below.
+
+In some cases, you may want to store the literal representation of a transaction in a file. The literal form can be read with *datomic.Util.read* and submitted as a transaction. This is a useful way to store a schema definition, for example.
+
+You can insert temporary ids into the literal representation of a transaction using the following syntax:
+
+```
+<pre class="src src-clojure">#db/id[partition-name value*]
+```
+
+
+
+where *partition-name* is the name of a partition in the system and the value is an optional negative number.
+
+When the literal representation of a transaction is parsed, this syntax is interpreted and a temporary id is generated.
+
+
+
+### Default Partition
+
+String tempids create entities in the *default-partition* for the transactor process. You can set the default partition by editing the transactor properties file:
+
+```
+<pre class="src src-clojure">default-partition=:my.namespace/my-partition
+```
+
+
+
+If no default partition is specified, the transactor will use the built-in *:db.part/user* partition.

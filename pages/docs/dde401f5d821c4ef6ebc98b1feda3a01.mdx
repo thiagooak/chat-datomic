@@ -1,0 +1,236 @@
+Backup and Restore
+==================
+
+[Backup](#backing-up) copies a Datomic database to a file system directory or to an [AWS S3 Bucket](https://aws.amazon.com/s3/) which you have appropriate [permissions](#aws-permissions).
+
+[Restore](#restoring) copies a Datomic database backup to a Datomic system.
+
+Backup and restore are useful for:
+
+- disaster recovery
+- moving databases from one storage to another
+
+Backups can be performed at any time against a live system and repeat backups to the same backup-uri take advantage of [differential backup](#differential-backup).
+
+Backing Up
+----------
+
+You can use the `backup-db` command to back up a database at a database-uri to storage at a [backup uri](#uri-syntax).
+
+```
+<pre class="src src-sh">bin/datomic -Xmx4g -Xms4g backup-db from-db-uri to-backup-uri
+```
+
+
+
+The backup process needs memory proportional to database size.
+
+You should give the backup process at least as much memory as [the transactor process is given](../operation/capacity.html#transactor-memory) for a system, or approximately 500MB per billion datoms, whichever value is higher.
+
+Backup URIs are per database. You can backup the same database at different points in time to a single backup URI.
+
+A backup from a database URI and [restore](#restoring) to that database URI should not occur at the same time.
+
+> You can **not** backup different databases to a single backup-uri.
+> 
+> - Attempting to restore different databases to the same backup URI will result in an error: 
+>     - `java.lang.IllegalArgumentException: :backup/claim-failed Backup storage already used by...`
+
+Backups to s3 can be encrypted with [S3 server-side encryption](https://docs.aws.amazon.com/AmazonS3/latest/userguide/serv-side-encryption.html). By default, ****backups are not stored encrypted****. To enable encryption, pass the `--encryption sse` flag:
+
+```
+<pre class="src src-sh">bin/datomic -Xmx4g -Xms4g backup-db --encryption sse from-db-uri to-backup-uri
+```
+
+
+
+
+
+### Differential Backup
+
+The first time you perform a backup it must backup the entire database.
+
+Repeat backups to the same backup-uri do not need to copy segments that are unchanged. Repeatedly backing up the same database to the same backup-uri will substantially reduce backup times. This approach is strongly recommended, especially for large databases.
+
+
+
+
+
+
+
+Listing Backups
+---------------
+
+You can use the `list-backups` command to list the available points in time tthat can be restored.
+
+```
+<pre class="src src-sh">bin/datomic list-backups backup-uri
+```
+
+
+
+
+
+
+
+Restoring
+---------
+
+You can use the `restore-db` command to restore a database.
+
+In order to restore a database you must ****first**** do the following:
+
+- Shut down all peers and: 
+    - `:dev` storage - the transactor must be running.
+    - All other storages - shut down transactors.
+- (*optional*) Have a valid `t` from the backup, obtained with the [`list-backups` command](#listing-backups)
+
+> There should be no process actively backing up to a backup-uri when restoring from that database URI.
+
+```
+<pre class="src src-sh">bin/datomic -Xmx4g -Xms4g restore-db from-backup-uri to-db-uri
+```
+
+
+
+You should give the restore process as much memory as you [give the transactor process](../operation/capacity.html#transactor-memory) for that system.
+
+By default the most recent backup will be restored. You can restore to any `t` output by [list backups](#listing-backups) by putting that t at the end of the command:
+
+```
+<pre class="src src-sh">bin/datomic -Xmx4g -Xms4g restore-db from-backup-uri to-db-uri t
+```
+
+
+
+You can restore into a database URI that already points to a different point-in-time for the same database. You cannot restore into a database URI that points to a different database.
+
+Restore can rename databases. However, you cannot restore a single database to two different database URIs within the same storage.
+
+You do not need to do anything to storage that's been restored to (e.g. deleting old files or tables) before or after restoring. However, restoring to an "empty" storage will use the least possible storage space.
+
+You must restart peers and transactors after a restore. The instructions below describe how to perform these steps, depending on which storage you are restoring to.
+
+
+
+### Restoring to :dev storage
+
+`:dev` storage requires a running transactor during restore, because storage resides inside the transactor process. You must start the transactor before running a restore, and then shutdown and restart the transactor after the restore completes.
+
+
+
+
+
+### Restoring to all other storages
+
+With all system processes down, run the restore.
+
+When the restore has completed successfully, start the transactor and peers.
+
+
+
+
+
+
+
+Verifying Backups
+-----------------
+
+You can use the `verify-backup` command to verify that a backup includes all segments and (optionally) that all segments are readable.
+
+The positional arguments to `verify-backup` are a backup-uri, a boolean for `read-all` and the backup t you wish to verify.
+
+```
+<pre class="src src-sh">bin/datomic -Xmx4g -Xms4g verify-backup backup-uri read-all t
+```
+
+
+
+If `read-all` is `false`, `verify-backup` will verify that all segments of the log and index trees are present in backup storage. This basic verification is optimized for speed and minimal use of I/O.
+
+If `read-all` is `true`, `verify-backup` will additionally read back every segment of the database. This deeper verification has I/O cost proportional to the size of the entire database, and is suitable as a check for e.g. bit-level corruption.
+
+
+
+
+
+Backup, Restore and Verify Performance
+--------------------------------------
+
+Backup, restore and verify performance can be configured through [system properties](../configuration/system-properties.html#backup-properties).
+
+
+
+
+
+Deleting Backups
+----------------
+
+Backup space can be reclaimed by deleting the entire content hierarchy at a particular backup-uri's location.
+
+This will reclaim all space, and delete all the different point-in-time backups associated with that URI.
+
+Deleting a single point in time within a backup-uri is not supported.
+
+
+
+
+
+Backup URI syntax
+-----------------
+
+backup-uris have the following syntax:
+
+DestinationSyntaxdirectory`file:/full/path/to/backup-directory`S3 (Pro only)`s3://bucket/prefix`Database URI syntax is described in the API docs for `connect`:
+
+- Java - [Peer.connect()](../javadoc/datomic/Peer.html#connect-java.lang.Object-).
+- Clojure - [datomic.api/connect](../clojure/index.html#datomic.api/connect)
+
+
+
+
+
+AWS Permissions
+---------------
+
+When backing up from DDB, the required AWS permissions are the same as those a Peer would use, i.e. storage read-only. However, when restoring to DDB, the AWS permissions should be those used by the transactor, i.e. read/write credentials. See [AWS Access Control](../operation/aws-access-control.html) for information on providing the backup/restore processes access to the necessary resources.
+
+
+
+### IAM role policies
+
+Peers performing backup will need to be able to write to nested keys within the backup S3 bucket. Peers performing restore will need to read from the backup S3 bucket. The following role policy would grant both permissions.
+
+```
+<pre class="src src-js">{<span style="color: #8b2252;">"Statement"</span>:
+ [{<span style="color: #8b2252;">"Effect"</span>:<span style="color: #8b2252;">"Allow"</span>,
+   <span style="color: #8b2252;">"Action"</span>:[<span style="color: #8b2252;">"s3:*"</span>],
+   <span style="color: #8b2252;">"Resource"</span>:
+   [<span style="color: #8b2252;">"arn:aws:s3:::{bucket-name}"</span>, <span style="color: #8b2252;">"arn:aws:s3:::{bucket-name}/*"</span>]}]}
+```
+
+
+
+Additionally, peers performing restore to a DDB table will need to be able to both read from and write to that table:
+
+```
+<pre class="src src-js">{<span style="color: #8b2252;">"Statement"</span>:
+ [{<span style="color: #8b2252;">"Effect"</span>:<span style="color: #8b2252;">"Allow"</span>,
+   <span style="color: #8b2252;">"Action"</span>:[<span style="color: #8b2252;">"dynamodb:*"</span>],
+   <span style="color: #8b2252;">"Resource"</span>:<span style="color: #8b2252;">"arn:aws:dynamodb:*:{account-id}:table/{table-name}"</span>}]}
+```
+
+
+
+
+
+
+
+
+
+Limitations
+-----------
+
+Backup and restore are not suitable for cloning of a database within a single storage. If you attempt to restore a database into a storage that already contains that database, but under a different name, the restore operation will fail with the message:
+
+Backup and restore operations require durable storage and will not work with the `:mem` database.

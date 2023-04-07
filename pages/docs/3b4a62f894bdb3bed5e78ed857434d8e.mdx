@@ -1,0 +1,66 @@
+Using Superset
+==============
+
+[Superset](https://superset.apache.org) is an open-source business intelligence and data analytics platform that provides numerous statistical and visualization tools. You can configure Superset to use Datomic as a data source via the included "presto" connector.
+
+**Important**: First, follow the steps in the [Python Setup](analytics-python.html) documentation.
+
+Installing Superset
+-------------------
+
+Using the venv [created previously](analytics-python.html#setup-venv):
+
+- From the directory created when making the venv (my-python-env):
+
+```
+<pre class="src src-example">. venv/bin/activate
+```
+
+
+
+Follow the [superset install and setup instructions](https://superset.apache.org/installation.html) in your Python `venv`, starting with: `pip install superset`
+
+Once installed, as indicated in the docs, you can launch superset with:
+
+```
+<pre class="src src-example">superset run -p 8080 --with-threads --reload --debugger
+```
+
+
+
+Use `Ctrl-C` to stop the superset server
+
+These setup steps only need to be run the first time you install Superset.
+
+To run it again in the future, return to the my-python-env directory and run:
+
+```
+<pre class="example">
+. venv/bin/activate
+superset run -p 8080 --with-threads --reload --debugger
+```
+
+Once Superset is running, it can be found at localhost:8080 in a web browser.
+
+
+
+
+
+Using Superset with Datomic Analytics
+-------------------------------------
+
+In the Superset Menu Bar Click "Sources" → "Databases" Click the + button to add a new database Choose a name for the DB and enter it in the Name field. In the SQL Alchemy URI field add the DB URI for the Datomic Analytics system:
+
+```
+<pre class="src src-example">presto://<host>:<port>/<catalog>/<schema>
+```
+
+
+
+Substituting `host`, `port`, `catalog`, and `schema`.
+
+Click "Test" to test the connection
+
+Check the "Expose in SQL Lab" Option
+
+Configure remaining options (if desired) and click Save to create the Data Source

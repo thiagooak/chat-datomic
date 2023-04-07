@@ -1,0 +1,85 @@
+Overview
+========
+
+The Components of Datomic
+-------------------------
+
+The Datomic software consists of the peer library, the client library and the transactor. These components connect to one of several storage service options. All of the components come in a single download.
+
+
+
+### The Peer Library
+
+The peer library gets embedded in your application server(s). It is a gateway to the rest of the database, submitting transactions and accepting changes from the transactor. It also provides data access, caching and query capability. It contains all the communication components needed for connecting to the transactor and storage services, as well as Datalog and other facilities for managing your data.
+
+The peer library can act in standalone mode, using an in-memory database as a stand-in for the other components.
+
+The peer library uses the [Peer API](../clojure/index.html).
+
+![peerlib.svg](../images/peerlib.svg)
+
+
+
+
+
+
+
+### The Client Library
+
+The Client library is a smaller, lighter weight library you can embed in a microservice or other lightweight process that connects to the Datomic Peer Server. The Client library not only provides a lighter weight interface to Datomic, but the client protocol is designed to support non-JVM languages.
+
+![clientpeerserver.svg](../images/clientpeerserver.svg)
+
+
+
+
+
+
+
+### The Peer Server
+
+The Datomic Peer Server is a JVM process that provides an interface for the Datomic Client Library. The Peer Server provides a gateway to the database, submitting transactions and accepting changes from the transactor. Like the Peer Library, the Peer Server provides caching and query capability for connected Datomic Clients.
+
+
+
+
+
+### The Transactor
+
+The transactor is a process that accepts transactions and coordinates change, and is needed whenever you want a system comprised of more than a single peer, or one that leverages a storage service. It can be run as a stand-alone process, or you can run our prebuilt AMI on EC2. With a transactor in play, the system can run in one of several storage modes. The simplest mode is called `:dev` mode, and leverages built-in storage capabilities of the transactor. It is intended for small-scale development and testing:
+
+![transactor.svg](../images/transactor.svg)
+
+
+
+
+
+
+
+### The Storage Service
+
+When you are ready for higher performance and scalability, you will integrate a storage service. A storage 'service' can be anything from a SQL database, to a key/value store, to a true service like Amazon's DynamoDB. You will still use the peer and client libraries described above, but will configure it and the transactor to use one of the external storage protocols. The currently supported protocols are ddb backed by DynamoDB, cass backed by Cassandra, and sql backed by a SQL database (like PostgreSQL).
+
+When using EC2 you can use our prebuilt Amazon AMI transactor. You will need an Amazon AWS account. Our tools will help you configure users, security groups, auto-scaling, metrics, cloud-formation and other details of AWS.
+
+When using Cassandra or SQL, you will need to stand up the storage system/server yourself, with scripts we provide to help you with e.g. installing the schemas Datomic requires.
+
+![clientarch_orig.svg](../images/clientarch_orig.svg)
+
+
+
+
+
+
+
+### Integrated memcached Support
+
+Another feature of the Datomic is optional memcached support. Simply configure the transactor and peers with your memcached servers and they will be transparently utilized as a distributed backing cache for data segments.
+
+
+
+
+
+### Storage Flexibility
+
+You can move an application from the memory database, to dev mode, to a storage-service based configuration with a switch of the connection string on the peers and a properties file on the transactor. All are fully API-compatible. You can move databases between storages with the backup/restore facilities.

@@ -1,0 +1,225 @@
+Customizing API Gateways
+========================
+
+By default, every Datomic [compute group](../whatis/architecture.html#compute-groups) manages two API Gateways: one for client access, and another for [ion applications](../ions/ions.html). This pages covers circumstances where you may want to go beyond Datomic's built-in API Gateway support:
+
+- [creating a custom domain for Datomic's API Gateways](#custom-domain)
+- [creating your own API Gateways](#creating-your-apigateway)
+
+Creating a Custom Domain
+------------------------
+
+The API Gateways managed by Datomic have generated endpoint names of the form <https://{api-id}.execute-api.{region}.amazonaws.com/>. If you want friendly custom domains in addition to these generated names, you can configure them either through [Route53](#route-53) or [your own DNS servers/registrar](#users-dns).
+
+Both methods described use [AWS Certificate Manager](https://console.aws.amazon.com/acm/home).
+
+
+
+### Route53
+
+These instructions assume that you're using a subdomain.
+
+The AWS Certificate manager instructions may differ based on your needs. These instructions provide a basic overview of how to setup a custom domain name.
+
+- AWS Certificate Manager 
+    - Go to [AWS Certificate Manager](https://console.aws.amazon.com/acm/home)
+    - Possibly click Provision Certificates
+    - Request a certificate
+    - Select Request a public certificate.
+    - Click "Request a certificate."
+    - Enter the domain name that you wish to use.
+    - Click "Next".
+    - Select the DNS validation method that you wish to use.
+    - Click "Next".
+    - Add any tags that you would like for easier identification of this Certificate later.
+    - Click "Review".
+    - Review your selections.
+    - Click "Confirm and Request"
+    - If you used DNS Validation: 
+        - Click the down arrow next to the domain name in the "Domain" box
+        - Click "Create record in Route 53"
+        - Review the information on the next screen.
+        - Click "Create"
+    - Once the Certificate's status in ACM is completed, proceed to the next step.
+- API Gateway 
+    - Go to [API Gateway](https://console.aws.amazon.com/apigateway/main/apis)
+    - Select the API that you want to connect a custom domain name to.
+    - Click "Custom domain names".
+    - Click "Create".
+    - Enter the desired domain name.
+    - Leave the defaults 
+        - TLS 1.2
+        - Mutual Authentication Off
+        - Endpoint Type - Regional
+    - Select the ACM Certificate that you created earlier, or the appropriate existing ACM Certificate.
+    - Add any tags that you would like for easier identification of this custom domain later.
+    - Click "Create Domain Name"
+    - On the following page for the newly created domain name, click the "API mappings" tab. 
+        - Click "Configure API mappings".
+        - Click "Add new mapping".
+        - Select the API that you want to connect a custom domain name to.
+        - Select the appropriate stage, likely `$default`
+        - Click "Save".
+    - Under "Configurations" copy and save the API Gateway domain name for the next step.
+- Route53 
+    - Go to [Route53](https://console.aws.amazon.com/route53/v2/home)
+    - Click Hosted Zones.
+    - Click the domain name that you are using.
+    - Create record.
+    - Record type "A" or "AAA".
+    - Record name is the subdomain used previously.
+    - Route traffic to "Alias to API Gateway API"
+    - Choose the appropriate region.
+    - Choose the endpoint matching the name that you saved earlier.
+    - Click "Create Records"
+
+After the DNS propagates, you should be able to visit a domain connected to a Client API Gateway and get a response similar to:
+
+```
+<pre class="src src-clojure">{<span style="color: #008b8b;">:s3-auth-path</span> <span style="color: #8b2252;">"<stack-name>-storagef7f305e7-z5ezcdtid-s3datomic-2n2m24rzlu6al"</span>}
+```
+
+
+
+
+
+
+
+### Your DNS Servers
+
+These instructions assume that you're using a subdomain.
+
+The AWS Certificate manager instructions may differ based on your needs. These instructions provide a basic overview of how to setup a custom domain name.
+
+- AWS Certificate Manager 
+    - Go to [AWS Certificate Manager](https://console.aws.amazon.com/acm/home)
+    - Possibly click Provision Certificates
+    - Request a certificate
+    - Select Request a public certificate.
+    - Click "Request a certificate."
+    - Enter the domain name that you wish to use.
+    - Click "Next".
+    - Select the DNS validation method that you wish to use.
+    - Click "Next".
+    - Add any tags that you would like for easier identification of this Certificate later.
+    - Click "Review".
+    - Review your selections.
+    - Click "Confirm and Request"
+- API Gateway 
+    - Go to [API Gateway](https://console.aws.amazon.com/apigateway/main/apis)
+    - Select the API that you want to connect a custom domain name to.
+    - Click "Custom domain names".
+    - Click "Create".
+    - Enter the desired domain name.
+    - Leave the defaults 
+        - TLS 1.2
+        - Mutual Authentication Off
+        - Endpoint Type - Regional
+    - Select the ACM Certificate that you created earlier, or the appropriate existing ACM Certificate.
+    - Add any tags that you would like for easier identification of this custom domain later.
+    - Click "Create Domain Name"
+    - On the following page for the newly created domain name, click the "API mappings" tab. 
+        - Click "Configure API mappings".
+        - Click "Add new mapping".
+        - Select the API that you want to connect a custom domain name to.
+        - Select the appropriate stage, likely ~$default~&gt;
+        - Click "Save".
+- DNS 
+    - Go to where you manage your DNS.
+    - Subdomain - If you used a subdomain 
+        - Create a new CNAME record.
+        - Host is the API Gateway domain name listed under your Custom domain names' Endpoint configuration.
+        - Value is the API Gateway endpoint URL.
+
+After the DNS propagates, you should be able to visit a domain connected to a Client API Gateway and get a response similar to:
+
+```
+<pre class="src src-clojure">{<span style="color: #008b8b;">:s3-auth-path</span> <span style="color: #8b2252;">"<stack-name>-storagef7f305e7-z5ezcdtid-s3datomic-2n2m24rzlu6al"</span>}
+```
+
+
+
+Ion API Gateway domains will need to be verified using your HTTP Direct invoke method.
+
+
+
+
+
+
+
+Creating your own API Gateway
+-----------------------------
+
+Datomic's built-in API Gateways will cover the majority of use cases, but it is possible to create your own API Gateways in addition to, or instead of, the API Gateways managed by Datomic. The instructions below cover creating and using your own API Gateways, both for Datomic clients and for ion applications.
+
+
+
+### Find Load Balancer Name
+
+- Go to [Cloudformation](https://console.aws.amazon.com/cloudformation/)
+- Select your Master Stack, Primary Compute Group or Query Group that you wish to add an endpoint to.
+- Click the "Outputs" tab.
+- Search for "LoadbalancerName" and take note of the associated value.
+
+
+
+
+
+### Create API Gateway
+
+- Go to the [API Gateway](https://console.aws.amazon.com/apigateway/main/apis)
+- Click "Create API"
+- Click "Build" under "HTTP API".
+- API name - "datomic-&lt;system-name&gt;-Client" or "datomic-&lt;system-name&gt;-HTTP-Direct" is suggested, depending on the gateway type.
+- Click "Next" on the Configure routes page.
+- Use the default Stage name value of `$default`. Click "Next".
+- Do not try to edit integrations at this time.
+- Click "Create"
+
+
+
+
+
+### Create a Route
+
+- On the page for your newly created API, click "Routes"
+- Path - `$default`
+    - A Client Access gateway must use a `$default` path. HTTP Direct access can be setup according to your needs.
+
+
+
+
+
+### Create an Integration
+
+- Click "Integrations"
+- Select your `default` path
+- Click "Create and attach an integration"
+- Integration Type - Private Resource
+- Selection Method - Select manually
+- Target Service - ALB/NLB
+- Load Balancer - use the value previously located in CloudFormation.
+- Listener 
+    - TCP ****8182**** for Client Access
+    - TCP ****8184**** for HTTP Direct Access
+- VPC link - select the name of your system.
+- Click "Create"
+
+
+
+
+
+### Using your Client Access API Gateway
+
+- Go to [API Gateway](https://console.aws.amazon.com/apigateway/main/apis)
+- Select the API that you created for client
+
+Your endpoint is now displayed in the "Stages" section of your API's page in [API Gateway](https://console.aws.amazon.com/apigateway/main/apis). Curl or view the link in your web browser. You should see text that looks like `{:s3-auth-path "my-datomic-systems3datomic-m62qe9be3uwp"}`. The exact value will differ for you.
+
+
+
+
+
+### Using your HTTP Direct Access API Gateway
+
+The HTTP Direct endpoint [is used to access your Ions over the internet](../ions-tutorial/entry-points.html#http-direct).

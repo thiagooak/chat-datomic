@@ -1,0 +1,611 @@
+Glossary
+========
+
+asOf
+----
+
+A database value as of a point in time. With asOf, you can reuse existing queries and rules to ask questions about points in time other than the present.
+
+
+
+
+
+assertion
+---------
+
+An atomic fact in the database, associating an [entity ](/cloud/glossary.html#entity), [attribute ](/cloud/glossary.html#attribute), [value ](/cloud/glossary.html#value), and a [tx ](/cloud/glossary.html#tx). Opposite of a [retraction ](/cloud/glossary.html#retraction).
+
+
+
+
+
+attribute
+---------
+
+Something that can be said about an [entity ](/cloud/glossary.html#entity). An attribute has a name, e.g. :firstName, and a value type, e.g. :db.type/long, and a cardinality.
+
+
+
+
+
+attribute identifier
+--------------------
+
+An entity identifier that refers to an attribute.
+
+
+
+
+
+basis-t
+-------
+
+The database t that is the basis for the current database, i.e. the most recent point-in-time that this database has seen.
+
+
+
+
+
+cardinality
+-----------
+
+Property of an [attribute ](/cloud/glossary.html#attribute) that specifies how many values of the attribute can be associated with a single reference entity. Possible values are :db.cardinality/one and :db.cardinality/many.
+
+
+
+
+
+caches
+------
+
+Nodes use a [multi-layered cache ](/cloud/whatis/architecture.html/cloud/glossary.html#caching) that consists of an object Cache, [valcache ](/cloud/glossary.html#valcache), and an EFS Cache.
+
+
+
+
+
+client
+------
+
+A process that uses a Datomic library to obtain [connection ](/cloud/glossary.html#connection) to interact with one or more [database ](/cloud/glossary.html#database).
+
+
+
+
+
+closed world assumption
+-----------------------
+
+Assumption that truth is what the database knows. Databases that intend to store data of record typically make the closed world assumption. Datomic adheres to the closed world model.
+
+
+
+
+
+component
+---------
+
+A [reference attribute ](/cloud/glossary.html#reference) that is part of its [entity ](/cloud/glossary.html#entity). E.g. your arm is a component of you, but your sister isn't. An attribute is a component it has :db/isComponent set to true.
+
+
+
+
+
+component attribute
+-------------------
+
+See [component ](/cloud/glossary.html#component).
+
+
+
+
+
+compute-group
+-------------
+
+An Auto Scaling Group of compute resources, either a primary compute group or a query group.
+
+
+
+
+
+connection
+----------
+
+Client object that provides access to a database. Programs can use a connection to submit transactions and queries.
+
+
+
+
+
+consistent hash ring
+--------------------
+
+Datomic uses a consistent hash ring to route transactions to a preferred Node per database. This is a performance optimization only: any Primary Compute Node can handle any transaction.
+
+
+
+
+
+covering index
+--------------
+
+A covering index contains (rather than points to) the data. Datomic indexes are covering indexes.
+
+
+
+
+
+database
+--------
+
+A database is a set of datoms.
+
+
+
+
+
+datom
+-----
+
+An atomic fact in a database, composed of entity/attribute/value/transaction/added. Pronounced like "datum", but pluralizes as datoms.
+
+
+
+
+
+datalog
+-------
+
+A deductive query system, typically consisting of:
+
+- A database of facts
+- A set of rules for deriving new facts from existing facts
+- a query processor that, given some partial specification of a fact or rule: finds all instances of that specification implied by the database and rules, i.e. all the matching facts
+ 
+Datomic's built-in [query ](/cloud/glossary.html#query) is an implementation of Datalog. 
+
+
+
+domain attribute
+----------------
+
+an attribute used to model something in your application domain.
+
+
+
+
+
+edn
+---
+
+The [extensible data notation ](https://github.com/edn-format/edn) is used by Datomic and other applications as a data transfer format.
+
+
+
+
+
+EFS cache
+---------
+
+A cache of segments in EFS that will typically contain the entirety of all databases, eliminating the need to read from S3.
+
+
+
+
+
+ensure
+------
+
+an operation that guarantees the existence and correct configuration of a resource. Ensure is typically built out of AWS primitives that create, query, and update resources.
+
+
+
+
+
+entity
+------
+
+The first component of a [datom ](/cloud/glossary.html#datom), specifying who or what the datom is about. Also the collection of datoms associated with a single entity, as in the Java type, Entity.
+
+
+
+
+
+entity id
+---------
+
+An opaque identifier assigned by Datomic that uniquely identifies an entity. Entity ids are integers for efficiency, but application programs should treat them as opaque ids.
+
+
+
+
+
+entity identifier
+-----------------
+
+a value that identifies an entity. Can be an entity id, an ident, or a lookup ref.
+
+
+
+
+
+environment
+-----------
+
+an instantiated set of all the resources need to run an application.
+
+
+
+
+
+external key
+------------
+
+a unique identifier external to Datomic. Typical external key types are email address, UUID, and URI. External key attributes should be declared as db.unique/identity.
+
+
+
+
+
+epoch
+-----
+
+Period of time bounded by writing index to storage. During an epoch, indexing is done in memory. At epoch boundaries, the in-memory index is merged with the persistent index, and a new persistent index is written to the storage service (without blocking the system).
+
+
+
+
+
+fact
+----
+
+See [datom ](/cloud/glossary.html#datom).
+
+
+
+
+
+Fressian
+--------
+
+ [Fressian ](https://github.com/Datomic/fressian/wiki/Rationale) is an extensible binary format that is used everywhere data is serialized by Datomic: on the wire, at rest, and in caches. Fressian is designed to be:
+
+- self-describing
+- language-independent
+- extensible
+- simple to implement and consume
+- compact and fast
+- friendly to dynamic and static languages
+- compressible in domain-specific ways
+ 
+
+
+
+
+keyword
+-------
+
+Data type representing a name, e.g. :email or (with namespace) :customer/email .
+
+
+
+
+
+ident
+-----
+
+A value of type :db/ident that uniquely identifies an [entity ](/cloud/glossary.html#entity).
+
+
+
+
+
+index
+-----
+
+Sorted collection of datoms. Indexes are named by the order in which datom components are used for sort, e.g. An index that sorts first by [entity ](/cloud/glossary.html#entity), then [attribute ](/cloud/glossary.html#attribute), then [value ](/cloud/glossary.html#value), then [tx ](/cloud/glossary.html#tx) is called EAVT.
+
+
+
+
+
+infrastructure
+--------------
+
+The set of all environments for an application.
+
+
+
+
+
+ions
+----
+
+Your application code, running on Datomic compute nodes.
+
+
+
+
+
+lookup-ref
+----------
+
+A list containing a unique attribute and a value that identifies an entity.
+
+
+
+
+
+LRU
+---
+
+Least Recently Used
+
+
+
+
+
+namespace
+---------
+
+Prefix portion of a [keyword ](/cloud/glossary.html#keyword) used to make the keyword globally unique. Namespaces serve a similar function to table names in a relational store, without imposing any obligations or limitations, e.g. an entity can have attributes from more than one namespace.
+
+
+
+
+
+object cache
+------------
+
+Nodes maintain an on-heap cache of segments containing the most recently used datoms.
+
+
+
+
+
+parameters
+----------
+
+named slots for application configuration data.
+
+
+
+
+
+primary compute stack
+---------------------
+
+a CloudFormation stack providing computational resources. Every Datomic system has a single primary compute stack, and may also have multiple query groups.
+
+
+
+
+
+pull
+----
+
+a declarative way to make hierarchical selections of information about entities
+
+
+
+
+
+query
+-----
+
+Datomic's Datalog system. A query finds [values ](/cloud/glossary.html#value) in a [database ](/cloud/glossary.html#database) subject to the given constraints, and is specified as [edn ](/cloud/glossary.html#edn).
+
+
+
+
+
+query group
+-----------
+
+An AutoScaling Group (ASG) of nodes used to dedicate bandwidth, processing power, and caching to particular jobs. Unlike sharding, query groups never dictate who a client must talk to in order to store or retrieve information. Any node in any group can handle any request.
+
+
+
+
+
+reference
+---------
+
+An attribute that refers to another entity. References always have the value type db.type/ref.
+
+
+
+
+
+reference attribute
+-------------------
+
+See [reference ](/cloud/glossary.html#reference).
+
+
+
+
+
+retraction
+----------
+
+An atomic fact in the database, dissociating an [entity ](/cloud/glossary.html#entity) from a particular [value ](/cloud/glossary.html#value) of an [attribute ](/cloud/glossary.html#attribute). Opposite of an [assertion ](/cloud/glossary.html#assertion).
+
+
+
+
+
+rule
+----
+
+A named group of [query ](/cloud/glossary.html#query) constraints, to allow re-use of logic across queries.
+
+
+
+
+
+storage resources
+-----------------
+
+The durable elements managed by a Datomic system.
+
+
+
+
+
+system
+------
+
+A complete Datomic installation, consisting of storage resources, a primary compute stack, and optional query groups.
+
+
+
+
+
+schema
+------
+
+The set of possible attributes that can be associated with entities. Any entity can have any attribute.
+
+
+
+
+
+schema attribute
+----------------
+
+a built-in attribute used to define schema, e.g. all attributes are named by :db/ident.
+
+
+
+
+
+segment
+-------
+
+Indexes store datoms as a tree of segments, where the leaf nodes contain a few thousand datoms each.
+
+
+
+
+
+storage-service
+---------------
+
+Subsystem responsible for persistence. Datomic Cloud uses DynamoDB as its storage service.
+
+
+
+
+
+time-point
+----------
+
+Data structure that can be resolved to a point in time in a database. Can be a database t, a tx, or a date.
+
+
+
+
+
+t
+-
+
+A point in time in a database. Every transaction is assigned a numeric t value greater than any previous t in the database, and all processes see a [consistent ](/cloud/transactions/acid.html/cloud/glossary.html#consistency) succession of ts.
+
+
+
+
+
+tx
+--
+
+An [entity ](/cloud/glossary.html#entity) representing a [transaction ](/cloud/glossary.html#transaction). Every [datom ](/cloud/glossary.html#datom) in a Datomic database includes the tx that created it, allowing recovery of the entire history of the database. Transactions are automatically associated with wall-clock time, but are otherwise ordinary entities. In particular, application code can make additional assertions about transactions.
+
+
+
+
+
+transaction
+-----------
+
+An atomic unit of work in a database. All Datomic writes are transactional, fully serialized, and ACID (Atomic, Consistent, Isolated, and Durable).
+
+
+
+
+
+transaction function
+--------------------
+
+a function that runs inside a transaction, taking the current database value plus user arguments and expanding into data to be added by the transaction.
+
+
+
+
+
+transaction log
+---------------
+
+an accumulate-only log of all transactions, stored in DynamoDB.
+
+
+
+
+
+tuple
+-----
+
+An ordered list of elements. Datomic queries return sets of tuples.
+
+
+
+
+
+unique
+------
+
+Attribute of an [attribute ](/cloud/glossary.html#attribute). Each [entity ](/cloud/glossary.html#entity) that has a [value ](/cloud/glossary.html#value) for a `:db/unique` attribute must have a different value. `:db/unique` has two possible values
+
+- db.unique/value: attempts to assert a duplicate value will fail
+- db.unique/identity: attempts to assert a duplicate identity will [upsert ](/cloud/glossary.html#upsert)
+ 
+
+
+
+
+upsert
+------
+
+Either insert or update an [entity ](/cloud/glossary.html#entity), depending on whether the unique entity already exists.
+
+
+
+
+
+valcache
+--------
+
+An SSD-backed cache of segments. Valcache is similar in performance to memcached but durable and capacious.
+
+
+
+
+
+value
+-----
+
+Something that does not change, e.g. 42, John, or [inst "2012-02-29". A ](/cloud/glossary.html#inst)[datom ](/cloud/glossary.html#datom) relates an [entity ](/cloud/glossary.html#entity) to a value through an [attribute ](/cloud/glossary.html#attribute).
+
+
+
+
+
+value type
+----------
+
+Attribute of an [attribute ](/cloud/glossary.html#attribute) that specifies the data structure that can be stored in the attribute. The value type determines how a [value ](/cloud/glossary.html#value) is
+
+- serialized
+- sorted for indexing
+- represented in a programming language type

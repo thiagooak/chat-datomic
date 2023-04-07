@@ -1,0 +1,231 @@
+Client Getting Started
+======================
+
+Getting started with the [Client Library](integrating-client-lib.html) is similar to [Getting Started with Peer](../getting-started/connect-to-a-database.html) except for a few differences:
+
+- [Dev setup](#local-dev-setup)
+- [Integrate the Client Library](integrating-client-lib.html)
+- [Connecting to a Database](#connect-to-a-database)
+- [Transacting](#transacting)
+
+Once you have your [development environment](#local-dev-setup) setup and have [connected to a database](#connect-to-a-database).
+
+Local Development Setup
+-----------------------
+
+The Datomic Peer Server provides an interface for Datomic [clients](#repl) to access databases. The Peer Server communicates with storage and the Transactor to service both reads from and writes to Datomic databases.
+
+> The tutorial uses the `mem` storage option with Peer Server. A transactor does not need to be running when using `mem`, but a transactor must be running and connected to the storage when using other storages.
+
+Navigate to the root of your Datomic distribution directory then run:
+
+```
+<pre class="src src-sh">bin/run -m datomic.peer-server -h localhost -p 8998 -a myaccesskey,mysecret -d hello,datomic:mem://hello
+```
+
+
+
+This starts a Peer Server with:
+
+FlagNameValueDescription`-h`Host`localhost`the hostname`-p`Port`8998`the port to listen on`-a`Access key`myaccesskey`an access key (you will this pass back to the Peer Server later to authenticate yourself)`-a`Secret`mysecret`an secret (you will this pass back to the Peer Server later to authenticate yourself)`-d`storage`hello`a URL describing what storage to use and a database nameThe tutorial will use the `mem` storage. `mem` stores the data in memory and does not persist beyond the life of the process.
+
+More details on configuration and options can be found on the [Peer Server](../client/peer-server.html)documentation page.
+
+The Peer Server process will lock the terminal will to this Peer Server process until the process is killed. CTRL-C will kill the process, or you can close the terminal window.
+
+Continuing with the tutorial with client will require a running Peer Server.
+
+
+
+### Integrate Client Library
+
+The Client library must be integrated in your project. [Follow the instructions for your preferred project type](integrating-client-lib.html)
+
+Follow the instructions until you have a running REPL.
+
+
+
+
+
+
+
+Connect to a Database
+---------------------
+
+The Datomic Client Library communicates with a Peer Server. If you have not yet started a Peer Server, follow the [Local Development Setup](#local-dev-setup) section prior to attempting to connect a Datomic Client.
+
+The first step to interacting with Datomic via the Client API is creating a client with [`datomic.client.api/client`](../../client-api/datomic.client.api.html#var-connect).
+
+Then create a connection with [`datomic.client.api/connect`](../../client-api/datomic.client.api.html#var-connect)by passing in the client and a database name.
+
+Creating a client requires several important parameters:
+
+- `:db-name` is the database your Client code will be interacting with.
+- `:endpoint` is the host and port where Datomic is running and listening.
+- `:secret` and `:access-key` are two opaque strings that match similar tokens provided when launching Datomic. They are set to "mysecret" and "myaccesskey" in this tutorial.
+
+[`datomic.client.api/client`](../../client-api/datomic.client.api.html#var-connect) takes a map with your client configuration.
+
+```
+<pre class="src src-clojure">(<span style="color: #a020f0;">def</span> <span style="color: #0000ff;">cfg</span> {<span style="color: #008b8b;">:server-type</span> <span style="color: #008b8b;">:peer-server</span>
+          <span style="color: #008b8b;">:access-key</span> <span style="color: #8b2252;">"myaccesskey"</span>
+          <span style="color: #008b8b;">:secret</span> <span style="color: #8b2252;">"mysecret"</span>
+          <span style="color: #008b8b;">:endpoint</span> <span style="color: #8b2252;">"localhost:8998"</span>
+          <span style="color: #008b8b;">:validate-hostnames</span> false})
+```
+
+
+
+```
+<pre class="src src-clojure">=> #'user/cfg
+```
+
+
+
+Create a client:
+
+```
+<pre class="src src-clojure">(<span style="color: #a020f0;">def</span> <span style="color: #0000ff;">client</span> (d/client cfg))
+```
+
+
+
+```
+<pre class="src src-clojure">=> #'user/client
+```
+
+
+
+Create a connection with that client:
+
+```
+<pre class="src src-clojure">(<span style="color: #a020f0;">def</span> <span style="color: #0000ff;">conn</span> (d/connect client {<span style="color: #008b8b;">:db-name</span> <span style="color: #8b2252;">"hello"</span>}))
+```
+
+
+
+```
+<pre class="src src-clojure">=> #'user/conn
+```
+
+
+
+You should see that a var was created called "`conn`" which is holding your database connection. You can inspect it:
+
+```
+<pre class="src src-clojure">conn
+```
+
+
+
+```
+<pre class="src src-clojure">=> {<span style="color: #008b8b;">:db-name</span> <span style="color: #8b2252;">"hello"</span>, 
+    <span style="color: #008b8b;">:database-id</span> <span style="color: #8b2252;">"5a381758-6e47-4504-aa08-07067b5c241a"</span>, 
+    <span style="color: #008b8b;">:t</span> 1008, 
+    <span style="color: #008b8b;">:next-t</span> 1009, 
+    <span style="color: #008b8b;">:type</span> <span style="color: #008b8b;">:datomic.client/conn</span>}
+```
+
+
+
+This tells you that you have an available connection to the database called "hello" as well as a few other details which you will learn more about later. You can now use "conn" as an input to future commands.
+
+
+
+
+
+Connecting
+----------
+
+The Client API [`connect`](../../client-api/datomic.client.api.html#var-connect) takes a [client object](../../client-api/index.html) and a map with a key of `:db-name` the value of the database that you want to connect to.
+
+```
+<pre class="example">
+(def cfg {:server-type :peer-server
+	:access-key "myaccesskey"
+	:secret "mysecret"
+	:endpoint "localhost:8998"
+	:validate-hostnames false})
+```
+
+```
+<pre class="example">
+=>
+#+user/cfg
+```
+
+```
+<pre class="example">
+(def client (d/client cfg))
+```
+
+```
+<pre class="example">
+=>
+#'user/client
+```
+
+```
+<pre class="example">
+(def conn (d/connect client {:db-name "hello"}))
+```
+
+```
+<pre class="example">
+=>
+#'user/conn
+```
+
+Now your connection can be used similar to how it is in the [Peer Getting Started](../getting-started/get-datomic.html).
+
+
+
+
+
+Transacting
+-----------
+
+The Client library's `transact` function takes the transaction data in a map under the key `:tx-data`.
+
+> `movie-schema` is defined in the Peer [Getting Started](../getting-started/get-datomic.html) section. Follow that guide, starting from "[Transacting Schema](../getting-started/transact-schema.html)" with these modifications to learn about using Client.
+
+```
+<pre class="src src-clojure">(d/transact conn {<span style="color: #008b8b;">:tx-data</span> movie-schema})
+```
+
+
+
+```
+<pre class="src src-clojure">=>
+{<span style="color: #008b8b;">:db-before</span> {<span style="color: #008b8b;">:database-id</span> <span style="color: #8b2252;">"58a47389-f1ab-4d81-85b6-715cecde9bac"</span>, 
+             <span style="color: #008b8b;">:t</span> 63, 
+             <span style="color: #008b8b;">:next-t</span> 1000, 
+             <span style="color: #008b8b;">:history</span> false}, 
+ <span style="color: #008b8b;">:db-after</span> {<span style="color: #008b8b;">:database-id</span> <span style="color: #8b2252;">"58a47389-f1ab-4d81-85b6-715cecde9bac"</span>, 
+            <span style="color: #008b8b;">:t</span> 1000, 
+            <span style="color: #008b8b;">:next-t</span> 1001, 
+            <span style="color: #008b8b;">:history</span> false}, 
+ <span style="color: #008b8b;">:tx-data</span> [ #datom[13194139534312 50 #inst <span style="color: #8b2252;">"2017-02-15T15:28:31.174-00:00"</span> 13194139534312 true] 
+            #datom[63 10 <span style="color: #008b8b;">:movie/title</span> 13194139534312 true] 
+            #datom[63 40 23 13194139534312 true] 
+            #datom[63 41 35 13194139534312 true] 
+            #datom[63 62 <span style="color: #8b2252;">"The title of the movie"</span> 13194139534312 true] 
+            #datom[64 10 <span style="color: #008b8b;">:movie/genre</span> 13194139534312 true] 
+            #datom[64 40 23 13194139534312 true] 
+            #datom[64 41 35 13194139534312 true] 
+            #datom[64 62 <span style="color: #8b2252;">"The genre of the movie"</span> 13194139534312 true] 
+            #datom[65 10 <span style="color: #008b8b;">:movie/release-year</span> 13194139534312 true] 
+            #datom[65 40 22 13194139534312 true] 
+            #datom[65 41 35 13194139534312 true] 
+            #datom[65 62 <span style="color: #8b2252;">"The year the movie was released in theaters"</span> 13194139534312 true] 
+            #datom[0 13 65 13194139534312 true] 
+            #datom[0 13 64 13194139534312 true] 
+            #datom[0 13 63 13194139534312 true]], 
+ <span style="color: #008b8b;">:tempids</span> {-9223301668109598144 63, -9223301668109598143 64, -9223301668109598142 65}}
+```
+
+
+
+This is in contrast to the [Peer](../getting-started/transact-schema.html) library. [Peer's `transact`](../clojure/index.html#datomic.ap/transact) takes the tx-data directly and returns a future which must be clojure.core/derefed.
+
+The rest of the [Getting Started](../getting-started/transact-schema.html) guide applies to the Client library with this difference in mind.

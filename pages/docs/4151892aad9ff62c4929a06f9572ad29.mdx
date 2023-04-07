@@ -1,0 +1,662 @@
+Schema
+======
+
+The facts that a Datomic database stores are represented by datoms. Each datom is an addition or retraction of a relation between an entity, an attribute, a value, and a transaction. The set of possible attributes a datom can specify is defined by a database's schema.
+
+Each Datomic database has a schema that describes the set of attributes that can be associated with entities. A schema only defines the characteristics of the attributes themselves. It does not define which attributes can be associated with which entities. Decisions about which attributes apply to which entities are made by an application.
+
+This gives applications a great degree of freedom to evolve over time. For example, an application that wants to model a person as an entity does not have to decide up front whether the person is an employee or a customer. It can associate a combination of attributes describing customers and attributes describing employees with the same entity. An application can determine whether an entity represents a particular abstraction, customer or employee, simply by looking for the presence of the appropriate attributes.
+
+Attributes
+----------
+
+Schema attributes are defined using the same data model used for application data. That is, attributes are themselves entities with associated attributes. Datomic defines a set of built-in system attributes that are used to define new attributes.
+
+
+
+### Required schema attributes
+
+Every new attribute is described by three required attributes:
+
+- `:db/ident` specifies the unique name of an attribute. It's value is a namespaced keyword with the lexical form `:<namespace>/<name>`. It is possible to define a name without a namespace, as in :&lt;name&gt;, but a namespace is preferred in order to avoid naming collisions. Namespaces can be hierarchical, with segments separated by ".", as in `:<namespace>.<nested-namespace>/<name>`. The `:db` namespace is reserved for use by Datomic itself.
+
+
+
+
+
+
+
+Value Types
+-----------
+
+- `:db/valueType` specifies the type of value that can be associated with an attribute. The type is expressed as a keyword. Allowable values are listed below.
+
+Value TypesDescriptionJava EquivalentExample`:db.type/bigdec`arbitrary precision decimal[`java.math.BigDecimal`](https://docs.oracle.com/javase/8/docs/api/java/math/BigDecimal.html)1.0M`:db.type/bigint`arbitrary precision integer[`java.math.BigInteger`](https://docs.oracle.com/javase/8/docs/api/java/math/BigInteger.html)7N`:db.type/boolean`boolean[`boolean`](https://docs.oracle.com/javase/tutorial/java/nutsandbolts/datatypes.html)true`:db.type/double`64-bit IEEE 754 floating point number[`double`](https://docs.oracle.com/javase/tutorial/java/nutsandbolts/datatypes.html)1.0`:db.type/float`32-bit IEEE 754 floating point number[`float`](https://docs.oracle.com/javase/tutorial/java/nutsandbolts/datatypes.html)1.0`:db.type/instant`instant in time[`java.util.Date`](https://docs.oracle.com/javase/8/docs/api/java/util/Date.html)\#inst "2017-09-16T11:43:32.450-00:00"`:db.type/keyword`namespace + nameN/A:yellow`:db.type/long`64 bit two's complement integer[`long`](https://docs.oracle.com/javase/tutorial/java/nutsandbolts/datatypes.html)42`:db.type/ref`reference to another entityN/A42`:db.type/string`Unicode string[`java.lang.String`](https://docs.oracle.com/javase/8/docs/api/java/lang/String.html)"foo"`:db.type/symbol`symbolN/Afoo`:db.type/tuple`[tuples](#tuples) of scalar valuesN/A\[42 12 "foo"\]`:db.type/uuid`128-bit universally unique identifier[`java.util.UUID`](https://docs.oracle.com/javase/8/docs/api/java/util/UUID.html)\#uuid "f40e770e-9ad5-11e7-abc4-cec278b6b50a"`:db.type/uri`Uniform Resource Identifier (URI)[`java.net.URI`](https://docs.oracle.com/javase/8/docs/api/java/net/URI.html)<https://www.datomic.com/details.html>`:db.type/bytes`Value type for small binary data[`byte[]`](https://docs.oracle.com/javase/tutorial/java/nutsandbolts/datatypes.html)(byte-array (map byte \[1 2 3\]))> **Note:** Symbols require 0.9.5927 or later and a [compatible base schema](../operation/deployment.html#upgrading-schema).
+
+
+
+### Notes on Value Types
+
+- Keywords map to the native interned-name type in languages that support them.
+- Instants are stored as the number of milliseconds since the epoch.
+- Symbols map to the symbol type in languages that support them, e.g. clojure.lang.Symbol in Clojure
+- Consistent results in query depend on the scale matching for all BigDecimal comparisons. You are strongly encouraged to use a consistent scale per attribute.
+
+
+
+#### Limitations of Bytes
+
+The bytes `:db.type/bytes` type maps directly to Java byte arrays, which do not have value semantics (semantically equal byte arrays do not compare or hash as equal). As a result, a bytes attribute can function only as a container of data that is semantically opaque, i.e.
+
+- given an entity id you can look up a bytes attribute value
+
+Byte attributes **cannot** be used in situations that require value semantics:
+
+- bytes attributes cannot be unique
+- bytes attributes cannot be used in a lookup ref
+- bytes attributes cannot be looked up by value
+- bytes cannot be used with [analytics](../analytics/analytics-concepts.html)
+
+
+
+
+
+#### Limitations of NaN
+
+The comparison semantics of NaN (java's constant holding Not-A-Number) make it unavailable for upsert. Upsert in Datomic requires comparison to perform and as such you'll need to explicitly retract NaN values to replace them.
+
+
+
+
+
+#### Big Decimal Scale
+
+Consistent results in query depend on the scale matching for all BigDecimal comparisons. You are *strongly* encouraged to use a consistent scale per attribute.
+
+
+
+
+
+#### Cardinality
+
+- `:db/cardinality` specifies whether an attribute associates a single value or a set of values with an entity. The values allowed for `:db/cardinality` are:
+    
+    `:db.cardinality/one` - the attribute is single valued, it associates a single value with an entity
+    
+    `:db.cardinality/many` - the attribute is multi valued, it associates a set of values with an entity
+    
+    Transactions can add or retract individual values for multi-valued attributes.
+
+
+
+
+
+
+
+### Tuples
+
+Tuples can be used to create multi-attribute unique keys on domain entities. Tuples can be used to optimize queries that otherwise would have to join two or more high-population attributes.
+
+> **Note:** Tuples require 0.9.5927 or later and a [compatible base schema](../operation/deployment.html#upgrading-schema).
+
+A tuple is a collection of 2-8 scalar values, represented in memory as a Clojure vector. There are three kinds of tuples:
+
+- [Composite tuples](#composite-tuples) are derived from other attributes of the same entity. Composite tuple types have a `:db/tupleAttrs`attribute, whose value is 2-8 keywords naming other attributes.
+- [Heterogeneous fixed length tuples](#heterogeneous-tuples) have a `:db/tupleTypes` attribute, whose value is a vector of 2-8 scalar value types.
+- [Homogeneous variable length tuples](#homogeneous-tuples) have a `:db/tupleType` attribute, whose value is a a vector of 2-8 keywords naming a scalar value type.
+
+The following types are considered scalar types suitable for use in a tuple:
+
+```
+<pre class="src src-clojure"><span style="color: #008b8b;">:db.type/bigdec</span> <span style="color: #008b8b;">:db.type/bigint</span> <span style="color: #008b8b;">:db.type/boolean</span> <span style="color: #008b8b;">:db.type/double</span> 
+<span style="color: #008b8b;">:db.type/instant</span> <span style="color: #008b8b;">:db.type/keyword</span> <span style="color: #008b8b;">:db.type/long</span> <span style="color: #008b8b;">:db.type/ref</span> <span style="color: #008b8b;">:db.type/string</span> 
+<span style="color: #008b8b;">:db.type/symbol</span> <span style="color: #008b8b;">:db.type/uri</span> <span style="color: #008b8b;">:db.type/uuid</span> 
+```
+
+
+
+String values within a tuple are limited to 256 characters.
+
+`nil` is a legal value for any slot in a tuple. This facilitates using tuples in range searches, where `nil` sorts lowest.
+
+Datomic includes the query helpers [tuple](../query/query.html#tuple) and [untuple](../query/query.html#untuple)to support storing same values both in a tuple and in separate attributes.
+
+
+
+
+
+### Composite Tuples
+
+Composite tuples are applicable:
+
+- when a domain entity has a multi-attribute key
+- to optimize a query that joins more than one high-population attributes on the same entity
+
+For example, consider the domain of course registrations, modelled with the following entity types:
+
+- courses represent a course, e.g. Algebra II
+- semesters represent a period in time when a course is run, e.g. "Fall 2019"
+- students can take courses in particular semesters
+
+```
+<pre class="src src-clojure">[{<span style="color: #008b8b;">:db/ident</span> <span style="color: #008b8b;">:student/first</span>
+  <span style="color: #008b8b;">:db/valueType</span> <span style="color: #008b8b;">:db.type/string</span>
+  <span style="color: #008b8b;">:db/cardinality</span> <span style="color: #008b8b;">:db.cardinality/one</span>}
+ {<span style="color: #008b8b;">:db/ident</span> <span style="color: #008b8b;">:student/last</span>
+  <span style="color: #008b8b;">:db/valueType</span> <span style="color: #008b8b;">:db.type/string</span>
+  <span style="color: #008b8b;">:db/cardinality</span> <span style="color: #008b8b;">:db.cardinality/one</span>}
+ {<span style="color: #008b8b;">:db/ident</span> <span style="color: #008b8b;">:student/email</span>
+  <span style="color: #008b8b;">:db/valueType</span> <span style="color: #008b8b;">:db.type/string</span>
+  <span style="color: #008b8b;">:db/cardinality</span> <span style="color: #008b8b;">:db.cardinality/one</span>
+  <span style="color: #008b8b;">:db/unique</span> <span style="color: #008b8b;">:db.unique/identity</span>}
+ {<span style="color: #008b8b;">:db/ident</span> <span style="color: #008b8b;">:semester/year</span>
+  <span style="color: #008b8b;">:db/valueType</span> <span style="color: #008b8b;">:db.type/long</span>
+  <span style="color: #008b8b;">:db/cardinality</span> <span style="color: #008b8b;">:db.cardinality/one</span>}
+ {<span style="color: #008b8b;">:db/ident</span> <span style="color: #008b8b;">:semester/season</span>
+  <span style="color: #008b8b;">:db/valueType</span> <span style="color: #008b8b;">:db.type/keyword</span>
+  <span style="color: #008b8b;">:db/cardinality</span> <span style="color: #008b8b;">:db.cardinality/one</span>}
+ {<span style="color: #008b8b;">:db/ident</span> <span style="color: #008b8b;">:semester/year+season</span>
+  <span style="color: #008b8b;">:db/valueType</span> <span style="color: #008b8b;">:db.type/tuple</span>
+  <span style="color: #008b8b;">:db/tupleAttrs</span> [<span style="color: #008b8b;">:semester/year</span> <span style="color: #008b8b;">:semester/season</span>]
+  <span style="color: #008b8b;">:db/cardinality</span> <span style="color: #008b8b;">:db.cardinality/one</span>
+  <span style="color: #008b8b;">:db/unique</span> <span style="color: #008b8b;">:db.unique/identity</span>}
+ {<span style="color: #008b8b;">:db/ident</span> <span style="color: #008b8b;">:course/id</span>
+  <span style="color: #008b8b;">:db/valueType</span> <span style="color: #008b8b;">:db.type/string</span>
+  <span style="color: #008b8b;">:db/unique</span> <span style="color: #008b8b;">:db.unique/identity</span>
+  <span style="color: #008b8b;">:db/cardinality</span> <span style="color: #008b8b;">:db.cardinality/one</span>}
+ {<span style="color: #008b8b;">:db/ident</span> <span style="color: #008b8b;">:course/name</span>
+  <span style="color: #008b8b;">:db/valueType</span> <span style="color: #008b8b;">:db.type/string</span>
+  <span style="color: #008b8b;">:db/cardinality</span> <span style="color: #008b8b;">:db.cardinality/one</span>}]
+```
+
+
+
+A *registration* entity is a unique combination of a student, semester, and course. In Datomic schema:
+
+```
+<pre class="src src-clojure">{<span style="color: #008b8b;">:db/ident</span> <span style="color: #008b8b;">:reg/course</span>
+ <span style="color: #008b8b;">:db/valueType</span> <span style="color: #008b8b;">:db.type/ref</span>
+ <span style="color: #008b8b;">:db/cardinality</span> <span style="color: #008b8b;">:db.cardinality/one</span>}
+{<span style="color: #008b8b;">:db/ident</span> <span style="color: #008b8b;">:reg/semester</span>
+ <span style="color: #008b8b;">:db/valueType</span> <span style="color: #008b8b;">:db.type/ref</span>
+ <span style="color: #008b8b;">:db/cardinality</span> <span style="color: #008b8b;">:db.cardinality/one</span>}
+{<span style="color: #008b8b;">:db/ident</span> <span style="color: #008b8b;">:reg/student</span>
+ <span style="color: #008b8b;">:db/valueType</span> <span style="color: #008b8b;">:db.type/ref</span>
+ <span style="color: #008b8b;">:db/cardinality</span> <span style="color: #008b8b;">:db.cardinality/one</span>}
+```
+
+
+
+A given course/semester/student combination is unique in the database. To model this, you can create a composite tuple whose `:db/tupleAttrs` are
+
+```
+<pre class="src src-clojure">{<span style="color: #008b8b;">:db/ident</span> <span style="color: #008b8b;">:reg/semester+course+student</span>
+ <span style="color: #008b8b;">:db/valueType</span> <span style="color: #008b8b;">:db.type/tuple</span>
+ <span style="color: #008b8b;">:db/tupleAttrs</span> [<span style="color: #008b8b;">:reg/course</span> <span style="color: #008b8b;">:reg/semester</span> <span style="color: #008b8b;">:reg/student</span>]
+ <span style="color: #008b8b;">:db/cardinality</span> <span style="color: #008b8b;">:db.cardinality/one</span>
+ <span style="color: #008b8b;">:db/unique</span> <span style="color: #008b8b;">:db.unique/identity</span>}
+```
+
+
+
+With this composite installed, Datomic's unique identity will ensure that all assertions about a semester/course/student combination resolve to the same entity.
+
+Composite attributes are entirely managed by Datomic–you never assert or retract them yourself. Whenever you assert or retract any attribute that is part of a composite, Datomic will automatically populate the composite value.
+
+Given a database with the courses and semesters schema, add some seed data:
+
+```
+<pre class="src src-clojure">[{<span style="color: #008b8b;">:semester/year</span> 2018
+  <span style="color: #008b8b;">:semester/season</span> <span style="color: #008b8b;">:fall</span>}
+ {<span style="color: #008b8b;">:course/id</span> <span style="color: #8b2252;">"BIO-101"</span>}
+ {<span style="color: #008b8b;">:student/first</span> <span style="color: #8b2252;">"John"</span>
+  <span style="color: #008b8b;">:student/last</span> <span style="color: #8b2252;">"Doe"</span>
+  <span style="color: #008b8b;">:student/email</span> <span style="color: #8b2252;">"johndoe@university.edu"</span>}]
+```
+
+
+
+Now if you register John for Bio 101 in the fall of 2018 by transacting:
+
+```
+<pre class="src src-clojure">[{<span style="color: #008b8b;">:reg/course</span> [<span style="color: #008b8b;">:course/id</span> <span style="color: #8b2252;">"BIO-101"</span>]
+  <span style="color: #008b8b;">:reg/semester</span> [<span style="color: #008b8b;">:semester/year+season</span> [2018 <span style="color: #008b8b;">:fall</span>]]
+  <span style="color: #008b8b;">:reg/student</span> [<span style="color: #008b8b;">:student/email</span> <span style="color: #8b2252;">"johndoe@university.edu"</span>]}] 
+```
+
+
+
+Datomic will also add the composite tuple datom:
+
+```
+<pre class="src src-clojure">#datom[20736789299855447 83 [6324390882967637 44112406506373204 64110323992363094] 13194139533320 true]]
+```
+
+
+
+Note that your entity IDs will differ from those in the example above
+
+If the current value of an entity does not include all attributes of a composite, the missing attributes will be nil. For example, given a composite 4-tuple :reg/semester+course+student+grade that also includes a student’s grade, the assertions above would cause Datomic to populate:
+
+```
+<pre class="src src-clojure">#datom[20736789299855447 83 [6324390882967637 44112406506373204 64110323992363094 nil] 13194139533320 true]]
+```
+
+
+
+Note that nil sorts lower than all other values, so tuples with trailing nils can be useful for range queries.
+
+If you retract all constituents of a composite, Datomic will retract the composite. For example, transacting:
+
+```
+<pre class="src src-clojure">[[<span style="color: #008b8b;">:db/retract</span> 20736789299855447 <span style="color: #008b8b;">:reg/course</span> [<span style="color: #008b8b;">:course/id</span> <span style="color: #8b2252;">"BIO-101"</span>]]
+ [<span style="color: #008b8b;">:db/retract</span> 20736789299855447 <span style="color: #008b8b;">:reg/semester</span> [<span style="color: #008b8b;">:semester/year+season</span> [2018 <span style="color: #008b8b;">:fall</span>]]]
+ [<span style="color: #008b8b;">:db/retract</span> 20736789299855447 <span style="color: #008b8b;">:reg/student</span> [<span style="color: #008b8b;">:student/email</span> <span style="color: #8b2252;">"johndoe@university.edu"</span>]]]
+```
+
+
+
+will cause Datomic to retract the composite:
+
+```
+<pre class="src src-clojure">#datom[20736789299855447 83 [6324390882967637 44112406506373204 64110323992363094] 13194139533321 false]]
+```
+
+
+
+Again, note that you will need to substitute the entity IDs from your initial transaction to replicate this example in your system.
+
+
+
+
+
+### Adding Composites to Existing Entities
+
+Adding a composite tuple to a database that contains existing data using those attributes will **not** immediately generate values for the new tuple. The composite tuple will be created the next time any of the composite member attributes are transacted. This includes "no-op" transactions of the same attribute value. This design allows you to add composite tuples in a systematic and paced manner, so as not to overwhelm a running system.
+
+An example helper function can be found in the [day of datomic cloud examples](https://github.com/Datomic/day-of-datomic/blob/20c02d26fd2a12481903dd5347589456c74f8eeb/src/datomic/dod/composites.clj). The function will cycle through all values for a given attribute, reasserting them, with the specified batch size and pause between batches. You can use this, or something like it, to systematically add composite tuples once you've created the necessary schema attribute(s).
+
+
+
+#### Heterogeneous Tuples
+
+Heterogenous tuples have a `:db/tupleTypes` attribute, with a value specified as a vector of 2-8 scalar types.
+
+For example, you could model a location in a 2D game with the following tuple attribute:
+
+```
+<pre class="src src-clojure">{<span style="color: #008b8b;">:db/ident</span> <span style="color: #008b8b;">:player/location</span>
+ <span style="color: #008b8b;">:db/valueType</span> <span style="color: #008b8b;">:db.type/tuple</span>
+ <span style="color: #008b8b;">:db/tupleTypes</span> [<span style="color: #008b8b;">:db.type/long</span> <span style="color: #008b8b;">:db.type/long</span>]
+ <span style="color: #008b8b;">:db/cardinality</span> <span style="color: #008b8b;">:db.cardinality/one</span>}
+```
+
+
+
+You can then explicitly assert a player's location with a vector of the appropriate tuple types:
+
+```
+<pre class="src src-clojure">(<span style="color: #a020f0;">def</span> <span style="color: #0000ff;">data</span> [{<span style="color: #008b8b;">:player/handle</span> <span style="color: #8b2252;">"Argent Adept"</span>
+            <span style="color: #008b8b;">:player/location</span> [100 0]}])
+```
+
+
+
+
+
+
+
+#### Homogeneous Tuples
+
+Homogeneous tuples provide variable length composites of a single attribute type. The `:db.type` of a homogeneous tuple is specified by the keyword attribute `:db/tupleType`.
+
+Datomic itself includes a good example of homogeneous tuples in the definitions of the other tuple types. Both `:db/tupleTypes` and `:db/tupleAttrs` are declared as homogeneous tuples of `:db/tupleType``:db.type/keyword`:
+
+```
+<pre class="src src-clojure"><span style="color: #b22222;">;; </span><span style="color: #b22222;">built in to Datomic</span>
+[{<span style="color: #008b8b;">:db/ident</span> <span style="color: #008b8b;">:db/tupleAttrs</span>
+  <span style="color: #008b8b;">:db/valueType</span> <span style="color: #008b8b;">:db.type/tuple</span>
+  <span style="color: #008b8b;">:db/tupleType</span> <span style="color: #008b8b;">:db.type/keyword</span>
+  <span style="color: #008b8b;">:db/cardinality</span> <span style="color: #008b8b;">:db.cardinality/one</span>}
+ {<span style="color: #008b8b;">:db/ident</span> <span style="color: #008b8b;">:db/tupleTypes</span>
+  <span style="color: #008b8b;">:db/valueType</span> <span style="color: #008b8b;">:db.type/tuple</span>
+  <span style="color: #008b8b;">:db/tupleType</span> <span style="color: #008b8b;">:db.type/keyword</span>
+  <span style="color: #008b8b;">:db/cardinality</span> <span style="color: #008b8b;">:db.cardinality/one</span>}]
+```
+
+
+
+
+
+
+
+#### Optional schema attributes
+
+In addition to these three required attributes, there are several optional attributes that can be associated with an attribute definitions:
+
+- *:db/doc* specifies a documentation string.
+- *:db/unique* - specifies a uniqueness constraint for the values of an attribute. Setting an attribute *:db/unique* also implies *:db/index*. The values allowed for *:db/unique* are:
+    
+    
+    - *:db.unique/value* - only one entity can have a given value for this attribute. Attempts to assert a duplicate value for the same attribute for a different entity id will fail. More documentation on unique values is available [here](../schema/identity.html#unique-values).
+    - *:db.unique/identity* - only one entity can have a given value for this attribute and "upsert" is enabled; attempts to insert a duplicate value for a temporary entity id will cause all attributes associated with that temporary id to be merged with the entity already in the database. More documentation on unique identities is available [here](../schema/identity.html#unique-identities).
+    
+    *:db/unique* defaults to nil.
+- *:db.attr/preds* - you can [ensure](#attribute-predicates) the value of an attribute with one or more predicates that you supply.
+- *:db/index* specifies a boolean value indicating that an index should be generated for this attribute. Defaults to false.
+- *:db/fulltext* specifies a boolean value indicating that an eventually consistent fulltext search index should be generated for the attribute. Defaults to false.
+    
+    Fulltext search is constrained by several defaults (which cannot be altered): searches are case insensitive, remove apostrophe or apostrophe and s sequences, and filter out the following common English stop words:
+
+```
+<pre class="example" id="org19b3657">
+"a", "an", "and", "are", "as", "at", "be", "but", "by",
+"for", "if", "in", "into", "is", "it",
+"no", "not", "of", "on", "or", "such",
+"that", "the", "their", "then", "there", "these",
+"they", "this", "to", "was", "will", "with"
+```
+
+
+
+
+
+#### Component
+
+- *:db/isComponent* specifies a boolean value indicating that an attribute whose type is *:db.type/ref* refers to a subcomponent of the entity to which the attribute is applied. When you retract an entity with *:db.fn/retractEntity*, all subcomponents are also retracted. When you [touch](../javadoc/datomic/Entity.html#touch--) an entity, all its subcomponent entities are touched recursively. Defaults to *false*.
+
+
+
+
+
+#### noHistory
+
+- *:db/noHistory* specifies a boolean value indicating whether past values of an attribute should not be retained. Defaults to false.
+    
+    The purpose of :db/noHistory is to conserve storage, not to make [semantic guarantees](../reference/excision.html)about removing information. The effect of :db/noHistory happens in the background, and some amount of history may be visible even for attributes with :db/noHistory set to true.
+
+
+
+
+
+
+
+### External keys
+
+All entities in a database have an internal key, the entity id. You can use *:db/unique* to define an attribute to represent an external key.
+
+An entity may have any number of external keys.
+
+External keys must be single attributes, multi-attribute keys are not supported.
+
+
+
+
+
+### Installing an attribute definition
+
+Attribute definitions are represented as data structures (see [Data Structures](../overview/data-structure-literals.html)) that can be submitted to a database as part of a transaction. It is idiomatic to use the [transaction map](../transactions/transactions.html#transaction-structure) data structure, as shown in the following example. It defines an attribute named *:person/name* of type *:db.type/string* with *:db.cardinality/one* that is intended to capture a person's name.
+
+```
+<pre class="src src-clojure">{<span style="color: #008b8b;">:db/ident</span> <span style="color: #008b8b;">:person/name</span>
+ <span style="color: #008b8b;">:db/valueType</span> <span style="color: #008b8b;">:db.type/string</span>
+ <span style="color: #008b8b;">:db/cardinality</span> <span style="color: #008b8b;">:db.cardinality/one</span>
+ <span style="color: #008b8b;">:db/doc</span> <span style="color: #8b2252;">"A person's name"</span>}
+```
+
+
+
+Every attribute definition must include *:db/ident*, *:db/valueType*, and *:db/cardinality*.
+
+> Leading underscores are used for [reverse lookup in pull](../query/pull.html#reverse-lookup).
+> 
+> If your attribute has a leading underscore then you will not be able to use reverse lookup with that attribute.
+
+Attribute installation is atomic. All the required information for an attribute must be specified in a single transaction, after which the attribute will be immediately available for use.
+
+
+
+
+
+
+
+Attribute Predicates
+--------------------
+
+> **Note:** Attribute predicates require 0.9.5927 or later and a [compatible base schema](../operation/deployment.html#upgrading-schema).
+
+You may want to constrain an attribute value by more than just its storage/representation type. For example, an email address is not just a string, but a string with a particular format. In Datomic, you can assert *attribute predicates* about an attribute. Attribute predicates are asserted via the `:db.attr/preds` attribute, and are fully-qualifed symbols that name a *predicate* of a value. Predicates return *true* (and only *true*) to indicate success. All other values indicate failure and are reported back as transaction errors.
+
+Inside transactions, Datomic will call all attribute predicates on all assertions for attribute values, and abort a transaction if any predicate fails.
+
+For example, the following function validates that a `user-name` has a particular length:
+
+```
+<pre class="src src-clojure">(<span style="color: #483d8b;">ns</span> datomic.samples.attr-preds)
+
+(<span style="color: #a020f0;">defn</span> <span style="color: #0000ff;">user-name?</span>
+  [s]
+  (<span style="color: #a0522d;"><=</span> 3 (<span style="color: #a0522d;">count</span> s) 15))
+```
+
+
+
+To install the `user-name?` predicate, add a `db.attr/preds`value to an attribute, e.g.
+
+```
+<pre class="src src-clojure">{<span style="color: #008b8b;">:db/ident</span> <span style="color: #008b8b;">:user/name</span>,
+ <span style="color: #008b8b;">:db/valueType</span> <span style="color: #008b8b;">:db.type/string</span>,
+ <span style="color: #008b8b;">:db/cardinality</span> <span style="color: #008b8b;">:db.cardinality/one</span>,
+ <span style="color: #008b8b;">:db.attr/preds</span> 'datomic.samples.attr-preds/user-name?}
+```
+
+
+
+A transaction that includes an invalid `user-name` will result in an [anomaly](https://github.com/cognitect-labs/anomalies) whose `ex-data` includes
+
+- the entity id
+- the attribute name
+- the attribute value
+- the name of the failed predicate
+- the predicate return in `:db.error/pred-return`
+
+For example, the string "This-name-is-too-long" is not a valid `user-name?` and will cause an anomaly like:
+
+```
+<pre class="src src-clojure">{<span style="color: #008b8b;">:cognitect.anomalies/category</span>
+ <span style="color: #008b8b;">:cognitect.anomalies/incorrect</span>, 
+ <span style="color: #008b8b;">:cognitect.anomalies/message</span>
+ <span style="color: #8b2252;">"Entity 42 attribute :user/name value This-name-is-too-long</span>
+<span style="color: #8b2252;">failed pred datomic.samples.attr-preds/user-name?"</span>
+ <span style="color: #008b8b;">:db.error/pred-return</span> false}
+```
+
+
+
+Attribute predicates must be on the classpath of a process that is performing a transaction.
+
+Attribute predicates can be asserted or retracted at any time, and will be enforced starting on the transaction after they are asserted. Asserting or retracting an attribute predicate has no effect on attribute values that already exist in the database.
+
+[`cancel`](../reference/database-functions.html#cancel) can be used to cancel an attribute predicate.
+
+
+
+
+
+Entity Specs
+------------
+
+> **Note:** Entity specs require 0.9.5927 or later and a [compatible base schema](../operation/deployment.html#upgrading-schema).
+
+You may want to ensure properties of an entity being asserted, for example
+
+- required keys
+- the creation of composite tuples
+- satisfaction of properties that cut across attributes and the db
+
+An *entity spec* is a Datomic entity having one or more of
+
+- (usually) a `:db/ident`
+- `:db.entity/attrs` naming [required attributes](#required-attributes)
+- `:db.entity/preds` naming [entity predicates](#entity-predicates)
+
+You can then ensure an entity spec by asserting the `:db/ensure`attribute for an entity. For example, the following transaction data ensures entity "new-account-1" with entity spec `:new-account`
+
+```
+<pre class="src src-clojure">{<span style="color: #008b8b;">:db/id</span> <span style="color: #8b2252;">"new-account-1"</span>
+ <span style="color: #008b8b;">:db/ensure</span> <span style="color: #008b8b;">:new-account</span>
+ <span style="color: #b22222;">;; </span><span style="color: #b22222;">other data that must be a valid :new-account</span>
+ }
+```
+
+
+
+`:db/ensure` is a virtual attribute. It is not added in the database; instead it triggers checkes based on the named entity.
+
+Entity predicates must be on the classpath of a process that is performing a transaction.
+
+Entity specs can be asserted or retracted at any time, and will be enforced starting on the transaction after they are asserted. Asserting or retracting an entity spec has no effect on entities that already exist in the database.
+
+Entity specs and `:db/ensure` are *not* analogous to traditional SQL constraints:
+
+- Specs are more flexible, enforcing arbitrary shapes on particular entities without imposing an overall structure on the database.
+- Specs can do more, allowing arbitrary functions of an entity and a database value.
+- Specs must be requested explicitly per transaction+entity, and enforcement is never automatic or retroactive.
+
+
+
+### Required Attributes
+
+The `:db.entity/attrs` attribute is a multi-valued attribute of keywords, where each keyword names a required attribute.
+
+For example, the following transaction data creates a spec that requires a `:user/name` and `:user/email`:
+
+```
+<pre class="src src-clojure">{<span style="color: #008b8b;">:db/ident</span> <span style="color: #008b8b;">:user/validate</span>
+ <span style="color: #008b8b;">:db.entity/attrs</span> [<span style="color: #008b8b;">:user/name</span> <span style="color: #008b8b;">:user/email</span>]}
+```
+
+
+
+The `:user/validate` entity can then be used in later transaction to ensure that all required attribute are present. For example, the following transcation would fail
+
+```
+<pre class="src src-clojure">{<span style="color: #008b8b;">:user/name</span> <span style="color: #8b2252;">"John Doe"</span>
+ <span style="color: #008b8b;">:db/ensure</span> <span style="color: #008b8b;">:user/validate</span>}
+```
+
+
+
+When a required attribute is missing, Datomic will throw an anomaly whose `ex-data` includes the failing entity and the name of the spec, e.g.:
+
+```
+<pre class="src src-clojure">{<span style="color: #008b8b;">:cognitect.anomalies/category</span>
+ <span style="color: #008b8b;">:cognitect.anomalies/incorrect</span>, 
+ <span style="color: #008b8b;">:cognitect.anomalies/message</span>
+ <span style="color: #8b2252;">"Entity 42 missing attributes [:user/email] of by :user/validate"</span>}
+```
+
+
+
+
+
+
+
+### Entity Predicates
+
+The `:db.entity/preds` attribute is a multi-valued attribute of symbols, where each symbol names a predicate of database value and entity id. Inside a transaction, Datomic will call all predicates, and abort the transaction if any predicate returns a value that is not `true`.
+
+Entity predicates must be on the classpath of a process that is performing a transaction.
+
+For example, given the following predicate:
+
+```
+<pre class="src src-clojure">(<span style="color: #483d8b;">ns</span> datomic.samples.entity-preds
+  (<span style="color: #008b8b;">:require</span> [datomic.api <span style="color: #008b8b;">:as</span> d]))
+
+(<span style="color: #a020f0;">defn</span> <span style="color: #0000ff;">scores-are-ordered?</span>
+  [db eid]
+  (<span style="color: #483d8b;">let</span> [m (d/pull db [<span style="color: #008b8b;">:score/low</span> <span style="color: #008b8b;">:score/high</span>] eid)]
+    (<span style="color: #a0522d;"><=</span> (<span style="color: #008b8b;">:score/low</span> m) (<span style="color: #008b8b;">:score/high</span> m))))
+```
+
+
+
+You could install the predicate on a guard entity:
+
+```
+<pre class="src src-clojure">{<span style="color: #008b8b;">:db/ident</span> <span style="color: #008b8b;">:score/guard</span>
+ <span style="color: #008b8b;">:db.entity/attrs</span> [<span style="color: #008b8b;">:score/low</span> <span style="color: #008b8b;">:score/high</span>] <span style="color: #b22222;">;; </span><span style="color: #b22222;">entity spec</span>
+ <span style="color: #008b8b;">:db.entity/preds</span> 'datomic.samples.entity-preds/scores-are-ordered?} <span style="color: #b22222;">;; </span><span style="color: #b22222;">entity predicate</span>
+```
+
+
+
+Given an invalid entity that requests the `:score/guard`:
+
+```
+<pre class="src src-clojure">{<span style="color: #008b8b;">:score/low</span> 100
+ <span style="color: #008b8b;">:score/high</span> 20
+ <span style="color: #008b8b;">:db/ensure</span> <span style="color: #008b8b;">:score/guard</span>}
+```
+
+
+
+Datomic will throw an anomaly whose `ex-data` names the failing predicate:
+
+```
+<pre class="src src-clojure">{<span style="color: #008b8b;">:cognitect.anomalies/category</span> 
+ <span style="color: #008b8b;">:cognitect.anomalies/incorrect</span>,
+ <span style="color: #008b8b;">:cognitect.anomalies/message</span>
+ <span style="color: #8b2252;">"Entity 42 failed pred datomic.samples.entity-preds/scores-are-ordered? of spec :score/guard"</span>
+ <span style="color: #008b8b;">:db.error/pred-return</span> false}
+```
+
+
+
+Datomic will report the value returned by the failing predicate under the `:db.error/pred-return` key. This can be used to report more information about what went wrong.
+
+[`cancel`](../reference/database-functions.html#cancel) can be used to cancel an entity predicate.
+
+
+
+
+
+
+
+Partitions
+----------
+
+All entities created in a database reside within a partition. Partitions group data together, providing locality of reference when executing queries across a collection of entities. In general, you want to group entities based on how you'll use them. Entities you'll often query across - like the community-related entities in our sample data - should be in the same partition to increase query performance. Different logical groups of entities should be in different partitions. Partitions are discussed in more detail in the [Indexes topic](../query/indexes.html#partitions).
+
+There are three partitions built into Datomic.
+
+PartitionPurpose:db.part/dbSystem partition, used for schema:db.part/txTransaction partition:db.part/userUser partition, for application entitiesThe attributes you create for your schema must live in the *:db.part/db* partition.
+
+The *:db.part/tx* partition is used only for [transaction entities](../transactions/transaction-processing.html#reified-transactions), which are created automatically by transactions.
+
+You can use *:db.part/user* for your own entities.
+
+Your schema can create one or more partitions appropriate for your application.
+
+
+
+### Creating new partitions
+
+A partition is represented by an entity with a *:db/ident* attribute, as shown below. A partition can be referred to by either its [entity id or ident](../schema/identity.html#idents).
+
+```
+<pre class="src src-clojure">{<span style="color: #008b8b;">:db/ident</span> <span style="color: #008b8b;">:communities</span>}
+```
+
+
+
+As with attribute definitions, there are two steps to installing a new partition in a database. The first is to create the partition entity. The second is to associate the new partition entity with the built-in system partition entity, *:db.part/db*. Specifically, the new partition must be added as a value of the *:db.part/db* entity's *:db.install/partition*attribute. This linkage is what tells the database that the new entity is actually a partition definition.
+
+Here is a complete transaction for installing the *:communities*partition. It includes the map that defines the partition, followed by the statement adding it as a value of *:db.part/db*'s *:db.install/partition* attribute.
+
+```
+<pre class="src src-clojure">[{<span style="color: #008b8b;">:db/id</span> <span style="color: #8b2252;">"communities"</span>
+  <span style="color: #008b8b;">:db/ident</span> <span style="color: #008b8b;">:communities</span>}
+ [<span style="color: #008b8b;">:db/add</span> <span style="color: #008b8b;">:db.part/db</span> <span style="color: #008b8b;">:db.install/partition</span> <span style="color: #8b2252;">"communities"</span>]]
+```

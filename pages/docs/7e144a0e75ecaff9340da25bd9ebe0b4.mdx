@@ -1,0 +1,221 @@
+Executing Queries
+=================
+
+Querying a database
+-------------------
+
+To query a database, we must first get a *value* of the database from the [connection](../getting-started/connect-to-a-database.html):
+
+```
+<pre class="src src-java"><span style="color: #228b22;">Database</span> <span style="color: #a0522d;">db</span> = conn.db();
+```
+
+
+
+A *Database* is an immutable value, and will never change. If we use *db* for several queries we will know the answers are based upon exactly the same data from a single point in time. As we said, the database itself acts as a relation of 5-tuples of
+
+```
+<pre class="src src-clojure">[entity attribute value transaction added?]
+```
+
+
+
+The following query finds all release names in the database:
+
+```
+<pre class="src src-clojure"><span style="color: #b22222;">;; </span><span style="color: #b22222;">query</span>
+[<span style="color: #008b8b;">:find</span> ?release-name
+ <span style="color: #008b8b;">:where</span> [_ <span style="color: #008b8b;">:release/name</span> ?release-name]
+<span style="color: #b22222;">;; </span><span style="color: #b22222;">inputs</span>
+db
+```
+
+
+
+```
+<pre class="src src-clojure">=>
+#{[<span style="color: #8b2252;">"Osmium"</span>]
+ [<span style="color: #8b2252;">"Hela roept de akela"</span>] 
+ [<span style="color: #8b2252;">"Ali Baba"</span>] 
+ [<span style="color: #8b2252;">"The Power of the True Love Knot"</span>]
+ ...}
+```
+
+
+
+
+
+
+
+q
+-
+
+[`datomic.client.api/q`](https://docs.datomic.com/client-api/datomic.client.api.html#var-q) is the primary entry point for Datomic query.
+
+`q` Performs the query described by query and args, and returns a collection of tuples.
+
+- `:query` - The query to perform: a map, list, or [string](#a-warning). 
+    - [`:find`](query.html#find-specifications) - specifies the tuples to be returned.
+    - [`:with`](query.html#with) - is optional, and names vars to be kept in the aggregation set but not returned
+    - [`:in`](query.html#inputs) - is optional. Omitting ':in …' is the same as specifying ':in $'
+    - `:where` - limits the result returned
+- `:args` - Data sources for the query, e.g. database values retrieved from a [call to db](#querying-database), and/or [rules](query.html#rules).
+
+
+
+
+
+qseq
+----
+
+`qseq` is a variant of `q` that [pulls](query.html#pull-expressions)and [xforms](pull.html#xform) lazily as you consume query results.
+
+[`datomic.client.ap/qseq`](https://docs.datomic.com/client-api/datomic.client.api.html#var-qseq) utilizes the same [arguments and grammar as q](pull.html#pull-grammar).
+
+`qseq` is primarily useful when you know in advance that you do not need/want a realized collection. i.e. you are only going to make a single pass (or partial pass) over the result data.
+
+Item transformations such as `pull` are deferred until the seq is consumed. For queries with pull(s), this results in: ​
+
+- Reduced memory use and the ability to execute larger queries.
+- Lower latency before the first results are returned.
+
+​ The returned seq object efficiently supports [`count`](https://clojure.github.io/clojure/clojure.core-api.html#clojure.core/bounded-count).
+
+
+
+
+
+Unification
+-----------
+
+Unification occurs when a variable appears in more than one data pattern. In the following query, *?e* appears twice:
+
+```
+<pre class="src src-clojure"><span style="color: #b22222;">;;</span><span style="color: #b22222;">which 42-year-olds like what?</span>
+[<span style="color: #008b8b;">:find</span> ?e ?x 
+ <span style="color: #008b8b;">:where</span> [?e <span style="color: #008b8b;">:age</span> 42] [?e <span style="color: #008b8b;">:likes</span> ?x]]
+```
+
+
+
+Matches for the variable *?e* must *unify*, i.e. represent the same value in every clause in order to satisfy the set of clauses. So a matching *?e* must have both *:age* 42 and *:likes* for some *?x*:
+
+```
+<pre class="src src-clojure">[[fred pizza], [ethel sushi]]
+```
+
+
+
+
+
+
+
+List form vs. Map form
+----------------------
+
+Queries written by humans typically are a list, and the various keyword arguments are inferred by position. For example, in the query
+
+```
+<pre class="src src-clojure">[<span style="color: #008b8b;">:find</span> ?e
+ <span style="color: #008b8b;">:in</span> $ ?fname ?lname
+ <span style="color: #008b8b;">:where</span> [?e <span style="color: #008b8b;">:user/firstName</span> ?fname]
+[?e <span style="color: #008b8b;">:user/lastName</span> ?lname]]
+```
+
+
+
+there is one :find argument, three :in arguments, and two :where arguments.
+
+While most people find the positional syntax easy to read, it makes extra work for programmatic readers and writers, which have to keep track of what keyword is currently "active" and interpret tokens accordingly. For such cases, queries can be specified more simply as maps. The query above becomes:
+
+```
+<pre class="src src-clojure">{<span style="color: #008b8b;">:find</span> [?e]
+ <span style="color: #008b8b;">:in</span> [$ ?fname ?lname]
+ <span style="color: #008b8b;">:where</span> [[?e <span style="color: #008b8b;">:user/firstName</span> ?fname]
+ [?e <span style="color: #008b8b;">:user/lastName</span> ?lname]]}
+```
+
+
+
+
+
+
+
+Work with Data Structures, Not Strings
+--------------------------------------
+
+Two features of Datalog queries make them immune to many of the SQL-injection style attacks to which many other DBMSs are vulnerable:
+
+- Datalog queries are composed of data structures, rather than strings, which obviates the need to do string interpolation, sanitation, escaping, etc.
+- The query API is parameterized with data sources. In many cases, this feature obviates the need to include user-provided data in the query itself. Instead, you can pass user data to a parameterized query as its own data source.
+
+You should avoid building queries by reading in a string that has been built up by concatenation or interpolation. Doing so gives up the security and simplicity of working with native data structures.
+
+
+
+
+
+Clause order
+------------
+
+To minimize the amount work the query engine must do, query authors should put the most restrictive or narrowing *:where* clauses first, and then proceed on to less restrictive clauses.
+
+As an example, consider the following [two queries](https://github.com/Datomic/day-of-datomic/blob/master/tutorial/query_perf.clj#L20-40) looking for Paul McCartney's releases. The first *:where* clause begins with a data pattern (*\[?release :release/name ?name\]*) that is not at all selective, forcing the query engine to consider **all** the releases in the system:
+
+```
+<pre class="src src-clojure"><span style="color: #b22222;">;; </span><span style="color: #b22222;">query</span>
+[<span style="color: #008b8b;">:find</span> [?name ...]
+ <span style="color: #008b8b;">:in</span> $ ?artist
+ <span style="color: #008b8b;">:where</span> [?release <span style="color: #008b8b;">:release/name</span> ?name]
+        [?release <span style="color: #008b8b;">:release/artists</span> ?artist]]
+<span style="color: #b22222;">;; </span><span style="color: #b22222;">inputs</span>
+db, mccartney
+```
+
+
+
+```
+<pre class="src src-clojure">=> [<span style="color: #8b2252;">"McCartney"</span> <span style="color: #8b2252;">"Another Day / Oh Woman Oh Why"</span> <span style="color: #8b2252;">"Ram"</span>]
+```
+
+
+
+The following equivalent query reorders the *:where* clause, leading with a much more selective pattern (*\[?release :release/artists ?artist\]*) that is limited in this context to the single *?artist*passed in.
+
+```
+<pre class="src src-clojure"><span style="color: #b22222;">;; </span><span style="color: #b22222;">query</span>
+[<span style="color: #008b8b;">:find</span> [?name ...]
+ <span style="color: #008b8b;">:in</span> $ ?artist
+ <span style="color: #008b8b;">:where</span> [?release <span style="color: #008b8b;">:release/artists</span> ?artist]
+        [?release <span style="color: #008b8b;">:release/name</span> ?name]]
+<span style="color: #b22222;">;; </span><span style="color: #b22222;">inputs and result same as above</span>
+```
+
+
+
+The second query runs 50 times faster.
+
+
+
+
+
+Queries and Peer Memory
+-----------------------
+
+Since queries run within the Peer with application-local memory, application designers need to consider the memory requirements for their queries.
+
+Datomic's Datalog is set-oriented and eager, and does not spill large results to disk. Queries are designed to be able to run over datasets much larger than memory. However, each intermediate representation step of a query must fit into local memory. Datomic doesn't spool intermediate representations to disk like some server-based RDBMS's.
+
+If you need to work with result sets larger than can fit in memory, you will need to break up the query into smaller pieces whose results can fit in memory. The [datoms](../query/indexes.html#datoms-api) and [index-range](../query/indexes.html#avet) APIs are often useful for this.
+
+
+
+
+
+Query Caching
+-------------
+
+Datomic processes maintain an in-memory cache of parsed query representations. Caching is based on equality (in the Java *.equals*sense) of the first argument to *q*. To take advantage of caching, programs should
+
+- Use parameterized queries (i.e. queries with multiple inputs) instead of building dynamic queries.
+- When building dynamic queries, use a canonical approach to naming and ordering such that equivalent queries will be Java *.equals*.

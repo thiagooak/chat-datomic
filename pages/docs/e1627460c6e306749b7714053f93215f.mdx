@@ -1,0 +1,96 @@
+Retract
+=======
+
+Explicit Retract
+----------------
+
+We would like to keep a count of items in inventory, so let's add a bit more schema:
+
+noslide
+
+```
+<pre class="src src-clojure">(<span style="color: #a020f0;">def</span> <span style="color: #0000ff;">inventory-counts</span>
+  [{<span style="color: #008b8b;">:db/ident</span> <span style="color: #008b8b;">:inv/count</span>
+    <span style="color: #008b8b;">:db/valueType</span> <span style="color: #008b8b;">:db.type/long</span>
+    <span style="color: #008b8b;">:db/cardinality</span> <span style="color: #008b8b;">:db.cardinality/one</span>}])
+
+(d/transact conn {<span style="color: #008b8b;">:tx-data</span> inventory-counts})
+```
+
+
+
+Now we can assert that we have seven of SKU-21 and a thousand of SKU-42:
+
+noslide
+
+```
+<pre class="src src-clojure"><span style="color: #b22222;">;; </span><span style="color: #b22222;">deliberate mistakes here!</span>
+(<span style="color: #a020f0;">def</span> <span style="color: #0000ff;">inventory-update</span>
+  [[<span style="color: #008b8b;">:db/add</span> [<span style="color: #008b8b;">:inv/sku</span> <span style="color: #8b2252;">"SKU-21"</span>] <span style="color: #008b8b;">:inv/count</span> 7]
+   [<span style="color: #008b8b;">:db/add</span> [<span style="color: #008b8b;">:inv/sku</span> <span style="color: #8b2252;">"SKU-22"</span>] <span style="color: #008b8b;">:inv/count</span> 7]
+   [<span style="color: #008b8b;">:db/add</span> [<span style="color: #008b8b;">:inv/sku</span> <span style="color: #8b2252;">"SKU-42"</span>] <span style="color: #008b8b;">:inv/count</span> 100]])
+
+(d/transact conn {<span style="color: #008b8b;">:tx-data</span> inventory-update})
+```
+
+
+
+Curse my clumsy fingers, we just put some bad data into the system. We aren't supposed to have any *SKU-22*, but we just added seven. We can fix this with a retraction, which cancels the effect of an assertion:
+
+noslide
+
+```
+<pre class="src src-clojure">(d/transact
+ conn
+ {<span style="color: #008b8b;">:tx-data</span> [[<span style="color: #008b8b;">:db/retract</span> [<span style="color: #008b8b;">:inv/sku</span> <span style="color: #8b2252;">"SKU-22"</span>] <span style="color: #008b8b;">:inv/count</span> 7]
+            [<span style="color: #008b8b;">:db/add</span> <span style="color: #8b2252;">"datomic.tx"</span> <span style="color: #008b8b;">:db/doc</span> <span style="color: #8b2252;">"remove incorrect assertion"</span>]]})
+```
+
+
+
+The `:db/retract` above removes the incorrect value, but note that we are also adding an assertion about the special tempid "datomic.tx". Every transaction in Datomic is its own entity, making it easy to add facts about why a transaction was added (or who added it, or from where the data came, etc.)
+
+
+
+
+
+Implicit Retract
+----------------
+
+We also miskeyed the entry for SKU-42, asserting 100 instead of 1000. We can fix this by asserting the correct value. We do **not** need also to retract the old value; since `:inv/count` is `:cardinality/one`, Datomic knows that there can only be one value at a time and will automatically retract the previous value:
+
+noslide
+
+```
+<pre class="src src-clojure">(d/transact
+ conn
+ {<span style="color: #008b8b;">:tx-data</span> [[<span style="color: #008b8b;">:db/add</span> [<span style="color: #008b8b;">:inv/sku</span> <span style="color: #8b2252;">"SKU-42"</span>] <span style="color: #008b8b;">:inv/count</span> 1000]
+            [<span style="color: #008b8b;">:db/add</span> <span style="color: #8b2252;">"datomic.tx"</span> <span style="color: #008b8b;">:db/doc</span> <span style="color: #8b2252;">"correct data entry error"</span>]]})
+```
+
+
+
+When we look only at the most recent database value, all we can see is the net effect after our corrections:
+
+noslide
+
+```
+<pre class="src src-clojure">(<span style="color: #a020f0;">def</span> <span style="color: #0000ff;">db</span> (d/db conn))
+
+(d/q
+ '[<span style="color: #008b8b;">:find</span> ?sku ?count
+   <span style="color: #008b8b;">:where</span>
+   [?inv <span style="color: #008b8b;">:inv/sku</span> ?sku]
+   [?inv <span style="color: #008b8b;">:inv/count</span> ?count]]
+ db)
+```
+
+
+
+```
+<pre class="src src-clojure">=> [[<span style="color: #8b2252;">"SKU-42"</span> 1000] [<span style="color: #8b2252;">"SKU-21"</span> 7]]
+```
+
+
+
+Knowing the present truth is a starting point, but Datomic's model of time will let us [do a lot more](history.html).

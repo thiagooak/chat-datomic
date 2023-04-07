@@ -1,0 +1,236 @@
+Running on AWS
+==============
+
+This document explains how to launch your Transactor on AWS. Before you read this, read through [Setting Up Storage Services](../overview/storage.html), configure your Storage Service and test it with a Transactor running locally. When you know your Transactor and Storage Service are working, follow the steps below to launch your Transactor on AWS.
+
+There is a [video](https://www.youtube.com/watch?v=wG5grJP3jKY) showing how to launch Datomic on AWS.
+
+All of the script commands described in this document must be executed from the root directory of the Datomic distribution.
+
+Starting the Transactor on AWS
+------------------------------
+
+You can deploy a Transactor on AWS by using [CloudFormation](https://aws.amazon.com/cloudformation/) to launch a Datomic AMI on an EC2 instance size of your choice. This section describes the process.
+
+A CloudFormation properties file specifies security group, ingress rules, instance size, and which version of the Transactor to run. The AMI pulls Transactor bits from S3; it will use the VERSION from the Datomic distribution automatically, if not otherwise specified.
+
+
+
+### Create the CloudFormation template
+
+Follow these steps to create a Cloud Formation template:
+
+- Copy the *config/samples/cf-template.properties* file to another location and change the name to, for instance, *my-cf.properties*. Edit the copied file as desired, and check it into source control.
+    
+    Note that, by default, the CloudFormation properties only allows access to the Transactor from other EC2 machines. You can enable access from anywhere if desired, simply uncomment the line:
+
+```
+<pre class="example" id="org4c3ca31">
+aws-ingress-cidrs=0.0.0.0/0
+```
+
+Communication with the Transactor is protected with a randomly generated username/password that are communicated to peers via the Storage Service (access to which is secured).
+
+You can modify this setting later, but it is easier to do it now!
+
+- Export your AWS account's credentials as environment variables so that they're accessible to scripts:
+
+```
+<pre class="src src-sh"><span style="color: #483d8b;">export</span> <span style="color: #a0522d;">AWS_ACCESS_KEY_ID</span>=<aws-access-key-id>
+```
+
+
+
+```
+<pre class="src src-sh"><span style="color: #483d8b;">export</span> <span style="color: #a0522d;">AWS_SECRET_KEY</span>=<aws-secret-key>
+```
+
+
+
+- Run the *ensure-cf* command, specifying your properties file as the input and another file name as the output (the file names can be the same):
+
+```
+<pre class="src src-sh">bin/datomic ensure-cf my-cf.properties my-cf.properties
+```
+
+
+
+The *ensure-cf* command will create the necessary AWS constructs, and emit an updated properties file containing information about what it created. If errors are reported, fix them, then repeat the process.
+
+- Run the *create-cf-template* command, specifying both your transactor properties file and your CloudFormation properties file as input, and redirect the output to a JSON file.
+
+```
+<pre class="src src-sh">bin/datomic create-cf-template my-transactor.properties my-cf.properties cf-template.json
+```
+
+
+
+
+
+
+
+### Start the CloudFormation stack on AWS
+
+Use the *create-cf-stack* command to run the configuration you have defined on AWS, passing the name of the stack and the template you previously created:
+
+```
+<pre class="src src-sh">bin/datomic create-cf-stack us-east-1 MyTransactor cf-template.json
+```
+
+
+
+That's it! In a few minutes you will have a transactor running on AWS. You can monitor the status of the stack you created via the [AWS CloudFormation Console](https://console.aws.amazon.com/cloudformation/).
+
+You can now run EC2-based peer applications against the Transactor AMI.
+
+Use the *delete-cf-stack* command to tear down the stack and stop all associated running instances with cf-delete-stack:
+
+```
+<pre class="src src-sh">bin/datomic delete-cf-stack us-east-1 MyTransactor
+```
+
+
+
+
+
+
+
+### Connecting to the Transactor on AWS
+
+If you've enabled access to your Transactor from anywhere, then, after your CloudFormation stack launches, you can connect to it as described in [Setting Up Storage Services](../overview/storage.html). If you do not enable access, you can only connect to it form another EC2 instance in the same security group.
+
+
+
+
+
+
+
+Using the AWS Management Console
+--------------------------------
+
+Once you are up and running on AWS with CloudFormation, you may want to make changes to your configuration. While you could shutdown your stack, make a new configuration and restart, it's easier to modify settings using the AWS Management Console.
+
+- To create, update or delete your CloudFormation stack… 
+    - Go to the [CloudFormation console](https://console.aws.amazon.com/cloudformation/home)
+- To enable or disable Internet-based access to your Transactor 
+    - Go to [EC2 security groups](https://console.aws.amazon.com/ec2/home?s=SecurityGroups)
+    - Select your group
+    - Select the *Inbound* tab in the property pane at the bottom of the right hand window
+    - Add or remove access to TCP port 4334 from "0.0.0.0/0" as needed to enable or disable Internet-based access
+- To adjust the throughput on your DynamoDB table 
+    - Go to the [DynamoDB console](https://console.aws.amazon.com/dynamodb/home)
+    - Select your table
+    - Click the *Modify Throughput* button on the toolbar
+- To see CloudWatch metrics 
+    - Go to the [CloudWatch console](https://console.aws.amazon.com/cloudwatch/home)
+    - Select DynamoDB or EC2 metrics
+    - Select desired metrics for your table or Transactor instance
+- To see your Transactor's logs 
+    - Go to the [S3 console](https://console.aws.amazon.com/s3/home)
+    - Select your log bucket (see the transactor properties file output by the *bin/datomic ensure-transactor* command, it contains the bucket name)
+    - Drill down in the directory hierarchy to find .zip'd log files
+
+
+
+
+
+Using S3 log storage and CloudWatch metrics
+-------------------------------------------
+
+The Transactor can copy its logs to [S3](https://aws.amazon.com/s3/) and publish metrics to Amazon's [CloudWatch](https://aws.amazon.com/cloudwatch/) service. These features are available even if you are not using DynamoDB as your storage service.
+
+
+
+### Using S3 log storage and CloudWatch metrics with DynamoDB storage
+
+To enable log copying, uncomment this line in your transactor properties file:
+
+```
+<pre class="example" id="org69545df">
+#aws-s3-log-bucket-id=
+```
+
+If you leave the values blank, an S3 bucket will be created for you. Alternatively, you can specify an existing bucket. The IAM role specified by the *aws-transactor-role* property will be assigned a policy granting write access to bucket.
+
+To enable CloudWatch metrics, uncomments these lines in your transactor properties file:
+
+```
+<pre class="example" id="orga9d4889">
+#aws-cloudwatch-dimension-value=your-system=name
+#aws-cloudwatch-region=
+```
+
+Specify a unique name for *aws-cloudwatch-dimension-value* and the desired AWS region for *aws-cloudwatch-region*. The IAM role specified by the *aws-transactor-role* property will be assigned a policy granting write access to CloudWatch.
+
+Once your property file is edited, run the *ensure-transactor*command, specifying your properties file and another filename as the output (the file names can be the same).
+
+```
+<pre class="src src-sh">bin/datomic ensure-transactor my-transactor.properties my-transactor.properties.
+```
+
+
+
+The *ensure-transactor* command will create the necessary AWS constructs, and emit an updated properties file containing information about what it created. If errors are reported, fix them, then repeat the process. Check the final file into source control.
+
+Start your transactor with the properties file output by the *ensure-transactor* command, and one or both features will be enabled.
+
+
+
+
+
+### Using S3 log storage and CloudWatch metrics with other storages
+
+To enable log copying, uncomment this line in your transactor properties file:
+
+```
+<pre class="example" id="org7c9c376">
+#aws-s3-log-bucket-id=
+```
+
+Set its value to the name of an existing S3 bucket.
+
+To enable CloudWatch metrics, uncomments these lines in your transactor properties file:
+
+```
+<pre class="example" id="org416980d">
+#aws-cloudwatch-dimension-value=your-system=name
+#aws-cloudwatch-region=
+```
+
+Specify a unique name for *aws-cloudwatch-dimension-value* and the desired AWS region for *aws-cloudwatch-region*.
+
+To enable the transactor to access the AWS resources you specify, you must attach the following policies to the transactor role:
+
+```
+<pre class="src src-js">{<span style="color: #8b2252;">"Statement"</span>:
+ [{<span style="color: #8b2252;">"Effect"</span>:<span style="color: #8b2252;">"Allow"</span>,
+   <span style="color: #8b2252;">"Action"</span>:[<span style="color: #8b2252;">"s3:PutObject"</span>],
+   <span style="color: #8b2252;">"Resource"</span>:
+   [<span style="color: #8b2252;">"arn:aws:s3:::{bucket-name}"</span>, <span style="color: #8b2252;">"arn:aws:s3:::{bucket-name}/*"</span>]}]}
+```
+
+
+
+```
+<pre class="src src-js">{<span style="color: #8b2252;">"Statement"</span>:
+ [{<span style="color: #8b2252;">"Resource"</span>:<span style="color: #8b2252;">"*"</span>,
+   <span style="color: #8b2252;">"Effect"</span>:<span style="color: #8b2252;">"Allow"</span>,
+   <span style="color: #8b2252;">"Action"</span>:
+   [<span style="color: #8b2252;">"cloudwatch:PutMetricData"</span>, <span style="color: #8b2252;">"cloudwatch:PutMetricDataBatch"</span>],
+   <span style="color: #8b2252;">"Condition"</span>:{<span style="color: #8b2252;">"Bool"</span>:{<span style="color: #8b2252;">"aws:SecureTransport"</span>:<span style="color: #8b2252;">"true"</span>}}}]}
+```
+
+
+
+
+
+
+
+
+
+Troubleshooting the Transactor AMI
+----------------------------------
+
+The Transactor AMI is designed as an expendable, commodity resource. It should be used once, and fail fast and shutdown in the face of any unrecoverable error.
+
+If you believe that the transactor is in a damaged state, you should shut it down and let CloudFormation start a new one. Never restart a transactor that is in a bad state, as you may propagate (and worsen) the problem.

@@ -1,0 +1,977 @@
+Datomic Cloud Change Log
+========================
+
+2023/02/28 990-9202
+-------------------
+
+   [Storage](operation/upgrading.html#storage-only-upgrade)   [Production Compute](operation/upgrading.html#compute-only-upgrade)   [Query Groups](operation/compute-template.html)     `<button class="copy-button" data-clipboard-text="https://s3.amazonaws.com/datomic-cloud-1/cft/990-9202/datomic-storage-990-9202.json" label="Copy to clipboard" title="copy CF URL to clipboard" type="button">990-9202</button>`   `<button class="copy-button" data-clipboard-text="https://s3.amazonaws.com/datomic-cloud-1/cft/990-9202/datomic-compute-990-9202.json" label="Copy to clipboard" title="copy CF URL to clipboard" type="button">990-9202</button>`   `<button class="copy-button" data-clipboard-text="https://s3.amazonaws.com/datomic-cloud-1/cft/990-9202/datomic-query-group-990-9202.json" label="Copy to clipboard" title="copy CF URL to clipboard" type="button">990-9202</button>`  - Performance: Datomic now uses caffeine instead of guava for the object cache.
+- Performance: improved fressian read.
+- Feature: io-stats for transactions and queries. See <https://docs.datomic.com/cloud/api/io-stats.html>.
+- Feature: query-stats. See <https://docs.datomic.com/cloud/api/query-stats.html>
+- Fix: Attribute names that begin with an underscore can be used for forward lookups in entity and pull. Note that naming attributes with a leading underscore is strongly discouraged because it conflicts with the convention for reverse lookup.
+- Fix: critical bug preventing transactions in 9188.
+- Fix: pull performance regression introduced in 9188.
+- Fix: Exception when using io-stats in nested contexts, you should no longer see "No implementation of method: :-merge-stats of protocol".
+- Upgraded AWS libraries to 1.12.358.
+
+
+
+
+
+2023/02/28 1.0.123 - Client-Cloud Update
+----------------------------------------
+
+   [client-cloud](client/client-api.html#installing)     `        <button class="copy-button" data-clipboard-text="com.datomic/client-cloud "1.0.123"" label="Copy to clipboard" title="copy CF URL to clipboard" type="button">1.0.123</button>`  - Feature: query-stats for transactions and queries. See <https://docs.datomic.com/cloud/api/query-stats.html>
+
+
+
+
+
+2022/11/29 981-9188
+-------------------
+
+> The 981-9188 release templates have been removed (12/12/2022) per Critical Notice <https://docs.datomic.com/cloud/releases.html#critical-notices>.
+> 
+> This release introduced a problem in Datomic that could eventually halt transactions (but not Reads). All templates have been removed and de-listed from the docs and marketplace. The 990-9202 release contains all features in this release and replaces 981-9188. Recommendation: if you upgraded to this specific version is to immediately upgrade again to the latest 990-9202.
+
+
+
+
+
+2022/11/29 1.0.62 ion
+---------------------
+
+   [Ion](operation/howto.html#ion)     `        <button class="copy-button" data-clipboard-text="com.datomic/ion "1.0.62"" label="Copy to clipboard" title="copy CF URL to clipboard" type="button">1.0.62</button>`  - Fix: requiring `dev-local` no longer disables `ion.cast/initialize-redirect`
+
+
+
+
+
+2022/11/29 1.0.122 - Client-Cloud Update
+----------------------------------------
+
+   [client-cloud](client/client-api.html#installing)     `        <button class="copy-button" data-clipboard-text="com.datomic/client-cloud "1.0.122"" label="Copy to clipboard" title="copy CF URL to clipboard" type="button">1.0.122</button>`  - Feature: io-stats for transactions and queries. See <https://docs.datomic.com/cloud/api/io-stats.html>
+
+
+
+
+
+2022/06/01 973-9132
+-------------------
+
+   [Storage](operation/upgrading.html#storage-only-upgrade)   [Production Compute](operation/upgrading.html#compute-only-upgrade)   [Query Groups](operation/compute-template.html)     `<button class="copy-button" data-clipboard-text="https://s3.amazonaws.com/datomic-cloud-1/cft/973-9132/datomic-storage-973-9132.json" label="Copy to clipboard" title="copy CF URL to clipboard" type="button">973-9132</button>`   `<button class="copy-button" data-clipboard-text="https://s3.amazonaws.com/datomic-cloud-1/cft/973-9132/datomic-compute-973-9132.json" label="Copy to clipboard" title="copy CF URL to clipboard" type="button">973-9132</button>`   `<button class="copy-button" data-clipboard-text="https://s3.amazonaws.com/datomic-cloud-1/cft/973-9132/datomic-query-group-973-9132.json" label="Copy to clipboard" title="copy CF URL to clipboard" type="button">973-9132</button>`  - Upgrade clojure to 1.11.1
+- Upgrade AWS SDK to 1.12.132
+- Upgrade com.cognitect/s3-creds to 1.0.27
+- Upgrade com.datomic/memcached-asg-java-client to 1.1.0.33
+- Upgrade transit-clj to 1.0.329
+- Upgrade com.datomic/client to 1.0.126
+- Upgrade com.datomic/client-cloud to 1.0.120
+- Upgrade tools.namespace to 1.2.0
+- Upgrade The AMI is now based on the 3/16/2022 version of Linux 2 base AMI
+- Upgrade NodeJS used in Lambdas to 14.x
+- Add new output `IonApiIntegrationId`
+- Upgrade Corretto11 to 11.0.14+10
+
+
+
+
+
+2022/04/06 1.0.59 ion
+---------------------
+
+   [Ion](operation/howto.html#ion)     `        <button class="copy-button" data-clipboard-text="com.datomic/ion "1.0.59"" label="Copy to clipboard" title="copy CF URL to clipboard" type="button">1.0.59</button>`  - Upgrade transit-clj to 1.0.329
+- Upgrade aws-java-sdk-ssm to 1.12.132
+
+
+
+
+
+2022/04/06 1.0.306 ion-dev
+--------------------------
+
+   [Ion dev](operation/howto.html#ion-dev)     `        <button class="copy-button" data-clipboard-text="com.datomic/ion-dev "1.0.306"" label="Copy to clipboard" title="copy CF URL to clipboard" type="button">1.0.306</button>`  - Upgrade aws-java-sdk-\* to 1.12.132
+- Upgrade s3-libs to 1.0.46
+
+
+
+
+
+2021/04/06 1.0.120 - Client-Cloud Update
+----------------------------------------
+
+   [client-cloud](client/client-api.html#installing)     `        <button class="copy-button" data-clipboard-text="com.datomic/client-cloud "1.0.120"" label="Copy to clipboard" title="copy CF URL to clipboard" type="button">1.0.120</button>`  - Upgrade client to 1.0.126
+- Upgrade s3-creds to 1.0.27
+- Upgrade aws-java-sdk-s3 to 1.12.132
+
+
+
+
+
+2022/04/1 1.0.304 ion-dev
+-------------------------
+
+   [Ion dev](operation/howto.html#ion-dev)     `        <button class="copy-button" data-clipboard-text="com.datomic/ion-dev "1.0.304"" label="Copy to clipboard" title="copy CF URL to clipboard" type="button">1.0.304</button>`  - Resolved [an issue](https://clojure.org/news/2022/04/01/deref#_from_the_core) where a user may encounter the error:
+
+```
+<pre class="src src-sh"><span style="color: #8b2252;">"WARNING: abs already refers to: #'clojure.core/abs in namespace: cognitect.s3-libs.file, being replaced by: #'cognitect.s3-libs.file/abs"</span>
+```
+
+
+
+
+
+
+
+2022/01/14 939-9127 - Compute Update
+------------------------------------
+
+   [Storage](operation/upgrading.html#storage-only-upgrade)   [Production Compute](operation/upgrading.html#compute-only-upgrade)   [Query Groups](operation/compute-template.html)     `<button class="copy-button" data-clipboard-text="https://s3.amazonaws.com/datomic-cloud-1/cft/939-9127/datomic-storage-939-9127.json" label="Copy to clipboard" title="copy CF URL to clipboard" type="button">939-9127</button>`   `<button class="copy-button" data-clipboard-text="https://s3.amazonaws.com/datomic-cloud-1/cft/939-9127/datomic-compute-939-9127.json" label="Copy to clipboard" title="copy CF URL to clipboard" type="button">939-9127</button>`   `<button class="copy-button" data-clipboard-text="https://s3.amazonaws.com/datomic-cloud-1/cft/939-9127/datomic-query-group-939-9127.json" label="Copy to clipboard" title="copy CF URL to clipboard" type="button">939-9127</button>`  - Upgraded AWS Java SDK to 1.12.100.
+- Upgraded Jetty to 9.4.41.v20210927
+- Upgraded core.async to 1.5.6348
+- Upgraded core.cache to 1.0.225
+- Upgraded core.memoize to 1.0.253
+- Upgraded data.priority-map to 1.1.0
+- Upgraded tools.analyzer to 1.1.0
+- Upgraded tools.analyzer.jvm to 1.2.2
+- Upgraded tools.namespace to 1.1.1
+- Upgraded tools.reader to 1.3.6
+- Upgraded asm to 9.2
+- Upgraded org.slf4j to 1.7.32
+- Upgraded http-client to 1.0.111
+- Upgraded Guava to 31.0.1
+- Upgraded commons-codec to 1.15
+- Upgraded Java 11 to 11.0.13+8
+- Upgrade: The AMI is now based on the 12/01/2021 version of Linux 2 base AMI
+
+
+
+
+
+2022/01/14 1.0.119 Client-Cloud Update
+--------------------------------------
+
+   [client-cloud](client/client-api.html#installing)     `        <button class="copy-button" data-clipboard-text="com.datomic/client-cloud "1.0.119"" label="Copy to clipboard" title="copy CF URL to clipboard" type="button">1.0.119</button>`  - Upgraded AWS Java SDK to 1.12.100
+- Upgraded Jetty to 9.4.44.v20210927
+- Upgraded core.async to 1.5.648
+- Upgraded core.cache to 1.0.225
+- Upgraded data.priority-map to 1.1.0
+- Upgraded http-client to 1.0.110
+
+
+
+
+
+2022/01/14 1.0.298 ion-dev
+--------------------------
+
+   [Ion dev](operation/howto.html#ion-dev)     `        <button class="copy-button" data-clipboard-text="com.datomic/ion-dev "1.0.298"" label="Copy to clipboard" title="copy CF URL to clipboard" type="button">1.0.298</button>`  - Upgraded AWS Java SDK to 1.12.100
+
+
+
+
+
+2022/01/14 1.0.58 ion
+---------------------
+
+   [Ion](operation/howto.html#ion)     `        <button class="copy-button" data-clipboard-text="com.datomic/ion "1.0.58"" label="Copy to clipboard" title="copy CF URL to clipboard" type="button">1.0.58</button>`  - Upgraded AWS Java SDK to 1.12.100
+
+
+
+
+
+2022/01/14 1.0.91 [CLI Tools](operation/cli-tools.html)
+-------------------------------------------------------
+
+   [CLI Tools](/operation/cli-tools.html)     [1.0.91](https://datomic-releases-1fc2183a.s3.amazonaws.com/tools/datomic-cli/datomic-cli-1.0.91.zip)  - Enhance error message when using `:local/root`
+
+
+
+
+
+2021/09/29 936-9118 - Compute and Storage Update
+------------------------------------------------
+
+   [Storage](operation/upgrading.html#storage-only-upgrade)   [Production Compute](operation/upgrading.html#compute-only-upgrade)   [Query Groups](operation/compute-template.html)     `<button class="copy-button" data-clipboard-text="https://s3.amazonaws.com/datomic-cloud-1/cft/936-9118/datomic-storage-936-9118.json" label="Copy to clipboard" title="copy CF URL to clipboard" type="button">936-9118</button>`   `<button class="copy-button" data-clipboard-text="https://s3.amazonaws.com/datomic-cloud-1/cft/936-9118/datomic-compute-936-9118.json" label="Copy to clipboard" title="copy CF URL to clipboard" type="button">936-9118</button>`   `<button class="copy-button" data-clipboard-text="https://s3.amazonaws.com/datomic-cloud-1/cft/936-9118/datomic-query-group-936-9118.json" label="Copy to clipboard" title="copy CF URL to clipboard" type="button">936-9118</button>`  - Fix: Ensure that code bucket IAM policy points to the correct bucket if bucket was deleted and recreated.
+- Fix: Prevent a problem where in rare situations indexing jobs can fail repeatedly with an `ArityException`.
+- Enhancement: Improve handling of throttling errors during CloudFormation stack creation.
+- Enhancement: The datalog engine will now do self-unification within a single clause.
+- Upgraded AWS Java SDK to 1.12.1.
+- Upgraded Clojure to 1.10.3
+- Upgraded jackson-core to 2.12.3
+- Upgraded Jetty to 9.4.41.v20210516
+- Upgraded core.async to 1.3.618
+- Upgraded http-client to 1.0.108
+- Upgraded transit-clj to 1.0.324
+- Upgraded data.json to 2.4.0
+- Upgraded tools.namespace to 1.1.0
+- Upgrade: The AMI is now based on the 07/01/2021 version of Linux 2 base AMI
+
+
+
+
+
+2021/09/29 1.0.117 - Client-Cloud Update
+----------------------------------------
+
+   [client-cloud](client/client-api.html#installing)     `        <button class="copy-button" data-clipboard-text="com.datomic/client-cloud "1.0.117"" label="Copy to clipboard" title="copy CF URL to clipboard" type="button">1.0.117</button>`  - Upgraded AWS Java SDK to 1.12.1.
+- Upgraded Jetty to 9.4.41.v20210516
+- Upgraded core.async to 1.3.618
+- Upgraded core.cache to 1.0.207
+- Upgraded http-client to 1.0.108
+- Upgraded transit-clj to 1.0.324
+
+
+
+
+
+2021/09/29 1.0.294 - ion-dev
+----------------------------
+
+   [Ion dev](operation/howto.html#ion-dev)     `        <button class="copy-button" data-clipboard-text="com.datomic/ion-dev "1.0.294"" label="Copy to clipboard" title="copy CF URL to clipboard" type="button">1.0.294</button>`  - Upgraded Lambda runtime to Corretto, per [AWS policy](https://aws.amazon.com/blogs/compute/announcing-migration-of-the-java-8-runtime-in-aws-lambda-to-amazon-corretto/).
+- Upgraded AWS Java SDK to 1.12.1.
+- Upgraded data.json to 2.4.0
+
+
+
+
+
+2021/09/29 1.0.57 - ion
+-----------------------
+
+   [Ion](operation/howto.html#ion)     `        <button class="copy-button" data-clipboard-text="com.datomic/ion "1.0.57"" label="Copy to clipboard" title="copy CF URL to clipboard" type="button">1.0.57</button>`  - Fix: `nil` error thrown when calling cast before calling `initialize-redirect`.
+- Upgraded AWS Java SDK to 1.12.1.
+- Upgraded transit-clj to 1.0.324
+- Upgraded data.json to 2.4.0
+
+
+
+
+
+2021/07/13 884-9095 - Compute Update
+------------------------------------
+
+   [Storage](operation/upgrading.html#storage-only-upgrade)   [Production Compute](operation/upgrading.html#compute-only-upgrade)   [Query Groups](operation/compute-template.html)     `<button class="copy-button" data-clipboard-text="https://s3.amazonaws.com/datomic-cloud-1/cft/884-9095/datomic-storage-884-9095.json" label="Copy to clipboard" title="copy CF URL to clipboard" type="button">884-9095</button>`   `<button class="copy-button" data-clipboard-text="https://s3.amazonaws.com/datomic-cloud-1/cft/884-9095/datomic-compute-884-9095.json" label="Copy to clipboard" title="copy CF URL to clipboard" type="button">884-9095</button>`   `<button class="copy-button" data-clipboard-text="https://s3.amazonaws.com/datomic-cloud-1/cft/884-9095/datomic-query-group-884-9095.json" label="Copy to clipboard" title="copy CF URL to clipboard" type="button">884-9095</button>`  - Enhancement: Many new [EC2 instance sizes](operation/growing-your-system.html#instance-sizes).
+- Enhancement: [Lower pricing](operation/growing-your-system.html#hourly-price) for all instance sizes.
+- Enhancement: [API Gateways](whatis/architecture.html#api-gateway) for client and application internet access.
+- Enhancement: [Run analytics anywhere](analytics/analytics-configuring.html).
+- Upgrade: Compute nodes have been upgraded from Java 8 to Java 11.
+- Replaced: The client access gateway is no longer available; you can connect directly to the new client API gateway.
+- Replaced: The analytics gateway is no longer available; you can run your own analytics node or cluster.
+- Replaced: The solo tier is no longer available; the production compute stack now scales all the way down to t3.small.
+- Replaced: The socks proxy is no longer available; clients can connect directly to the client API Gateway.
+- Replaced: Each compute group now uses an ALB instead of an NLB.
+
+This upgrade will cause up to one minute of downtime for each compute group. Make sure to perform this upgrade at a time that minimizes the impact of these disruptions.
+
+In addition, make sure to read the upgrade instructions below *for each of the following scenarios that apply to your system today*: solo systems, production systems, developer connections, application connections, analytics connections, and web application (ion) connections.
+
+
+
+### 884-9095 for Solo Users
+
+Datomic no longer has a Solo compute stack. If you were using Solo you can upgrade to Production at no additional cost by peforming the following steps:
+
+- Your web applications no longer need to go through a [web lambda proxy](ions/ions-reference.html#web-lambda-proxies). They can (and must) instead use [HTTP direct](ions/ions-reference.html#web-ion). HTTP direct is higher performance and simplifies your code, which no longer needs to call `ionize`.
+- Perform a [storage upgrade](operation/upgrading.html#storage-only-upgrade).
+- Perform a [compute upgrade](operation/upgrading.html#compute-only-upgrade), selecting the t3.small instance size (the default).
+
+
+
+
+
+### 884-9095 for Production Users
+
+If you are running Production, you now have a set of t3 instance sizes to choose from. Many users will be able to provision smaller, less expensive instances:
+
+- Unless your compute group [needs valcache](operation/growing-your-system.html#valcache), you should switch from your current i3 instance to the matching-sized t3 instance.
+- If you believe you were already overprovisioned with i3.large, you should consider a [smaller t3 instance size](../operation/growing-your-system.html#instance-sizes).
+
+
+
+
+
+### 884-9095 for Developer Connections
+
+884-9095 significantly simplifies developer connections. If you connect to Datomic with a socks proxy to the access gateway, remove all of those steps from your workflow. Instead:
+
+- When you upgrade a compute group, enable the client API gateway.
+- Configure your clients to connect directly to the client API gateway endpoint.
+
+
+
+
+
+### 884-9095 for Application Connections
+
+884-9095 significantly simplies application connections. If your application connections require managing security groups, VPC endpoints, or VPC peering, remove all of these steps from your workflow. Instead:
+
+- When upgrade a compute group, enable the client API gateway.
+- Configure your application clients to connect directly to the client API gateway endpoint.
+
+
+
+
+
+### 884-9095 for Ion Applications with API Gateway
+
+If you manually created an API Gateway for your ion application on a previous release of Datomic, that gateway will no longer work. You should note any custom configuration for refererence and then delete the gateway. Then, let Datomic create the API Gateway for you (preferred), or follow the updated instructions for creating your own API Gateway.
+
+
+
+
+
+### 884-9095 for Ion Applications using Web Lambda Proxies
+
+If you were using [Web Lambda Proxies](ions/ions-reference.html#web-lambda-proxies), then you should change to HTTP Direct or lambdas.
+
+- Move the function to the `:http-direct` or `:lambdas` key in your ion-config.edn
+- The [`ionize`](ions/ions-reference.html#ionize) function should not be used.
+- Expect the appropriate input data for the type of entry point ([HTTP Direct](ions/ions-reference.html#web-ion) or [Lambda](ions/ions-reference.html#lambda-ion))
+
+
+
+
+
+### 884-9095 for Analytics Users
+
+If you were using Datomic analytics via the access gateway, you will now need to start your own analytics cluster. [Configure analytics](analytics/analytics-configuring.html) on any machine or cluster of machines (locally or in EC2), and connect to the client API gateway endpoint.
+
+
+
+
+
+
+
+2021/07/13 884-9095 - Storage Update
+------------------------------------
+
+- Enhancement: The storage template now sets DDB provisioning to fit within the AWS free tier if your usage is low enough.
+
+
+
+
+
+2021/07/13 - 0.10.89 - [CLI Tools](operation/cli-tools.html)
+------------------------------------------------------------
+
+   [CLI Tools](/operation/cli-tools.html)     [0.10.98](https://datomic-releases-1fc2183a.s3.amazonaws.com/tools/datomic-cli/datomic-cli-0.10.98.zip)  - Add describe-groups system command
+
+
+
+
+
+2021/07/13 0.8.113 - Client-Cloud Update
+----------------------------------------
+
+   [client-cloud](client/client-api.html#installing)     `        <button class="copy-button" data-clipboard-text="com.datomic/client-cloud "0.8.113"" label="Copy to clipboard" title="copy CF URL to clipboard" type="button">0.8.113</button>`  - Add support for hmac through API Gateway
+
+
+
+
+
+2021/07/13 0.9.290 - ion-dev
+----------------------------
+
+   [Ion dev](operation/howto.html#ion-dev)     `        <button class="copy-button" data-clipboard-text="com.datomic/ion-dev "1.0.290"" label="Copy to clipboard" title="copy CF URL to clipboard" type="button">1.0.290</button>`  - Update dep list for Datomic Cloud 884-9095
+- Enhancement: Improved integration between ions and AWS Application Load Balancers for the cloud version release.
+
+
+
+
+
+2021/03/02 - 781-9041 - Compute Update
+--------------------------------------
+
+   [Storage](operation/upgrading.html#storage-only-upgrade)   [Solo Compute](operation/upgrading.html#compute-only-upgrade)   [Production Compute](operation/upgrading.html#compute-only-upgrade)   [Query Groups](operation/compute-template.html)     `<button class="copy-button" data-clipboard-text="https://s3.amazonaws.com/datomic-cloud-1/cft/781-9041/datomic-storage-781-9041.json" label="Copy to clipboard" title="copy CF URL to clipboard" type="button">781-9041</button>`   `<button class="copy-button" data-clipboard-text="https://s3.amazonaws.com/datomic-cloud-1/cft/781-9041/datomic-solo-compute-781-9041.json" label="Copy to clipboard" title="copy CF URL to clipboard" type="button">781-9041</button>`   `<button class="copy-button" data-clipboard-text="https://s3.amazonaws.com/datomic-cloud-1/cft/781-9041/datomic-production-compute-781-9041.json" label="Copy to clipboard" title="copy CF URL to clipboard" type="button">781-9041</button>`   `<button class="copy-button" data-clipboard-text="https://s3.amazonaws.com/datomic-cloud-1/cft/781-9041/datomic-query-group-781-9041.json" label="Copy to clipboard" title="copy CF URL to clipboard" type="button">781-9041</button>`  - Upgrade: AWS Lambda Runtimes moved to NodeJs 12.x
+- Enhancement: New AWS Region - `ca-central-1`
+- Upgrade Jetty server to version 9.4.36.v20210114
+
+
+
+
+
+2021/02/23 0.9.282 - ion-dev &amp;&amp; 0.9.50 - ion
+----------------------------------------------------
+
+   [Ion](operation/howto.html#ion)   [Ion dev](operation/howto.html#ion-dev)     `        <button class="copy-button" data-clipboard-text="com.datomic/ion "0.9.50"" label="Copy to clipboard" title="copy CF URL to clipboard" type="button">0.9.50</button>`   `        <button class="copy-button" data-clipboard-text="com.datomic/ion-dev "0.9.282"" label="Copy to clipboard" title="copy CF URL to clipboard" type="button">0.9.282</button>`  - ion-dev 
+    - Improvement: Limit how long to wait for a cluster node to gracefully shutdown.
+    - Improvement: Increase performance of Ion request handler
+    - Fix: Suppress noisy AsyncContext Alert caused by Ion timeout
+- ion 
+    - Improvement: `get-params` now allows arbitrary number of parameters
+
+
+
+
+
+2021/02/23 - 772-9034 - Compute Update
+--------------------------------------
+
+   [Storage](operation/upgrading.html#storage-only-upgrade)   [Solo Compute](operation/upgrading.html#compute-only-upgrade)   [Production Compute](operation/upgrading.html#compute-only-upgrade)   [Query Groups](operation/compute-template.html)     `<button class="copy-button" data-clipboard-text="https://s3.amazonaws.com/datomic-cloud-1/cft/772-9034/datomic-storage-772-9034.json" label="Copy to clipboard" title="copy CF URL to clipboard" type="button">772-9034</button>`   `<button class="copy-button" data-clipboard-text="https://s3.amazonaws.com/datomic-cloud-1/cft/772-9034/datomic-solo-compute-772-9034.json" label="Copy to clipboard" title="copy CF URL to clipboard" type="button">772-9034</button>`   `<button class="copy-button" data-clipboard-text="https://s3.amazonaws.com/datomic-cloud-1/cft/772-9034/datomic-production-compute-772-9034.json" label="Copy to clipboard" title="copy CF URL to clipboard" type="button">772-9034</button>`   `<button class="copy-button" data-clipboard-text="https://s3.amazonaws.com/datomic-cloud-1/cft/772-9034/datomic-query-group-772-9034.json" label="Copy to clipboard" title="copy CF URL to clipboard" type="button">772-9034</button>`  - Fix: [Attribute Predicates](schema/schema-reference.html#attribute-predicates) are now applied to assertions only.
+- Upgrade to presto 348 for [Datomic analytics](analytics/analytics-cli.html).
+
+
+
+
+
+2021/01/20 - 0.8.113 - Client-Cloud Update
+------------------------------------------
+
+   [client-cloud](client/client-api.html#installing)     `        <button class="copy-button" data-clipboard-text="com.datomic/client-cloud "0.8.113"" label="Copy to clipboard" title="copy CF URL to clipboard" type="button">0.8.113</button>`  - Improvement: Make client dynaload thread safe
+
+
+
+
+
+2020/11/30 732-8992 - Compute Update
+------------------------------------
+
+   [Storage](operation/upgrading.html#storage-only-upgrade)   [Solo Compute](operation/upgrading.html#compute-only-upgrade)   [Production Compute](operation/upgrading.html#compute-only-upgrade)   [Query Groups](operation/compute-template.html)     `<button class="copy-button" data-clipboard-text="https://s3.amazonaws.com/datomic-cloud-1/cft/732-8992/datomic-storage-732-8992.json" label="Copy to clipboard" title="copy CF URL to clipboard" type="button">732-8992</button>`   `<button class="copy-button" data-clipboard-text="https://s3.amazonaws.com/datomic-cloud-1/cft/732-8992/datomic-solo-compute-732-8992.json" label="Copy to clipboard" title="copy CF URL to clipboard" type="button">732-8992</button>`   `<button class="copy-button" data-clipboard-text="https://s3.amazonaws.com/datomic-cloud-1/cft/732-8992/datomic-production-compute-732-8992.json" label="Copy to clipboard" title="copy CF URL to clipboard" type="button">732-8992</button>`   `<button class="copy-button" data-clipboard-text="https://s3.amazonaws.com/datomic-cloud-1/cft/732-8992/datomic-query-group-732-8992.json" label="Copy to clipboard" title="copy CF URL to clipboard" type="button">732-8992</button>`  - New: Change the scale of a [BigDecimal attribute](schema/schema-reference.html#notes-on-value-types) in a transaction.
+- Upgrade to presto 346, fixing a [bug](https://github.com/prestosql/presto/commit/e7eeeedcc9751c022ffb9df648ee5442cd421c32)that prevents analytics gateway from launching.
+- Fix: Reenable query counts metric in [dashboard](operation/monitoring.html#dashboards).
+- Fix: Query correctly treats range functions as functions (not as predicates).
+- New region: `eu-north-1`
+
+
+
+
+
+2020/09/23 715-8973 - Compute Update
+------------------------------------
+
+   [Storage](operation/upgrading.html#storage-only-upgrade)   [Solo Compute](operation/upgrading.html#compute-only-upgrade)   [Production Compute](operation/upgrading.html#compute-only-upgrade)   [Query Groups](operation/compute-template.html)     `<button class="copy-button" data-clipboard-text="https://s3.amazonaws.com/datomic-cloud-1/cft/715-8973/datomic-storage-715-8973.json" label="Copy to clipboard" title="copy CF URL to clipboard" type="button">715-8973</button>`   `<button class="copy-button" data-clipboard-text="https://s3.amazonaws.com/datomic-cloud-1/cft/715-8973/datomic-solo-compute-715-8973.json" label="Copy to clipboard" title="copy CF URL to clipboard" type="button">715-8973</button>`   `<button class="copy-button" data-clipboard-text="https://s3.amazonaws.com/datomic-cloud-1/cft/715-8973/datomic-production-compute-715-8973.json" label="Copy to clipboard" title="copy CF URL to clipboard" type="button">715-8973</button>`   `<button class="copy-button" data-clipboard-text="https://s3.amazonaws.com/datomic-cloud-1/cft/715-8973/datomic-query-group-715-8973.json" label="Copy to clipboard" title="copy CF URL to clipboard" type="button">715-8973</button>`  - New region: `ap-south-1`
+- Fix: Improve storage garbage collection.
+- Fix: Prevent situation where `tx-range` sometimes returned one extra transaction prior to a specified instant.
+
+
+
+
+
+2020/08/07 704-8957 - Compute Update
+------------------------------------
+
+   [Storage](operation/upgrading.html#storage-only-upgrade)   [Solo Compute](operation/upgrading.html#compute-only-upgrade)   [Production Compute](operation/upgrading.html#compute-only-upgrade)   [Query Groups](operation/compute-template.html)     `<button class="copy-button" data-clipboard-text="https://s3.amazonaws.com/datomic-cloud-1/cft/704-8957/datomic-storage-704-8957.json" label="Copy to clipboard" title="copy CF URL to clipboard" type="button">704-8957</button>`   `<button class="copy-button" data-clipboard-text="https://s3.amazonaws.com/datomic-cloud-1/cft/704-8957/datomic-solo-compute-704-8957.json" label="Copy to clipboard" title="copy CF URL to clipboard" type="button">704-8957</button>`   `<button class="copy-button" data-clipboard-text="https://s3.amazonaws.com/datomic-cloud-1/cft/704-8957/datomic-production-compute-704-8957.json" label="Copy to clipboard" title="copy CF URL to clipboard" type="button">704-8957</button>`   `<button class="copy-button" data-clipboard-text="https://s3.amazonaws.com/datomic-cloud-1/cft/704-8957/datomic-query-group-704-8957.json" label="Copy to clipboard" title="copy CF URL to clipboard" type="button">704-8957</button>`  - New feature: [Cancel](https://docs.datomic.com/cloud/transactions/transaction-processing.html#cancel)
+- New region: `eu-west-2`
+- Fix: Prevent race condition in valcache that could lead to a failed read
+- Improvement: Better entity predicate error messages
+- Improvement: Better indexing performance
+- Upgrade: The version of the Presto server running on the access gateway is now 338. This includes an upgrade to Java 11 on the access gateway.
+- Upgrade: The AMI is now based on the 6/17/2020 version of Linux 2 base AMI
+- Upgrade: AWS SDK for Java to version 1.11.826
+- Upgrade: core.async to version 1.3.610
+
+
+
+
+
+2020/08/07 0.9.276 - ion-dev &amp;&amp; 0.9.48 - ion
+----------------------------------------------------
+
+   [Ion](operation/howto.html#ion)   [Ion dev](operation/howto.html#ion-dev)     `        <button class="copy-button" data-clipboard-text="com.datomic/ion "0.9.48"" label="Copy to clipboard" title="copy CF URL to clipboard" type="button">0.9.48</button>`   `        <button class="copy-button" data-clipboard-text="com.datomic/ion-dev "0.9.276"" label="Copy to clipboard" title="copy CF URL to clipboard" type="button">0.9.276</button>`  - New feature: [Cancel](https://docs.datomic.com/cloud/transactions/transaction-processing.html#cancel)
+- cloud-deps update
+
+
+
+
+
+2020/07/21 - 0.8.102 - Client-Cloud Update
+------------------------------------------
+
+   [client-cloud](client/client-api.html#installing)     `        <button class="copy-button" data-clipboard-text="com.datomic/client-cloud "0.8.102"" label="Copy to clipboard" title="copy CF URL to clipboard" type="button">0.8.102</button>`  - Fix: `datomic.api.client.async/client` now accepts `:dev-local` as a `:server-type`
+
+
+
+
+
+2020/07/17 - 0.8.101 - Client-Cloud Update
+------------------------------------------
+
+   [client-cloud](client/client-api.html#installing)     `        <button class="copy-button" data-clipboard-text="com.datomic/client-cloud "0.8.101"" label="Copy to clipboard" title="copy CF URL to clipboard" type="button">0.8.101</button>`  - New feature: [dev-local](dev-local.html)
+
+
+
+
+
+2020/05/14 - 668-8927 - Compute Update
+--------------------------------------
+
+   [Storage](operation/upgrading.html#storage-only-upgrade)   [Solo Compute](operation/upgrading.html#compute-only-upgrade)   [Production Compute](operation/upgrading.html#compute-only-upgrade)   [Query Groups](operation/compute-template.html)     `<button class="copy-button" data-clipboard-text="https://s3.amazonaws.com/datomic-cloud-1/cft/668-8927/datomic-storage-668-8927.json" label="Copy to clipboard" title="copy CF URL to clipboard" type="button">668-8927</button>`   `<button class="copy-button" data-clipboard-text="https://s3.amazonaws.com/datomic-cloud-1/cft/668-8927/datomic-solo-compute-668-8927.json" label="Copy to clipboard" title="copy CF URL to clipboard" type="button">668-8927</button>`   `<button class="copy-button" data-clipboard-text="https://s3.amazonaws.com/datomic-cloud-1/cft/668-8927/datomic-production-compute-668-8927.json" label="Copy to clipboard" title="copy CF URL to clipboard" type="button">668-8927</button>`   `<button class="copy-button" data-clipboard-text="https://s3.amazonaws.com/datomic-cloud-1/cft/668-8927/datomic-query-group-668-8927.json" label="Copy to clipboard" title="copy CF URL to clipboard" type="button">668-8927</button>`  - New feature: [qseq](query/query-executing.html#qseq)
+- New feature: [index-pull](query/query-index-pull.html)
+- New feature: [xform](query/query-pull.html#xform-option)
+- Enhancement: Improve index efficiency.
+- Enhancement: Improve performance of pull in queries.
+- Enhancement: Improve internal record keeping of active databases that could lead to spurious error messages.
+- Enhancement: Base AMI is now sourced from Amazon Linux 2, and includes recent security updates
+
+> **Upgrade:** As recommended by AWS, we have upgraded our base AMI to Amazon Linux 2 \[<https://aws.amazon.com/blogs/aws/update-on-amazon-linux-ami-end-of-life/>\]. This new AMI includes a breaking change to the linux netcat utility that Ions use to deploy new code to a cluster. We encourage all users of Ions to upgrade to [version 0.9.265](#ion-dev-265) or later of ion-dev prior to upgrading to this release.
+
+
+
+
+
+2020/05/14 - 0.9.265 - ion-dev &amp;&amp; 0.9.43 - ion
+------------------------------------------------------
+
+   [Ion](operation/howto.html#ion)   [Ion dev](operation/howto.html#ion-dev)     `        <button class="copy-button" data-clipboard-text="com.datomic/ion "0.9.43"" label="Copy to clipboard" title="copy CF URL to clipboard" type="button">0.9.43</button>`   `        <button class="copy-button" data-clipboard-text="com.datomic/ion-dev "0.9.265"" label="Copy to clipboard" title="copy CF URL to clipboard" type="button">0.9.265</button>`  - Enhancement: Calculate transitive list of dependencies in [`:dependency-conflict` map](ions/ions-reference.html#dependency-conflicts)
+- Update dep list for [Cloud 668-8927](#668-8927) release
+
+
+
+
+
+2020/05/14 - 0.8.96 - Client-Cloud Update
+-----------------------------------------
+
+   [client-cloud](client/client-api.html#installing)     `        <button class="copy-button" data-clipboard-text="com.datomic/client-cloud "0.8.98"" label="Copy to clipboard" title="copy CF URL to clipboard" type="button">0.8.98</button>`  - New feature: [qseq](query/query-executing.html#qseq)
+- New feature: [index-pull](query/query-index-pull.html)
+- Updated jetty dependencies from 9.4.24.v20191120 to 9.4.27.v20200227.
+
+
+
+
+
+2020/04/28 - 0.10.82 - [CLI Tools](operation/cli-tools.html)
+------------------------------------------------------------
+
+   [CLI Tools](/operation/cli-tools.html)     [0.10.82](https://datomic-releases-1fc2183a.s3.amazonaws.com/tools/datomic-cli/datomic-cli-0.10.82.zip)  - Enhancement: Add `–ssho` option to the [gateway restart command](operation/cli-tools.html#restart) to pass ssh configuration options as if using `ssh -o &lt;option&gt;`
+
+
+
+
+
+2020/02/21 - 616-8879 - Compute Update
+--------------------------------------
+
+   [Storage](operation/upgrading.html#storage-only-upgrade)   [Solo Compute](operation/upgrading.html#compute-only-upgrade)   [Production Compute](operation/upgrading.html#compute-only-upgrade)   [Query Groups](operation/compute-template.html)     `<button class="copy-button" data-clipboard-text="https://s3.amazonaws.com/datomic-cloud-1/cft/616-8879/datomic-storage-616-8879.json" label="Copy to clipboard" title="copy CF URL to clipboard" type="button">616-8879</button>`   `<button class="copy-button" data-clipboard-text="https://s3.amazonaws.com/datomic-cloud-1/cft/616-8879/datomic-solo-compute-616-8879.json" label="Copy to clipboard" title="copy CF URL to clipboard" type="button">616-8879</button>`   `<button class="copy-button" data-clipboard-text="https://s3.amazonaws.com/datomic-cloud-1/cft/616-8879/datomic-production-compute-616-8879.json" label="Copy to clipboard" title="copy CF URL to clipboard" type="button">616-8879</button>`   `<button class="copy-button" data-clipboard-text="https://s3.amazonaws.com/datomic-cloud-1/cft/616-8879/datomic-query-group-616-8879.json" label="Copy to clipboard" title="copy CF URL to clipboard" type="button">616-8879</button>`  - New feature: `\[:db/retract eid aid\]` will retract all values for an eid/aid combination.
+- Critical Fix: regression introduced in 569-8835 where `datoms`, `seek-datoms`, and `index-range` return incorrect results if `Iterable.iterator` is called more than once on the returned value.
+- Fix: respect `nil` as a limit in query `pull` expression.
+- Fix: respect `false` as a default in query `pull` expressions for boolean-valued attributes.
+- Fix: allow arbitrary `java.util.List` (not just Clojure vectors) for lookup refs.
+
+
+
+
+
+2020/02/19 - 0.10.81 - [CLI Tools](operation/cli-tools.html)
+------------------------------------------------------------
+
+   [CLI Tools](/operation/cli-tools.html)     [0.10.81](https://datomic-releases-1fc2183a.s3.amazonaws.com/tools/datomic-cli/datomic-cli-0.10.81.zip)  - Many new features - [see docs](operation/cli-tools.html)
+
+
+
+
+
+2020/02/03 - 0.9.251 - ion-dev
+------------------------------
+
+   [Ion dev](operation/howto.html#ion-dev)     `        <button class="copy-button" data-clipboard-text="com.datomic/ion-dev "0.9.251"" label="Copy to clipboard" title="copy CF URL to clipboard" type="button">0.9.251</button>`  - Increase timeout for how long a deployment will wait for dependencies to sync on an instance
+
+
+
+
+
+2020/01/20 - 589-8846 - Storage and Compute Update
+--------------------------------------------------
+
+   [Storage](operation/upgrading.html#storage-only-upgrade)   [Solo Compute](operation/upgrading.html#compute-only-upgrade)   [Production Compute](operation/upgrading.html#compute-only-upgrade)   [Query Groups](operation/compute-template.html)     `<button class="copy-button" data-clipboard-text="https://s3.amazonaws.com/datomic-cloud-1/cft/589-8846/datomic-storage-589-8846.json" label="Copy to clipboard" title="copy CF URL to clipboard" type="button">589-8846</button>`   `<button class="copy-button" data-clipboard-text="https://s3.amazonaws.com/datomic-cloud-1/cft/589-8846/datomic-solo-compute-589-8846.json" label="Copy to clipboard" title="copy CF URL to clipboard" type="button">589-8846</button>`   `<button class="copy-button" data-clipboard-text="https://s3.amazonaws.com/datomic-cloud-1/cft/589-8846/datomic-production-compute-589-8846.json" label="Copy to clipboard" title="copy CF URL to clipboard" type="button">589-8846</button>`   `<button class="copy-button" data-clipboard-text="https://s3.amazonaws.com/datomic-cloud-1/cft/589-8846/datomic-query-group-589-8846.json" label="Copy to clipboard" title="copy CF URL to clipboard" type="button">589-8846</button>`  - New region: `sa-east-1`
+- Better tagging of resources created by Datomic
+- Fixed problem using with-db from ions
+
+
+
+
+
+2019/11/26 - [CLI Tools](operation/cli-tools.html) - 0.9.33
+-----------------------------------------------------------
+
+   [CLI Tools](/operation/cli-tools.html)     [0.9.33](https://datomic-releases-1fc2183a.s3.amazonaws.com/tools/datomic-cli/datomic-cli-0.9.33.zip)  - Note: This release requires a version of Datomic Cloud 569-8835 or newer
+- Enhancement: `datomic-gateway restart` now just restarts the process running on the access gateway, instead of restarting the whole instance. This results in faster restart times when making configuration changes. Restarting a bastion-only access gateway has no effect.
+- Enhancement: Automatically retrieve the hostkey from the access gateway. There will no longer be a warning about the authenticity of the host.
+
+
+
+
+
+2019/11/26 - 569-8835 - Storage and Compute Update
+--------------------------------------------------
+
+   [Storage](operation/upgrading.html#storage-only-upgrade)   [Solo Compute](operation/upgrading.html#compute-only-upgrade)   [Production Compute](operation/upgrading.html#compute-only-upgrade)   [Query Groups](operation/compute-template.html)     `<button class="copy-button" data-clipboard-text="https://s3.amazonaws.com/datomic-cloud-1/cft/569-8835/datomic-storage-569-8835.json" label="Copy to clipboard" title="copy CF URL to clipboard" type="button">569-8835</button>`   `<button class="copy-button" data-clipboard-text="https://s3.amazonaws.com/datomic-cloud-1/cft/569-8835/datomic-solo-compute-569-8835.json" label="Copy to clipboard" title="copy CF URL to clipboard" type="button">569-8835</button>`   `<button class="copy-button" data-clipboard-text="https://s3.amazonaws.com/datomic-cloud-1/cft/569-8835/datomic-production-compute-569-8835.json" label="Copy to clipboard" title="copy CF URL to clipboard" type="button">569-8835</button>`   `<button class="copy-button" data-clipboard-text="https://s3.amazonaws.com/datomic-cloud-1/cft/569-8835/datomic-query-group-569-8835.json" label="Copy to clipboard" title="copy CF URL to clipboard" type="button">569-8835</button>`  - Fix: resolve tempids for reference attributes inside tuples.
+- Enhancement: performance improvement for range predicates in analytics support
+- Enhancement: SSH public keys automatically handled by access gateway and proxy script
+- Enhancement: AutoScalingGroup details exposed as CloudFormation Outputs
+- Enhancement: [JDBC metadata](analytics/analytics-configuring.html#jdbc-metadata) support in analytics
+- Upgrade: AWS Lambda Runtimes moved to NodeJs 10.x
+
+
+
+
+
+2019/11/19 - 0.9.247 - ion-dev
+------------------------------
+
+   [Ion dev](operation/howto.html#ion-dev)     `        <button class="copy-button" data-clipboard-text="com.datomic/ion-dev "0.9.247"" label="Copy to clipboard" title="copy CF URL to clipboard" type="button">0.9.247</button>`  - Better error message for invalid ion-config.edn.
+- Update commands to match the preferred approach of [installing ion-dev in your user deps.edn](operation/howto.html#ion-dev)
+- Use slf4j-simple to prevent console warning when invoking tools.
+
+
+
+
+
+2019/11/14 - 0.8.81 - Client-Cloud Update
+-----------------------------------------
+
+   [client-cloud](client/client-api.html#installing)     `        <button class="copy-button" data-clipboard-text="com.datomic/client-cloud "0.8.81"" label="Copy to clipboard" title="copy CF URL to clipboard" type="button">0.8.81</button>`  - Documentation string updates
+
+
+
+
+
+2019/11/12 - 0.9.240 - ion-dev
+------------------------------
+
+   [Ion dev](operation/howto.html#ion-dev)     `        <button class="copy-button" data-clipboard-text="com.datomic/ion-dev "0.9.240"" label="Copy to clipboard" title="copy CF URL to clipboard" type="button">0.9.240</button>`  - Upgrade Clojure tools.deps.alpha to 0.8.584
+
+
+
+
+
+2019/11/06 - [CLI Tools](operation/cli-tools.html) - 0.9.21
+-----------------------------------------------------------
+
+   [CLI Tools](/operation/cli-tools.html)     [0.9.21](https://datomic-releases-1fc2183a.s3.amazonaws.com/tools/datomic-cli/datomic-cli-0.9.21.zip)  - Enhancement: Added `--ssho` to allow any SSH -o option to be passed, removed `--no-host-key-checking` option
+- `--instance-wait` option renamed to `--wait`
+
+
+
+
+
+2019/10/01 - 535-8812 - Compute Template Update
+-----------------------------------------------
+
+   [Storage](operation/upgrading.html#storage-only-upgrade)   [Solo Compute](operation/upgrading.html#compute-only-upgrade)   [Production Compute](operation/upgrading.html#compute-only-upgrade)   [Query Groups](operation/compute-template.html)     `<button class="copy-button" data-clipboard-text="https://s3.amazonaws.com/datomic-cloud-1/cft/535-8812/datomic-storage-535-8812.json" label="Copy to clipboard" title="copy CF URL to clipboard" type="button">535-8812</button>`   `<button class="copy-button" data-clipboard-text="https://s3.amazonaws.com/datomic-cloud-1/cft/535-8812/datomic-solo-compute-535-8812.json" label="Copy to clipboard" title="copy CF URL to clipboard" type="button">535-8812</button>`   `<button class="copy-button" data-clipboard-text="https://s3.amazonaws.com/datomic-cloud-1/cft/535-8812/datomic-production-compute-535-8812.json" label="Copy to clipboard" title="copy CF URL to clipboard" type="button">535-8812</button>`   `<button class="copy-button" data-clipboard-text="https://s3.amazonaws.com/datomic-cloud-1/cft/535-8812/datomic-query-group-535-8812.json" label="Copy to clipboard" title="copy CF URL to clipboard" type="button">535-8812</button>`  - Fix: prevent exception thrown when handling COUNT(\*) clauses in analytics support.
+- Fix: do not create redundant `:db.install/attribute` datoms for idempotent schema operations.
+- Update transactor Clojure dependency to 1.10.1.
+- Enhancement: New AWS Region - ap-northeast-1.
+
+
+
+
+
+2019/10/01 - [CLI Tools](operation/cli-tools.html) - 0.9.11
+-----------------------------------------------------------
+
+   [CLI Tools](/operation/cli-tools.html)     [0.9.11](https://datomic-releases-1fc2183a.s3.amazonaws.com/tools/datomic-cli/datomic-cli-0.9.11.zip)  - Initial release of [CLI tools](operation/howto.html#cli-tools)
+
+
+
+
+
+2019/10/01 - 512-8806 - Storage and Compute Template Update
+-----------------------------------------------------------
+
+   [Storage](operation/upgrading.html#storage-only-upgrade)   [Solo Compute](operation/upgrading.html#compute-only-upgrade)   [Production Compute](operation/upgrading.html#compute-only-upgrade)   [Query Groups](operation/compute-template.html)     `<button class="copy-button" data-clipboard-text="https://s3.amazonaws.com/datomic-cloud-1/cft/512-8806/datomic-storage-512-8806.json" label="Copy to clipboard" title="copy CF URL to clipboard" type="button">512-8806</button>`   `<button class="copy-button" data-clipboard-text="https://s3.amazonaws.com/datomic-cloud-1/cft/512-8806/datomic-solo-compute-512-8806.json" label="Copy to clipboard" title="copy CF URL to clipboard" type="button">512-8806</button>`   `<button class="copy-button" data-clipboard-text="https://s3.amazonaws.com/datomic-cloud-1/cft/512-8806/datomic-production-compute-512-8806.json" label="Copy to clipboard" title="copy CF URL to clipboard" type="button">512-8806</button>`   `<button class="copy-button" data-clipboard-text="https://s3.amazonaws.com/datomic-cloud-1/cft/512-8806/datomic-query-group-512-8806.json" label="Copy to clipboard" title="copy CF URL to clipboard" type="button">512-8806</button>`  - New feature preview: Analytics. See <https://docs.datomic.com/cloud/analytics/analytics-concepts.html>.
+- Fix: Allow Datomic Cloud to launch correctly in accounts that have a large number of existing ASGs.
+
+
+
+
+
+2019/08/15 - 0.9.234 - ion-dev &amp;&amp; 0.9.35 - ion
+------------------------------------------------------
+
+   [Ion](operation/howto.html#ion)   [Ion dev](operation/howto.html#ion-dev)     `        <button class="copy-button" data-clipboard-text="com.datomic/ion "0.9.35"" label="Copy to clipboard" title="copy CF URL to clipboard" type="button">0.9.35</button>`   `        <button class="copy-button" data-clipboard-text="com.datomic/ion-dev "0.9.234"" label="Copy to clipboard" title="copy CF URL to clipboard" type="button">0.9.234</button>`  - Enhancement: allow for the inclusion of the target dir in the `:paths` list.
+
+
+
+
+
+2019/08/06 - 482-8794 - Compute Template Update
+-----------------------------------------------
+
+   [Storage](operation/upgrading.html#storage-only-upgrade)   [Solo Compute](operation/upgrading.html#compute-only-upgrade)   [Production Compute](operation/upgrading.html#compute-only-upgrade)   [Query Groups](operation/compute-template.html)     `<button class="copy-button" data-clipboard-text="https://s3.amazonaws.com/datomic-cloud-1/cft/482-8794/datomic-storage-482-8794.json" label="Copy to clipboard" title="copy CF URL to clipboard" type="button">482-8794</button>`   `<button class="copy-button" data-clipboard-text="https://s3.amazonaws.com/datomic-cloud-1/cft/482-8794/datomic-solo-compute-482-8794.json" label="Copy to clipboard" title="copy CF URL to clipboard" type="button">482-8794</button>`   `<button class="copy-button" data-clipboard-text="https://s3.amazonaws.com/datomic-cloud-1/cft/482-8794/datomic-production-compute-482-8794.json" label="Copy to clipboard" title="copy CF URL to clipboard" type="button">482-8794</button>`   `<button class="copy-button" data-clipboard-text="https://s3.amazonaws.com/datomic-cloud-1/cft/482-8794/datomic-query-group-482-8794.json" label="Copy to clipboard" title="copy CF URL to clipboard" type="button">482-8794</button>`  - New: Upgrade from t2 to t3 instances for bastion and query groups.
+- Fix: `tx-range` now returns a map with a `:data` key, consistent with the docs.
+- Fix: Correctly handle boolean attributes in composite tuples.
+- Fix: Prevent erroneous attempts to use Datomic On-Prem's excision feature.
+
+
+
+
+
+2019/07/09 - 480-8772 - Compute Template Update
+-----------------------------------------------
+
+   [Storage](operation/upgrading.html#storage-only-upgrade)   [Solo Compute](operation/upgrading.html#compute-only-upgrade)   [Production Compute](operation/upgrading.html#compute-only-upgrade)   [Query Groups](operation/compute-template.html)     `<button class="copy-button" data-clipboard-text="https://s3.amazonaws.com/datomic-cloud-1/cft/480-8772/datomic-storage-480-8772.json" label="Copy to clipboard" title="copy CF URL to clipboard" type="button">480-8772</button>`   `<button class="copy-button" data-clipboard-text="https://s3.amazonaws.com/datomic-cloud-1/cft/480-8772/datomic-solo-compute-480-8772.json" label="Copy to clipboard" title="copy CF URL to clipboard" type="button">480-8772</button>`   `<button class="copy-button" data-clipboard-text="https://s3.amazonaws.com/datomic-cloud-1/cft/480-8772/datomic-production-compute-480-8772.json" label="Copy to clipboard" title="copy CF URL to clipboard" type="button">480-8772</button>`   `<button class="copy-button" data-clipboard-text="https://s3.amazonaws.com/datomic-cloud-1/cft/480-8772/datomic-query-group-480-8772.json" label="Copy to clipboard" title="copy CF URL to clipboard" type="button">480-8772</button>`  - Fixed problem where databases that change an attribute from `:db.cardinality/one` to`:db.cardinality/many` may become unavailable after a process restart.
+
+
+
+
+
+2019/06/27 - 480-8770 - Compute Template Update
+-----------------------------------------------
+
+   [Storage](operation/upgrading.html#storage-only-upgrade)   [Solo Compute](operation/upgrading.html#compute-only-upgrade)   [Production Compute](operation/upgrading.html#compute-only-upgrade)   [Query Groups](operation/compute-template.html)     `<button class="copy-button" data-clipboard-text="https://s3.amazonaws.com/datomic-cloud-1/cft/480-8770/datomic-storage-480-8770.json" label="Copy to clipboard" title="copy CF URL to clipboard" type="button">480-8770</button>`   `<button class="copy-button" data-clipboard-text="https://s3.amazonaws.com/datomic-cloud-1/cft/480-8770/datomic-solo-compute-480-8770.json" label="Copy to clipboard" title="copy CF URL to clipboard" type="button">480-8770</button>`   `<button class="copy-button" data-clipboard-text="https://s3.amazonaws.com/datomic-cloud-1/cft/480-8770/datomic-production-compute-480-8770.json" label="Copy to clipboard" title="copy CF URL to clipboard" type="button">480-8770</button>`   `<button class="copy-button" data-clipboard-text="https://s3.amazonaws.com/datomic-cloud-1/cft/480-8770/datomic-query-group-480-8770.json" label="Copy to clipboard" title="copy CF URL to clipboard" type="button">480-8770</button>`  - New feature: [Tuples](https://docs.datomic.com/cloud/schema/schema-reference.html#tuples).
+- New feature: [Attribute predicates](https://docs.datomic.com/cloud/schema/schema-reference.html#attribute-predicates).
+- New feature: [Entity specs](https://docs.datomic.com/cloud/schema/schema-reference.html#entity-specs).
+- New feature: [Return maps](https://docs.datomic.com/cloud/query/query-data-reference.html#return-maps).
+- Fix: `sample` aggregate could hang query thread.
+
+
+
+
+
+2019/06/18 - 0.8.78 - Client-Cloud Update
+-----------------------------------------
+
+   [client-cloud](client/client-api.html#installing)     `        <button class="copy-button" data-clipboard-text="com.datomic/client-cloud "0.8.78"" label="Copy to clipboard" title="copy CF URL to clipboard" type="button">0.8.78</button>`  - New feature: [Return Maps](query/query-data-reference.html#return-maps).
+- New feature: Reverse references in `nav` (try it in [REBL](http://rebl.cognitect.com/download.html)).
+
+
+
+
+
+2019/06/04 - ion-dev 0.9.231
+----------------------------
+
+   [Ion dev](operation/howto.html#ion-dev)     `        <button class="copy-button" data-clipboard-text="com.datomic/ion-dev "0.9.231"" label="Copy to clipboard" title="copy CF URL to clipboard" type="button">0.9.231</button>`  - Improvement: Fixed issue where some older Java libraries could not be loaded in an ion application
+
+
+
+
+
+2019/05/16 - 477-8741 - Compute Template Update - [HTTP Direct](ions/ions-reference.html#http-direct-config)
+------------------------------------------------------------------------------------------------------------
+
+   [Storage](operation/upgrading.html#storage-only-upgrade)   [Solo Compute](operation/upgrading.html#compute-only-upgrade)   [Production Compute](operation/upgrading.html#compute-only-upgrade)   [Query Groups](operation/compute-template.html)     `<button class="copy-button" data-clipboard-text="https://s3.amazonaws.com/datomic-cloud-1/cft/477-8741/datomic-storage-477-8741.json" label="Copy to clipboard" title="copy CF URL to clipboard" type="button">477-8741</button>`   `<button class="copy-button" data-clipboard-text="https://s3.amazonaws.com/datomic-cloud-1/cft/477-8741/datomic-solo-compute-477-8741.json" label="Copy to clipboard" title="copy CF URL to clipboard" type="button">477-8741</button>`   `<button class="copy-button" data-clipboard-text="https://s3.amazonaws.com/datomic-cloud-1/cft/477-8741/datomic-production-compute-477-8741.json" label="Copy to clipboard" title="copy CF URL to clipboard" type="button">477-8741</button>`   `<button class="copy-button" data-clipboard-text="https://s3.amazonaws.com/datomic-cloud-1/cft/477-8741/datomic-query-group-477-8741.json" label="Copy to clipboard" title="copy CF URL to clipboard" type="button">477-8741</button>`  The 477-8741 release contains fixes, enhancements, and dependency updates:
+
+- Enhancement: [HTTP Direct](ions/ions-reference.html#http-direct-config) integration for ions.
+- Enhancement: Improved integration between ions and AWS Network Load Balancers. This eliminates transient errors during rolling deployments.
+- Enhancement: Improved integration between ions and AWS Lambda. This also eliminates transient errors.
+- Fix: Issue where cluster nodes could become unresponsive when serving multiple databases or a burst of `tx-range` queries.
+- Fix: Nested queries could deadlock the query pool on Solo nodes.
+- Fix: Increased direct memory on Production nodes to prevent out-of-direct-memory errors.
+- Update: Version 1.7.26 of org.slf4j libraries.
+
+
+
+
+
+2019/05/15 - 0.9.229 - ion-dev &amp;&amp; 0.9.34 - ion
+------------------------------------------------------
+
+   [Ion](operation/howto.html#ion)   [Ion dev](operation/howto.html#ion-dev)     `        <button class="copy-button" data-clipboard-text="com.datomic/ion "0.9.34"" label="Copy to clipboard" title="copy CF URL to clipboard" type="button">0.9.34</button>`   `        <button class="copy-button" data-clipboard-text="com.datomic/ion-dev "0.9.229"" label="Copy to clipboard" title="copy CF URL to clipboard" type="button">0.9.229</button>`  - New Feature: HTTP Direct
+- Enhancement: Improved integration between ions and AWS NLBs
+
+
+
+
+
+2019/04/25 - 470-8654.1 - Compute, Storage, and [Query Group](operation/compute-template.html#updating) Update
+--------------------------------------------------------------------------------------------------------------
+
+   [Storage](operation/upgrading.html#storage-only-upgrade)   [Solo Compute](operation/upgrading.html#compute-only-upgrade)   [Production Compute](operation/upgrading.html#compute-only-upgrade)   [Query Groups](operation/compute-template.html)     `<button class="copy-button" data-clipboard-text="https://s3.amazonaws.com/datomic-cloud-1/cft/470-8654.1/datomic-storage-470-8654.1.json" label="Copy to clipboard" title="copy CF URL to clipboard" type="button">470-8654.1</button>`   `<button class="copy-button" data-clipboard-text="https://s3.amazonaws.com/datomic-cloud-1/cft/470-8654.1/datomic-solo-compute-470-8654.1.json" label="Copy to clipboard" title="copy CF URL to clipboard" type="button">470-8654.1</button>`   `<button class="copy-button" data-clipboard-text="https://s3.amazonaws.com/datomic-cloud-1/cft/470-8654.1/datomic-production-compute-470-8654.1.json" label="Copy to clipboard" title="copy CF URL to clipboard" type="button">470-8654.1</button>`   `<button class="copy-button" data-clipboard-text="https://s3.amazonaws.com/datomic-cloud-1/cft/470-8654.1/datomic-query-group-470-8654.1.json" label="Copy to clipboard" title="copy CF URL to clipboard" type="button">470-8654.1</button>`  > **Note**Our Cloud Formation templates use node.js lambdas to create support functions for Cloud Formation. April 30th 2019 is the end of life date for AWS Lambda node.js runtime that we currently use.
+> 
+> Effective May 1, 2019, Datomic Cloud CloudFormation templates older than 4/25/2019 will no longer execute. Datomic systems launched with those templates will continue to run, but any template operations (launching or upgrading CloudFormation stacks) will fail.
+> 
+> All Datomic Cloud users should [upgrade](operation/upgrading.html) to [470-8654.1](#470-8654.1) at their earliest convenience.
+> 
+> For more information see the AWS [runtime support policy](https://docs.aws.amazon.com/lambda/latest/dg/runtime-support-policy.html).
+
+- Critical: Updated to Node.js 8.10 runtime. All Datomic Cloud users should [upgrade](operation/upgrading.html) at their earliest convenience.
+
+
+
+
+
+2019/02/22 - 470-8654 - Compute Template Update
+-----------------------------------------------
+
+   [Storage](operation/upgrading.html#storage-only-upgrade)   [Solo Compute](operation/upgrading.html#compute-only-upgrade)   [Production Compute](operation/upgrading.html#compute-only-upgrade)   [Query Groups](operation/compute-template.html)     `<button class="copy-button" data-clipboard-text="https://s3.amazonaws.com/datomic-cloud-1/cft/470-8654/datomic-storage-470-8654.json" label="Copy to clipboard" title="copy CF URL to clipboard" type="button">470-8654</button>`   `<button class="copy-button" data-clipboard-text="https://s3.amazonaws.com/datomic-cloud-1/cft/470-8654/datomic-solo-compute-470-8654.json" label="Copy to clipboard" title="copy CF URL to clipboard" type="button">470-8654</button>`   `<button class="copy-button" data-clipboard-text="https://s3.amazonaws.com/datomic-cloud-1/cft/470-8654/datomic-production-compute-470-8654.json" label="Copy to clipboard" title="copy CF URL to clipboard" type="button">470-8654</button>`   `<button class="copy-button" data-clipboard-text="https://s3.amazonaws.com/datomic-cloud-1/cft/470-8654/datomic-query-group-470-8654.json" label="Copy to clipboard" title="copy CF URL to clipboard" type="button">470-8654</button>`  > **Note** If you have created a VPC Endpoint using the provided CloudFormation Template, you will need to delete that CloudFormation Stack prior to upgrading to this version of Datomic Cloud.
+> 
+> Attempting to upgrade to or past this release without deleting the Stack will result in a failed update with the message: `Export <SystemName>-VpcEndpointServiceName cannot be deleted as it is in use by <SystemName>-vpc-endpoint`
+> 
+> See [the troubleshooting documentation](troubleshooting.html#vpc-endpoint-stack) for more information.
+
+The 470-8654 release contains fixes, enhancements, and dependency updates:
+
+- Fix: Production nodes now use the [documented -Xss values](ions/ions-reference.html#jvm-settings) for starting the JVM, preventing stack overflow when compiling complex ion applications.
+- Fix: Fixed bug where ion connections could fail to become aware of recent transactions in a timely manner.
+- Fix: Allow bigint values in transaction data.
+- Fix: Corrected allowlist handling of function calls from datalog rules.
+- Enhancement: New AWS Region - ap-southeast-1.
+- Enhancement: Improved valcache cleanup algorithm.
+- Enhancement: Reduce storage overhead of transactions.
+- Enhancement: Defer creation of VPC Endpoint Service until specifically needed for [cross-VPC client access](operation/vpc-access.html#separate-vpc).
+- Update to version 2.9.8 of [Jackson](https://github.com/FasterXML/jackson).
+- Update to version 1.11.479 of the [AWS SDK for Java](https://aws.amazon.com/sdk-for-java/).
+
+
+
+
+
+2018/12/10 - 454-8573 - Compute Template Update
+-----------------------------------------------
+
+   [Storage](operation/upgrading.html#storage-only-upgrade)   [Solo Compute](operation/upgrading.html#compute-only-upgrade)   [Production Compute](operation/upgrading.html#compute-only-upgrade)   [Query Groups](operation/compute-template.html)     `<button class="copy-button" data-clipboard-text="https://s3.amazonaws.com/datomic-cloud-1/cft/454-8573/datomic-storage-454-8573.json" label="Copy to clipboard" title="copy CF URL to clipboard" type="button">454-8573</button>`   `<button class="copy-button" data-clipboard-text="https://s3.amazonaws.com/datomic-cloud-1/cft/454-8573/datomic-solo-compute-454-8573.json" label="Copy to clipboard" title="copy CF URL to clipboard" type="button">454-8573</button>`   `<button class="copy-button" data-clipboard-text="https://s3.amazonaws.com/datomic-cloud-1/cft/454-8573/datomic-production-compute-454-8573.json" label="Copy to clipboard" title="copy CF URL to clipboard" type="button">454-8573</button>`   `<button class="copy-button" data-clipboard-text="https://s3.amazonaws.com/datomic-cloud-1/cft/454-8573/datomic-query-group-454-8573.json" label="Copy to clipboard" title="copy CF URL to clipboard" type="button">454-8573</button>`  The 454-8573 release contains a number of performance and availability enhancements:
+
+- Enhancement: You can configure systems to [preload a database](setting-up.html) before serving requests, eliminating a source of [unavailable anomalies](https://github.com/cognitect-labs/anomalies#the-categories).
+- Enhancement: Ion deployments [load active databases before serving requests](ions/ions-reference.html#deploy), eliminating a source of [unavailable anomalies](https://github.com/cognitect-labs/anomalies#the-categories).
+- Enhancement: Improved throughput for transactions initiated by ion applications running the Production Topology.
+- Enhancement: Improved performance for systems that create and delete many databases (e.g. test systems)
+- Enhancement: Improvements to logging.
+
+
+
+
+
+2018/12/10 - 0.9.186 - ion-dev &amp;&amp; 0.9.28 - ion
+------------------------------------------------------
+
+   [Ion](operation/howto.html#ion)   [Ion dev](operation/howto.html#ion-dev)     `        <button class="copy-button" data-clipboard-text="com.datomic/ion "0.9.28"" label="Copy to clipboard" title="copy CF URL to clipboard" type="button">0.9.28</button>`   `        <button class="copy-button" data-clipboard-text="com.datomic/ion-dev "0.9.186"" label="Copy to clipboard" title="copy CF URL to clipboard" type="button">0.9.186</button>`  - Enhancement: Increase CodeDeploy timeout to 5 minutes.
+- Enhancement: Include doc strings for user facing functions in build artifact
+
+
+
+
+
+2018/11/28 - 0.8.71 - Client-Cloud update
+-----------------------------------------
+
+   [client-cloud](client/client-api.html#installing)     `        <button class="copy-button" data-clipboard-text="com.datomic/client-cloud "0.8.71"" label="Copy to clipboard" title="copy CF URL to clipboard" type="button">0.8.71</button>`  - Add compatibility with com.cognitect/aws-api
+- Add Datafy
+- Upgraded http-client to 0.1.87
+- Improved error reporting
+
+
+
+
+
+2018/10/10 - 441-8505 - Critical Update - Compute Template Update
+-----------------------------------------------------------------
+
+   [Storage](operation/upgrading.html#storage-only-upgrade)   [Solo Compute](operation/upgrading.html#compute-only-upgrade)   [Production Compute](operation/upgrading.html#compute-only-upgrade)   [Query Groups](operation/compute-template.html)     `<button class="copy-button" data-clipboard-text="https://s3.amazonaws.com/datomic-cloud-1/cft/441-8505/datomic-storage-441-8505.json" label="Copy to clipboard" title="copy CF URL to clipboard" type="button">441-8505</button>`   `<button class="copy-button" data-clipboard-text="https://s3.amazonaws.com/datomic-cloud-1/cft/441-8505/datomic-solo-compute-441-8505.json" label="Copy to clipboard" title="copy CF URL to clipboard" type="button">441-8505</button>`   `<button class="copy-button" data-clipboard-text="https://s3.amazonaws.com/datomic-cloud-1/cft/441-8505/datomic-production-compute-441-8505.json" label="Copy to clipboard" title="copy CF URL to clipboard" type="button">441-8505</button>`   `<button class="copy-button" data-clipboard-text="https://s3.amazonaws.com/datomic-cloud-1/cft/441-8505/datomic-query-group-441-8505.json" label="Copy to clipboard" title="copy CF URL to clipboard" type="button">441-8505</button>`  Release 441-8505 includes critical updates. All users of the Production Topology and Query Groups should [upgrade](operation/operation/upgrading.html) to 441-8505 immediately. The Solo Topology is not affected.
+
+- Critical: fixes a problem that can cause portions of the log to become inaccessible. Please update as soon as possible.
+
+
+
+
+
+2018/09/07 - 441-8477 - Compute Template Update
+-----------------------------------------------
+
+   [Storage](operation/upgrading.html#storage-only-upgrade)   [Solo Compute](operation/upgrading.html#compute-only-upgrade)   [Production Compute](operation/upgrading.html#compute-only-upgrade)   [Query Groups](operation/compute-template.html)     `<button class="copy-button" data-clipboard-text="https://s3.amazonaws.com/datomic-cloud-1/cft/441-8477/datomic-storage-441-8477.template" label="Copy to clipboard" title="copy CF URL to clipboard" type="button">441-8477</button>`   `<button class="copy-button" data-clipboard-text="https://s3.amazonaws.com/datomic-cloud-1/cft/441-8477/datomic-solo-compute-441-8477.template" label="Copy to clipboard" title="copy CF URL to clipboard" type="button">441-8477</button>`   `<button class="copy-button" data-clipboard-text="https://s3.amazonaws.com/datomic-cloud-1/cft/441-8477/datomic-production-compute-441-8477.template" label="Copy to clipboard" title="copy CF URL to clipboard" type="button">441-8477</button>`   `<button class="copy-button" data-clipboard-text="https://s3.amazonaws.com/datomic-cloud-1/cft/441-8477/datomic-query-group-441-8477.template" label="Copy to clipboard" title="copy CF URL to clipboard" type="button">441-8477</button>`  - New feature: [query groups](whatis/architecture.html#query-groups).
+- New instance type option: i3.xlarge for [Production](whatis/architecture.html#production-topology).
+- Improved memory settings: more stack space for [Solo](whatis/architecture.html#solo-topology), more heap space for Production.
+- Bugfix: fixed bug that could prevent a Production node from beginning indexing jobs.
+
+
+
+
+
+2018/08/21 - 0.8.63 - Client-Cloud update
+-----------------------------------------
+
+   [client-cloud](client/client-api.html#installing)     `        <button class="copy-button" data-clipboard-text="com.datomic/client-cloud "0.8.63"" label="Copy to clipboard" title="copy CF URL to clipboard" type="button">0.8.63</button>`  - Bugfix: fixed bug that could cause a `with` database query to go to the wrong node in a production cluster.
+- Bugfix: fixed Jetty configuration that could cause a client to prevent JVM from shutting down.
+- Upgraded transit-clj to 0.8.313
+- `:query-group` parameter is no longer required in the client arg-map
+
+
+
+
+
+2018/08/15 - 0.9.176 - ion-dev &amp;&amp; 0.9.26 - ion
+------------------------------------------------------
+
+   [Ion](operation/howto.html#ion)   [Ion dev](operation/howto.html#ion-dev)     `        <button class="copy-button" data-clipboard-text="com.datomic/ion "0.9.26"" label="Copy to clipboard" title="copy CF URL to clipboard" type="button">0.9.26</button>`   `        <button class="copy-button" data-clipboard-text="com.datomic/ion-dev "0.9.176"" label="Copy to clipboard" title="copy CF URL to clipboard" type="button">0.9.176</button>`  - Enhancement: [parameters](ions/ions-reference.html#parameters) library for working with the [AWS Systems Manager Parameter Store](https://docs.aws.amazon.com/systems-manager/latest/userguide/systems-manager-paramstore.html)
+
+
+
+
+
+2018/08/15 - 409-8407 - Compute Template Update
+-----------------------------------------------
+
+   [Storage](operation/upgrading.html#storage-only-upgrade)   [Solo Compute](operation/upgrading.html#compute-only-upgrade)   [Production Compute](operation/upgrading.html#compute-only-upgrade)     `<button class="copy-button" data-clipboard-text="https://s3.amazonaws.com/datomic-cloud-1/cft/409-8407/datomic-storage-409-8407.json" label="Copy to clipboard" title="copy CF URL to clipboard" type="button">409-8407</button>`   `<button class="copy-button" data-clipboard-text="https://s3.amazonaws.com/datomic-cloud-1/cft/409-8407/datomic-solo-compute-409-8407.json" label="Copy to clipboard" title="copy CF URL to clipboard" type="button">409-8407</button>`   `<button class="copy-button" data-clipboard-text="https://s3.amazonaws.com/datomic-cloud-1/cft/409-8407/datomic-production-compute-409-8407.json" label="Copy to clipboard" title="copy CF URL to clipboard" type="button">409-8407</button>`  - Bugfix: allow retraction of `:db/unique` attributes
+- Bugfix: coerce `Integer` values to long when needed in transactions
+- Enhancement: better memory utilization allows larger query results
+- Enhancement: automatically rollback deployments when an ion application fails to load
+- Added support for `ap-southeast-2` (Sydney) region
+
+
+
+
+
+2018/07/10 - 0.9.173 - ion-dev &amp;&amp; 0.9.14 - ion
+------------------------------------------------------
+
+   [Ion](operation/howto.html#ion)   [Ion dev](operation/howto.html#ion-dev)     `        <button class="copy-button" data-clipboard-text="com.datomic/ion "0.9.14"" label="Copy to clipboard" title="copy CF URL to clipboard" type="button">0.9.14</button>`   `        <button class="copy-button" data-clipboard-text="com.datomic/ion-dev "0.9.173"" label="Copy to clipboard" title="copy CF URL to clipboard" type="button">0.9.173</button>`  - New Feature: `datomic.ion.cast` library for [monitoring ions](ions/ions-monitoring.html)
+- Bugfix: fixed race condition in ion code loading that could allow ion invocation before namespace completely loaded
+- Enhancement: [warn on dependency conflicts](ions/ions-reference.html#dependency-conflicts)
+- Improvement: prefer shell-friendly symbols instead of strings as arguments to datomic.ion.dev CLI commands
+- Improvement: better error messaging when [deploying](ions/ions-reference.html#deploy) to the wrong region.
+- Improvement: list available deploy groups in [push output](ions/ions-reference.html#push)
+- Improvement: enforce the requirement for `:uname` when project has a `:local/root` in deps.edn.
+
+
+
+
+
+2018/07/02 - 0.8.56 - Client Cloud Update
+-----------------------------------------
+
+- Enhancement: added sync to client API. See <https://docs.datomic.com/cloud/transcactions/client-synchronization.html>
+- Better error message when unable to connect to cluster or proxy.
+
+
+
+
+
+2018/06/29 - 402-8396 - Compute Template Update
+-----------------------------------------------
+
+   [Storage](operation/upgrading.html#storage-only-upgrade)   [Solo Compute](operation/upgrading.html#compute-only-upgrade)   [Production Compute](operation/upgrading.html#compute-only-upgrade)     `<button class="copy-button" data-clipboard-text="https://s3.amazonaws.com/datomic-cloud-1/cft/402-8396/datomic-storage-402-8396.json" label="Copy to clipboard" title="copy CF URL to clipboard" type="button">402-8396</button>`   `<button class="copy-button" data-clipboard-text="https://s3.amazonaws.com/datomic-cloud-1/cft/402-8396/datomic-solo-compute-402-8396.json" label="Copy to clipboard" title="copy CF URL to clipboard" type="button">402-8396</button>`   `<button class="copy-button" data-clipboard-text="https://s3.amazonaws.com/datomic-cloud-1/cft/402-8396/datomic-production-compute-402-8396.json" label="Copy to clipboard" title="copy CF URL to clipboard" type="button">402-8396</button>`  - Upgraded AWS libs to 1.11.349
+- Upgraded Jackson libs to 2.9.5
+- Fixed cache problem where all `d/with` databases deriving from a common initial call to `d/with-db` had the same common value.
+
+
+
+
+
+2018/06/06 - 0.8.54 - client-cloud Update
+-----------------------------------------
+
+   [client-cloud](client/client-api.html#installing)     `        <button class="copy-button" data-clipboard-text="com.datomic/client-cloud "0.8.54"" label="Copy to clipboard" title="copy CF URL to clipboard" type="button">0.8.54</button>`  - Enhancement: added [:server-type :ion](ions/ions-reference.html#server-type-ion)
+- Enhancement: ensure recentness of `d/db conn`
+
+
+
+
+
+2018/06/06 - 397-8384 - Storage and Compute Template Update
+-----------------------------------------------------------
+
+   [Storage](operation/upgrading.html#storage-only-upgrade)   [Solo Compute](operation/upgrading.html#compute-only-upgrade)   [Production Compute](operation/upgrading.html#compute-only-upgrade)     `<button class="copy-button" data-clipboard-text="https://s3.amazonaws.com/datomic-cloud-1/cft/397-8384/datomic-storage-397-8384.json" label="Copy to clipboard" title="copy CF URL to clipboard" type="button">397-8384</button>`   `<button class="copy-button" data-clipboard-text="https://s3.amazonaws.com/datomic-cloud-1/cft/397-8384/datomic-solo-compute-397-8384.json" label="Copy to clipboard" title="copy CF URL to clipboard" type="button">397-8384</button>`   `<button class="copy-button" data-clipboard-text="https://s3.amazonaws.com/datomic-cloud-1/cft/397-8384/datomic-production-compute-397-8384.json" label="Copy to clipboard" title="copy CF URL to clipboard" type="button">397-8384</button>`  - Enhancement: [Datomic Ions](ions/ions.html)
+- Improvement: Replaced Application Load Balancer with Network Load Balancer. If your applications run in a separate VPC you will need to [configure a VPC endpoint](operation/vpc-access.html#separate-vpc).
+
+
+
+
+
+2018/02/21 - 303-8300 - Storage and Compute Template Update
+-----------------------------------------------------------
+
+   [Storage](operation/upgrading.html#storage-only-upgrade)   [Solo Compute](operation/upgrading.html#compute-only-upgrade)   [Production Compute](operation/upgrading.html#compute-only-upgrade)     `<button class="copy-button" data-clipboard-text="https://s3.amazonaws.com/datomic-cloud-1/cft/303-8300/datomic-storage-303-8300.json" label="Copy to clipboard" title="copy CF URL to clipboard" type="button">303-8300</button>`   `<button class="copy-button" data-clipboard-text="https://s3.amazonaws.com/datomic-cloud-1/cft/303-8300/datomic-solo-compute-303-8300.json" label="Copy to clipboard" title="copy CF URL to clipboard" type="button">303-8300</button>`   `<button class="copy-button" data-clipboard-text="https://s3.amazonaws.com/datomic-cloud-1/cft/303-8300/datomic-production-compute-303-8300.json" label="Copy to clipboard" title="copy CF URL to clipboard" type="button">303-8300</button>`  - Bugfix: doubles and floats allowed in transactions
+- Bugfix: avoid unnecessary ":AdopterSkippedOlder" alert when creating new database
+- Update: latest Amazon Linux patches
+- Improvement: better error handling in Storage template
+- Improvement: reduce memcached timeout
+
+
+
+
+
+2018/01/15 - 297-8291 - Initial Release
+---------------------------------------
+
+   [Storage](operation/upgrading.html#storage-only-upgrade)   [Solo Compute](operation/upgrading.html#compute-only-upgrade)   [Production Compute](operation/upgrading.html#compute-only-upgrade)     `<button class="copy-button" data-clipboard-text="https://s3.amazonaws.com/datomic-cloud-1/cft/297-8291/datomic-storage-297-8291.json" label="Copy to clipboard" title="copy CF URL to clipboard" type="button">297-8291</button>`   `<button class="copy-button" data-clipboard-text="https://s3.amazonaws.com/datomic-cloud-1/cft/297-8291/datomic-solo-compute-297-8291.json" label="Copy to clipboard" title="copy CF URL to clipboard" type="button">297-8291</button>`   `<button class="copy-button" data-clipboard-text="https://s3.amazonaws.com/datomic-cloud-1/cft/297-8291/datomic-production-compute-297-8291.json" label="Copy to clipboard" title="copy CF URL to clipboard" type="button">297-8291</button>`

@@ -1,0 +1,77 @@
+Transactor
+==========
+
+Running the Transactor
+----------------------
+
+A Datomic transactor performs ACID transactions for a set of databases. You can launch a transactor for one or more databases with the bin/transactor script in the datomic directory:
+
+```
+<pre class="src src-bash">bin/transactor path/to/transactor-template.properties
+```
+
+
+
+The transactor properties file needs to include *license-key* from your my.datomic registered account. For information on launching a second transactor for high availability, see [configuring high availability](../operation/ha.html).
+
+If you set a `pid-file` in the transactor properties file, Datomic will write the current process ID to that file on startup.
+
+The transactor startup script accepts JVM arguments, but please note that JVM args other than `-Xmx` and `-Xms` passed to `bin/transactor` (including Java system properties passed via `-D`) override Datomic's recommended Java options, including the GC settings.
+
+JVM ArgumentDev Default SettingProd Default SettingMax HeapXmx1gXmx4gInitial Heap sizeXms1gXms4gGC Settings-XX:+UseG1GC-XX:+UseG1GC -XX:MaxGCPauseMillis=50-XX:MaxGCPauseMillis=50For information on supported storages and how transactors interact with peers see [storage services](../overview/storage.html) and [peers](../peer/peer-getting-started.html).
+
+
+
+### Health Check Endpoint
+
+A web endpoint for health check is **not** needed for the Datomic transactor. The Datomic transactor is not a web application, and Datomic [High Availability](../operation/ha.html) takes care of transactor health automatically.
+
+However, some tools have a checklist requirement that all processes provide a health check endpoint. If you need one, Datomic Pro lets you set a health check host and port in the transactor properties file:
+
+```
+<pre class="src src-sh">ping-host=localhost
+ping-port=9999
+```
+
+
+
+Or on the command line:
+
+```
+<pre class="src src-sh">bin/transactor -Ddatomic.pingHost=localhost -Ddatomic.pingPort=9999 {etc.}
+```
+
+
+
+When the health check is enabled, Datomic will respond with a 2xx status code to HTTP requests for {host}:{port}/health, e.g.
+
+```
+<pre class="src src-sh">wget localhost:9999/health
+```
+
+
+
+```
+<pre class="src src-sh">=> HTTP request sent, awaiting response... 200 OK
+```
+
+
+
+
+
+
+
+
+
+Stopping the Transactor
+-----------------------
+
+The transactor does not perform any kind of cleanup, and can therefore be stopped any way you like. You can kill a Datomic transactor with a termination signal, e.g. `SIGTERM`, `SIGINT`, or `SIGKILL`. For example:
+
+```
+<pre class="src src-sh"><span style="color: #483d8b;">kill</span> $(DATOMIC_PROCESS_ID)
+```
+
+
+
+If you have an [HA standby](../operation/ha.html), it will take over transactions automatically when you kill an active transactor.

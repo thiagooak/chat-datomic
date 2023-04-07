@@ -1,0 +1,781 @@
+Setting Up Storage Services
+===========================
+
+This document walks through the process of provisioning a Storage Service and running a transactor. The steps are:
+
+- select and provision a [Storage Service](#storage-services)
+- [install license key](#install-license)
+- [start a Transactor](#start-transactor) with appropriate properties file
+- configure [storage client dependencies](#storage-client-dependencies) for your peer
+- [connect Peer Library to Transactor](#connecting-to-transactor) with Storage Service specific URI
+
+Storage Services
+----------------
+
+Storage Service options are listed here. Steps required to provision them and detailed instructions are included below (links provided here for convenience).
+
+- [Dev mode (dev)](#provisioning-dev-mode)
+- [SQL database (sql)](#sql-database)
+- [DynamoDB (ddb)](#provisioning-dynamo)
+- [Cassandra (cass)](#cassandra)
+- [Cassandra2 (cass2)](#cassandra2)
+
+Note that you can move an application from one Storage Service to another simply by switching the connection string used by peers and the properties file used to start the Transactor. All are fully API-compatible.
+
+All of the script commands described in this document must be executed from the root directory of the Datomic distribution.
+
+
+
+
+
+Request a Datomic Pro Starter Edition key
+-----------------------------------------
+
+You can get up and running on all supported storages by requesting a free Datomic Pro Starter Edition license key [here](https://my.datomic.com/starter).
+
+
+
+
+
+Storage client dependencies
+---------------------------
+
+Datomic depends on various storage client libraries. You can find the recommended versions of all storage client libraries in the `provided`scope of the Datomic pom.xml file:
+
+```
+<pre class="src src-sh">mvn dependency:list -DincludeScope=provided
+```
+
+
+
+These jars are included in the Datomic distribution `/lib`, and are used by the transactor to access the storage systems. Peers will need the jars corresponding to the storage system on their classpath as well.
+
+
+
+
+
+Provisioning dev mode
+---------------------
+
+The dev storage protocol is intended for development. It runs an embedded JDBC server inside the transactor, and uses local disk files for storage.
+
+You can get started immediately by [installing your license key](#install-license), and review the [Embedded Storage Configuration](../configuration/configuring-embedded-storage.html) later.
+
+
+
+
+
+Provisioning a SQL database
+---------------------------
+
+The steps to provision a SQL database as your Storage Service are:
+
+- setup a SQL database, or use an existing one
+- create SQL table (datomic\_kvs)
+- create SQL user(s), or use an existing one
+- get jdbc connection string
+- Add JDBC driver dependencies to your project
+- install license key
+
+There are scripts for doing each of the first three steps with [PostgreSQL](https://www.postgresql.org/), [MySQL](https://www.mysql.com/), and [Oracle](https://www.oracle.com/database/) in the Datomic distribution's *bin/sql*directory. You can run them using their respective command line or GUI admin tools.
+
+For example, for Postgres at the command line:
+
+noslide
+
+```
+<pre class="src src-sh">psql -f bin/sql/postgres-db.sql -U postgres
+
+psql -f bin/sql/postgres-table.sql -U postgres -d datomic
+
+psql -f bin/sql/postgres-user.sql -U postgres -d datomic
+```
+
+
+
+The last script creates a user named 'datomic' with the password 'datomic'. You can use an existing user instead, or modify the script to create a user with a different username or password, if desired.
+
+If you want to use a different SQL server, you'll need to mimic the table and schema from one of the included databases.
+
+
+
+### JDBC drivers
+
+Only the Postgres driver is included with the transactor distribution. For other SQL distributions, you will have to make the driver available on the classpath of the transactor (by placing it in &lt;datomic-install&gt;/lib).
+
+For all SQL distributions, in your peer project add a dependency for your specific JDBC driver. The example below show how that looks for PostgreSQL.
+
+In a maven based build, add the following snippet to the dependencies section of your pom.xml:
+
+noslide
+
+```
+<pre class="src src-xml"><<span style="color: #0000ff;">dependency</span>>
+  <<span style="color: #0000ff;">groupId</span>>org.postgresql</<span style="color: #0000ff;">groupId</span>>
+  <<span style="color: #0000ff;">artifactId</span>>postgresql</<span style="color: #0000ff;">artifactId</span>>
+  <<span style="color: #0000ff;">version</span>>42.5.1</<span style="color: #0000ff;">version</span>>
+</<span style="color: #0000ff;">dependency</span>>
+```
+
+
+
+In a leiningen project, add the following to the dependencies section of your *project.clj* in collection under `:dependencies` key:
+
+```
+<pre class="src src-clojure">[org.postgresql/postgresql <span style="color: #8b2252;">"42.5.1"</span>]
+```
+
+
+
+Now you are ready to [install your license key](#install-license).
+
+
+
+
+
+### Validation Query
+
+Datomic uses a query to validate JDBC connections. By default this query is:
+
+noslide
+
+```
+<pre class="src src-sql"><span style="color: #a020f0;">select</span> 1 <span style="color: #a020f0;">from</span> dual
+```
+
+
+
+for Oracle JDBC URIs and
+
+noslide
+
+```
+<pre class="src src-sql"><span style="color: #a020f0;">select</span> 1
+```
+
+
+
+for all others. This validation query can be overridden via the [`datomic.sqlValidationQuery` system property](../configuration/system-properties.html).
+
+
+
+
+
+### Provisioning for a Heroku PostgreSQL database
+
+You can provision a Heroku hosted PostgreSQL database for use as your Storage Service using the following steps:
+
+- sign up for Heroku Postgresql
+- start a database and retrieve host, port, dbname, username and password from the web console
+- use PGAdmin to install the Datomic table schema by: 
+    - adding a server using the connection information retrieved in the previous step and specifying the dbname for the MaintenanceDB (in place of 'postgres') as well as the actual database
+    - open a SQL window on that server and paste in the bin/sql/postgres-table script
+    - edit the owner and grant to be the user Heroku provides and remove the public grant
+    - run the script to create the datomic\_kvs table
+
+
+
+
+
+
+
+Provisioning DynamoDB
+---------------------
+
+> Datomic is not compatible with DynamoDB's [Global Tables](https://aws.amazon.com/dynamodb/global-tables/) feature.
+
+The steps to provision [DynamoDB](https://aws.amazon.com/dynamodb/) as your Storage Service are:
+
+- setup an AWS account, or use an existing one
+- create a DynamoDB table, IAM roles, S3 bucket, permissions etc.; 
+    - this process can be automated using Datomic's *ensure-transactor* command.
+- add the AWS DynamoDB dependency to your project.
+
+Datomic supports IAM roles. If you have a transactor that uses IAM user access keys, see [Migrating to IAM Roles](../operation/migrate-to-roles.html) for information on how to switch to using roles, and [AWS Access Control](../operation/aws-access-control.html) for information about Datomic's use of IAM roles and IAM user access credentials in general.
+
+If you don't already have an AWS account, sign up using the [Amazon Web Services Console](https://aws.amazon.com).
+
+
+
+### DynamoDB AWS Peer Dependency
+
+There is an example in the *provided* scope of the *pom.xml* in the Datomic directory for including the DynamoDB portion of the AWS Java SDK in a maven project. To configure Leiningen with this dependency, you will need to include the following:
+
+noslide
+
+```
+<pre class="src src-clojure">[com.amazonaws/aws-java-sdk-dynamodb <span style="color: #8b2252;">"1.11.600"</span>]
+```
+
+
+
+in your dependencies list.
+
+
+
+
+
+### Automated setup
+
+There is an automated process to create the necessary DynamoDB table, IAM roles, S3 bucket, permissions etc. To invoke it:
+
+- Copy the *config/samples/ddb-transactor-template.properties* file to another location and give it a new name, for instance, *my-transactor.properties*. The template will work with default settings, but you can edit your copy if you want to specify something explicitly.
+- Export your AWS account's credentials as environment variables so that they're accessible to scripts:
+
+noslide
+
+```
+<pre class="src src-sh"><span style="color: #483d8b;">export</span> <span style="color: #a0522d;">AWS_ACCESS_KEY_ID</span>=<aws-access-key-id>
+
+<span style="color: #483d8b;">export</span> <span style="color: #a0522d;">AWS_SECRET_KEY</span>=<aws-secret-key>
+```
+
+
+
+- Run the *ensure-transactor* command, specifying your copy of the properties file file as the input and another filename as the output (the names can be the same):
+
+noslide
+
+```
+<pre class="src src-sh">bin/datomic ensure-transactor my-transactor.properties my-transactor.properties
+```
+
+
+
+The *ensure-transactor* command will create the necessary AWS constructs, and emit an updated properties file containing information about what it created. If errors are reported, fix them, then repeat the process. Check the final output file into source control.
+
+
+
+
+
+### Manual setup
+
+If you are unable to run the *ensure-transactor* command or wish to customize your AWS configuration, you can manually configure your AWS setup to match the settings ensure will generate automatically:
+
+
+
+#### Table configuration
+
+The DynamoDB table schema requires an "id" attribute of type String as primary key with 'Keytype' "HASH":
+
+```
+<pre class="src src-js">{
+  <span style="color: #8b2252;">"Table"</span>:
+    {
+      <span style="color: #8b2252;">"AttributeDefinitions"</span>: [
+          {<span style="color: #8b2252;">"AttributeName"</span>: <span style="color: #8b2252;">"id"</span>,
+            <span style="color: #8b2252;">"AttributeType"</span>: <span style="color: #8b2252;">"S"</span>}
+      ],
+
+    ...
+
+     <span style="color: #8b2252;">"KeySchema"</span>: [
+       {<span style="color: #8b2252;">"KeyType"</span>: <span style="color: #8b2252;">"HASH"</span>,
+        <span style="color: #8b2252;">"AttributeName"</span>: <span style="color: #8b2252;">"id"</span>}
+      ]
+
+    ...
+    }
+}
+```
+
+
+
+No indexing should be enabled.
+
+
+
+
+
+#### IAM Role Configuration
+
+You will need to configure IAM roles for the transactor and peers.
+
+
+
+
+
+#### Transactor Role
+
+You will need to apply a policy that grants the transactor role access to the Dynamo table you've created. You may optionally apply two other policies to the transactor transactor role to enable log rotation to S3 and metric reporting.
+
+
+
+
+
+#### DynamoDB table access (storage access)
+
+This policy is required for the transactor to run. Replace &lt;AWS-ACCOUNT-ID&gt; and &lt;TABLE-NAME&gt;.
+
+noslide
+
+```
+<pre class="src src-js">{<span style="color: #8b2252;">"Statement"</span>:
+ [{<span style="color: #8b2252;">"Effect"</span>: <span style="color: #8b2252;">"Allow"</span>,
+   <span style="color: #8b2252;">"Action"</span>: [<span style="color: #8b2252;">"dynamodb:*"</span>],
+   <span style="color: #8b2252;">"Resource"</span>: <span style="color: #8b2252;">"arn:aws:dynamodb:*:<AWS-ACCOUNT-ID>:table/<TABLE-NAME>"</span>}]}
+```
+
+
+
+
+
+
+
+#### S3 bucket access (log rotation)
+
+This policy is optional - it enables S3 log rotation. The policy below includes access to subfolders within the S3 bucket. Replace &lt;S3-LOG-BUCKET&gt;.
+
+noslide
+
+```
+<pre class="src src-js">{<span style="color: #8b2252;">"Statement"</span>:
+ [{<span style="color: #8b2252;">"Effect"</span>: <span style="color: #8b2252;">"Allow"</span>,
+   <span style="color: #8b2252;">"Action"</span>: [<span style="color: #8b2252;">"s3:PutObject"</span>],
+   <span style="color: #8b2252;">"Resource"</span>: [<span style="color: #8b2252;">"arn:aws:s3:::<S3-LOG-BUCKET>"</span>, <span style="color: #8b2252;">"arn:aws:s3:::<S3-LOG-BUCKET>/*"</span>]}]}
+```
+
+
+
+
+
+
+
+#### CloudWatch Metrics
+
+This policy is optional - it enables the transactor to report metrics to CloudWatch.
+
+noslide
+
+```
+<pre class="src src-js">{<span style="color: #8b2252;">"Statement"</span>:
+ [{<span style="color: #8b2252;">"Effect"</span>:<span style="color: #8b2252;">"Allow"</span>,
+   <span style="color: #8b2252;">"Resource"</span>:<span style="color: #8b2252;">"*"</span>,
+   <span style="color: #8b2252;">"Condition"</span>:{<span style="color: #8b2252;">"Bool"</span>:{<span style="color: #8b2252;">"aws:SecureTransport"</span>:<span style="color: #8b2252;">"true"</span>}},
+   <span style="color: #8b2252;">"Action"</span>: [<span style="color: #8b2252;">"cloudwatch:PutMetricData"</span>, <span style="color: #8b2252;">"cloudwatch:PutMetricDataBatch"</span>]}]}
+```
+
+
+
+
+
+
+
+#### Peer Role
+
+You will need to grant the peer a few read access permissions on the DynamoDB table. Replace &lt;AWS-ACCOUNT-ID&gt; and &lt;TABLE-NAME&gt;.
+
+```
+<pre class="src src-js">{<span style="color: #8b2252;">"Statement"</span>:
+ [{<span style="color: #8b2252;">"Effect"</span>:<span style="color: #8b2252;">"Allow"</span>,
+   <span style="color: #8b2252;">"Action"</span>: [<span style="color: #8b2252;">"dynamodb:GetItem"</span>, <span style="color: #8b2252;">"dynamodb:BatchGetItem"</span>, <span style="color: #8b2252;">"dynamodb:Scan"</span>, <span style="color: #8b2252;">"dynamodb:Query"</span>],
+   <span style="color: #8b2252;">"Resource"</span>:
+   <span style="color: #8b2252;">"arn:aws:dynamodb:*:<AWS-ACCOUNT-ID>:table/<TABLE-NAME>"</span>}]}
+```
+
+
+
+
+
+
+
+#### IAM User Keys
+
+If you're using IAM user keys for the peer or transactor instead of roles, you will need to apply the above policies to the user.
+
+
+
+
+
+#### DynamoDB Transactor Properties
+
+The DynamoDB transactor properties file must be configured so that the hostname is manually entered, and the transactor and peer roles must be provided, as well as the name of the Dynamo table. Start from the *config/samples/ddb-transactor-template.properties*file in the Datomic distribution and insert values for the following from above, plus whatever other settings are necessary for your configuration.:
+
+noslide
+
+```
+<pre class="src src-shell-script"><span style="color: #a0522d;">host</span>=<FINAL-HOST-NAME>
+<span style="color: #b22222;"># </span><span style="color: #b22222;">e.g., ec2-ip-with-hyphens.compute-1.amazonaws.com</span>
+...
+aws-dynamodb-table=<TABLE-NAME>
+...
+aws-transactor-role=<TRANSACTOR-IAM-ROLE-NAME>
+...
+aws-peer-role=<PEER-IAM-ROLE-NAME>
+```
+
+
+
+
+
+
+
+#### Other AWS Configuration
+
+For communication between peers and transactors on AWS, if required, you will need to configure [security groups](../overview/aws.html#connecting-transactor-aws)as well. Refer to [the AWS docs](../overview/aws.html) for all other AWS configuration not directly related to using DynamoDB as a storage.
+
+
+
+
+
+
+
+### DynamoDB Throughput
+
+Note that by default the ensure process will create a DynamoDB table with a modest provisioning level suitable for experimentation under low load. When you are ready to plan production use, you should review the [capacity planning docs](../operation/capacity.html) and use the [DynamoDB console](https://console.aws.amazon.com/dynamodb/home) to provision more throughput.
+
+Every application will be different, but these three rules of thumb will get you started provisioning DynamoDB for Datomic:
+
+To get started, budget at least as much for DynamoDB throughput as you do for transactor EC2 instances. Split this budget evenly between read and write capacity. (This will result in higher read capacity, as read capacity is less expensive.)
+
+Measure your actual use. DynamoDB has great CloudWatch metrics that will tell you how much capacity you are actually using, and you can configure warnings when your application is throttled to its provisioned limit.
+
+For bulk import jobs, turn write throughput up as high as necessary (based on monitoring), and then turn it back down when you are done.
+
+Once you have made an initial selection for DynamoDB throughput, you are ready to [install your license key](#install-license).
+
+
+
+
+
+### DynamoDB Local
+
+Datomic supports using [DynamoDB Local](https://docs.aws.amazon.com/amazondynamodb/latest/developerguide/Tools.html) as a development-time storage. To configure this storage, edit the *ddb-transactor-template.properties*file as follows:
+
+- Change the protocol to *protocol=ddb-local*
+- Comment out the aws-dynamo-db-region property
+- Uncomment the aws-dynamodb-override-endpoint property and modify its values as appropriate
+
+Then, follow the [DynamoDB Local](https://docs.aws.amazon.com/amazondynamodb/latest/developerguide/Tools.html) setup instructions to start the local storage service. Then, run *bin/datomic ensure-transactor* with the properties files created above. Lastly, start the transactor.
+
+DynamoDB Local requires an access key ID and secret access key, even though they are ignored. It is advisable to use dummy values for these properties during development against DynamoDB Local.
+
+
+
+
+
+
+
+Provisioning Cassandra
+----------------------
+
+Using Cassandra as a storage service requires a cluster of at least 3 nodes running an up-to-date release of Cassandra. Datomic supports 2.0.X, 2.1.X, and 3.0.X versions of Cassandra. Refer to the version of the Cassandra driver in the *provided* scope in the *pom.xml* in the Datomic directory and the [Datastax Java Driver Compatibility matrix](https://docs.datastax.com/en/developer/driver-matrix/doc/common/driverMatrix.html?scroll=driverMatrix__java-driver-matrix)to verify Datastax/Cassandra compatibility for a specific release of Datomic. The cluster needs to be configured to support the CQL native transport (this is on by default in new releases of Cassandra). If you have an existing cluster that meets these requirements, you can use it. Otherwise, you need to configure one following the instructions on the Cassandra site.
+
+Note that Datomic does not support running on a Cassandra cluster that spans [datacenters](#cassandra-limitations).
+
+While Cassandra consistency settings are entirely up to you we strongly recommend having a consistency setting of at least 3. Having a consistency setting of 1 has the potential to lose data and you decline the advantage of having Cassandra replicas. Replication level of 3 is the minimum consistency setting required to survive the loss of one node. This calculation can change depending on the number of nodes you have. A helpful tool for assessing your need can be found [here](https://www.ecyrd.com/cassandracalculator/).
+
+Once a cluster is configured, you must provision a keyspace and table (column family) for Datomic to use. You can do this using the CQL scripts provided in the distribution's *bin/cql* directory. You can execute the scripts using the *cqlsh* tool provided by Cassandra (use an appropriate superuser username and password, if required):
+
+noslide
+
+```
+<pre class="src src-sh">cqlsh -f bin/cql/cassandra-keyspace.cql -u cassandra -p cassandra
+```
+
+
+
+noslide
+
+```
+<pre class="src src-sh">cqlsh -f bin/cql/cassandra-table.cql -u cassandra -p cassandra
+```
+
+
+
+Datomic provides optional support for Cassandra's internal username/password mechanism for authentication and authorization. If your cluster is configured to require authentication and authorization, you must also create a user for Datomic:
+
+noslide
+
+```
+<pre class="src src-sh">cqlsh -f bin/cql/cassandra-user.cql -u cassandra -p cassandra
+```
+
+
+
+This script creates the user and grants it access to the Datomic keyspace.
+
+Note that if you are using Cassandra 3.X the cqlsh tool may require you to explicitly specify the cql version with the command line flag:
+
+noslide
+
+```
+<pre class="src src-sh">--cqlversion=3.4.0
+```
+
+
+
+Next, setup your transactor properties file:
+
+- Copy the *config/samples/cassandra-transactor-template.properties* file to another location and give it a new name, for instance, *cassandra-transactor.properties*.
+- Set the entry for *cassandra-host* to refer to a member of the cluster.
+- If your cluster uses a non-standard port for the CQL native transport, set *cassandra-port*.
+- If your cluster is configured to require authentication and authorization, set *cassandra-user* and *cassandra-password*.
+- If your Cassandra cluster is configured with the necessary certificates to support SSL, and verified it works with a simple client (e.g., *cqlsh*), you can configure the transactor to use SSL by setting *cassandra-ssl* to true. See the [Cassandra docs](https://docs.datastax.com/en/security/6.0/security/encryptClientNodeSSL.html) for more information.
+- You can optionally provide *cassandra-cluster-callback*, whose value is a name identifying either a Java static method (e.g. my.app.Cassandra.buildCluster), or a clojure function (e.g. my.app/build-cluster). This method/function takes as its single argument a map containing the above parameters, and which returns an instance of [Cassandra Cluster](https://docs.datastax.com/en/drivers/java/2.0/com/datastax/driver/core/Cluster.html). Note that the argument type for this method is Object, e.g.
+
+```
+<pre class="src src-java"><span style="color: #a020f0;">import</span> <span style="color: #008b8b;">com</span>.<span style="color: #008b8b;">datastax</span>.<span style="color: #008b8b;">driver</span>.<span style="color: #008b8b;">core</span>.<span style="color: #228b22;">Cluster</span>;
+<span style="color: #a020f0;">import</span> <span style="color: #008b8b;">datomic</span>.<span style="color: #228b22;">Util</span>;
+<span style="color: #a020f0;">import</span> <span style="color: #008b8b;">java</span>.<span style="color: #008b8b;">util</span>.<span style="color: #228b22;">Map</span>;
+
+<span style="color: #a020f0;">public</span> <span style="color: #a020f0;">class</span> <span style="color: #228b22;">DatomicCassandra</span> {
+  <span style="color: #a020f0;">public</span> <span style="color: #a020f0;">static</span> <span style="color: #228b22;">Cluster</span> <span style="color: #0000ff;">build</span>(<span style="color: #228b22;">Object</span> <span style="color: #a0522d;">args</span>) {
+    <span style="color: #228b22;">Map</span> <<span style="color: #228b22;">Object</span>, <span style="color: #228b22;">Object</span>> <span style="color: #a0522d;">params</span> = (<span style="color: #228b22;">Map</span><<span style="color: #228b22;">Object</span>,<span style="color: #228b22;">Object</span>>) args;
+    <span style="color: #008b8b;">Cluster</span>.<span style="color: #228b22;">Builder</span> <span style="color: #a0522d;">cluster</span> = Cluster.builder();
+    cluster.addContactPoint((<span style="color: #228b22;">String</span>)params.get(Util.read(<span style="color: #8b2252;">":host"</span>)));
+    cluster.withPort((<span style="color: #228b22;">Integer</span>)(params.get(Util.read(<span style="color: #8b2252;">":port"</span>))));
+    cluster.withCredentials((<span style="color: #228b22;">String</span>)params.get(Util.read(<span style="color: #8b2252;">":user"</span>)),
+                            (<span style="color: #228b22;">String</span>)params.get(Util.read(<span style="color: #8b2252;">":password"</span>)));
+
+    <span style="color: #b22222;">// </span><span style="color: #b22222;">Set other cluster options here</span>
+
+    <span style="color: #a020f0;">return</span> cluster.build();
+  }
+}
+```
+
+
+
+In your peer project, add a dependency for the [DataStax Java Driver for Apache Cassandra](https://github.com/datastax/java-driver).
+
+In a maven based build, add the following snippet to the dependencies section of your *pom.xml*:
+
+noslide noslide
+
+```
+<pre class="src src-xml"><<span style="color: #0000ff;">dependency</span>>
+  <<span style="color: #0000ff;">groupId</span>>com.datastax.cassandra</<span style="color: #0000ff;">groupId</span>>
+  <<span style="color: #0000ff;">artifactId</span>>cassandra-driver-core</<span style="color: #0000ff;">artifactId</span>>
+  <<span style="color: #0000ff;">version</span>>3.1.0</<span style="color: #0000ff;">version</span>>
+</<span style="color: #0000ff;">dependency</span>>
+```
+
+
+
+In a leiningen project, add the following to the dependencies section of your *project.clj*:
+
+noslide
+
+```
+<pre class="src src-clojure"><span style="color: #b22222;">;; </span><span style="color: #b22222;">in collection under :dependencies key</span>
+[com.datastax.cassandra/cassandra-driver-core <span style="color: #8b2252;">"3.1.0"</span>]
+```
+
+
+
+Now you are ready to [install your license key](#install-license).
+
+
+
+### Limitations
+
+- Datomic does not support Cassandra's multi-datacenter replication. See [the HA section](../operation/ha.html#moving-across-data-centers)for more information on Datomic's storage level consistent copy requirements.
+- Datomic does not support quorum operations in multi-datacenter environments due to the negative impact on availability and write performance.
+
+
+
+
+
+
+
+Provisioning Cassandra2 (Alpha)
+-------------------------------
+
+The Cassandra2 storage service provides improved support for large datasets. Cassandra2 breaks large segments into chunks, avoiding performance issues and operational problems that can occur when index segments run up against [Cassandra's limits](https://cwiki.apache.org/confluence/display/CASSANDRA2/CassandraLimitations).
+
+> If you are happily using Cassandra with your existing dataset, you need not consider Cassandra2.
+> 
+> Cassandra2 support is alpha, please contact support if you are planning to try Cassandra2.
+
+Cassandra2 works exactly like Cassandra, **except**
+
+- The Cassandra schema is different. Follow the same [setup instructions](#cassandra) as for Casssandra, but use the cql files with a '2' in the name.
+- The protocol URI is different. Follow the same connection instructions as for Casssandra, but use the `cass2:` instead of `cass:` in your [connection URI](https://docs.datomic.com/on-prem/clojure/index.html#datomic.api/connect).
+
+Note that Cassandra and Cassandra2 are different storage services! You can use [backup and restore](../operation/backup.html) to migrate databases from Cassandra to Cassandra2 (or between any storage services).
+
+
+
+
+
+Install your license key
+------------------------
+
+To use a storage other than free, you will need to use a Pro license. If you do not have a license yet, you can request a [Starter License](https://my.datomic.com/starter).
+
+Once you have your key, you can install it by pasting the key into the value of the license-key property in your transactor properties file:
+
+noslide
+
+```
+<pre class="src src-sh">license-key=XXXXXXXX...
+```
+
+
+
+You are now ready to [start the transactor](#start-transactor).
+
+
+
+
+
+Starting the transactor
+-----------------------
+
+Once your Storage Service is configured, you can start the Transactor locally by running *bin/transactor*. It takes a properties file as input. The file varies depending on the Storage Service:
+
+- For Dev and SQL, make a copy of the appropriate template properties file in *config/samples* and edit it as desired. 
+    - If you are using a Heroku hosted PostgreSQL instance, edit your *sql-transactor-template.properties* as follows: 
+        - add the Heroku-provided host and database name to the JDBC URL in the *sql-url* property
+        - put the username and password in the *sql-user* and *sql-password* properties
+        - uncomment the *sql-driver-params* property and set it to:
+            
+            sql-driver-params=ssl=true&amp;sslfactory=org.postgresql.ssl.NonValidatingFactory
+- Note that when you run the transactor locally against DynamoDB, you must specify AWS access keys using either environment variables (AWS\_SECRET\_KEY and AWS\_ACCESS\_KEY\_ID) or Java system properties (aws.secretKey and aws.accessKeyId). You can use your AWS account access keys or a set of IAM user access keys. If you use IAM user access keys, the user must be assigned the [necessary policies](#manual-setup). Running locally this way should only be considered for development and is not a supported means for handling permissions in production.
+
+To start the Transactor, run the following command, passing in your properties file:
+
+noslide
+
+```
+<pre class="src src-sh">bin/transactor my-transactor.properties
+```
+
+
+
+If you are accessing Cassandra via SSL, you must provide a Java [TrustStore](https://docs.oracle.com/cd/E21454_01/html/821-2544/cnfg_ssl-overview_c.html) for the transactor to use when connecting to storage. The TrustStore must contain one or more certificates that can be used to verify the identity of the storage node(s) the transactor is connecting to. You must also provide a Java KeyStore that the transactor will use to establish an SSL connection with peers. You specify the TrustStore and KeyStore using the standard Java system properties:
+
+noslide
+
+```
+<pre class="src src-sh">bin/transactor -Djavax.net.ssl.trustStore=path-to-truststore
+-Djavax.net.ssl.trustStorePassword=password-for-truststore
+-Djavax.net.ssl.keyStore=path-to-keystore
+-Djavax.net.ssl.keyStorePassword=password-for-keystore my-transactor.properties
+```
+
+
+
+See the [Troubleshooting](#troubleshooting) section for more info if you get an exception when trying to start the transactor with SSL.
+
+If you are not using SSL to access Cassandra, Datomic configures a KeyStore for the transactor and a TrustStore for peers automatically.
+
+If the console output includes a line of the form:
+
+```
+<pre class="example" id="orgcd83e1a">
+System started {URI}
+```
+
+the transactor is working correctly. The URI is used by peers to attach to the system. See the JavaDoc for [Peer.connect()](../javadoc/datomic/Peer.html#connect-java.lang.Object-) for the full connection details.
+
+The Transactor requires a Java 1.6+ Server VM. By default, the Transactor runs with 1GB memory pool. You can change the default by passing a *-Xmx* flag, as you would when you launch a JVM application directly.
+
+Note that Transactors and peers that use DynamoDB will have the best performance running on EC2. You can test them locally to ensure the correct configuration, but should deploy them to EC2 using the provided AMI, as described below.
+
+
+
+
+
+Connecting to the transactor
+----------------------------
+
+After the Transactor is running, you can test the configuration using the Datomic shell. You need the storage-specific connection URI as described in the JavaDoc for [Peer.connect()](../javadoc/datomic/Peer.html#connect-java.lang.Object-).
+
+After connecting to storage, peers will look up the transactor endpoint. The transactor writes the value of the *host* transactor property in storage, and this is the address peers will attempt to connect to. If the transactor cannot bind to its publicly reachable IP address (e.g. the transactor is on a VM that doesn't own or can't see its external address), you will need to provide a value for *alt-host* on the transactor with the publicly reachable IP address in addition to the *host* property. If the peers cannot reach the transactor using *host* they will use the *alt-host* address instead.
+
+If you are accessing Cassandra via SSL, you must provide a Java [TrustStore](https://docs.oracle.com/cd/E21454_01/html/821-2544/cnfg_ssl-overview_c.html) for the peer to use. The TrustStore must contain one or more certificates the can be used to verify the identity of the storage node(s) the peer is connecting to. The TrustStore must also contain the certificate that can be used to verify the identity of the transactor. You specify a TrustStore using the standard Java system properties:
+
+noslide
+
+```
+<pre class="src src-sh">-Djavax.net.ssl.trustStore=path-to-truststore
+-Djavax.net.ssl.trustStorePassword=password-for-truststore
+```
+
+
+
+See the [Troubleshooting](#troubleshooting) section for more info if you experience a stack trace when trying to connect a peer when using SSL.
+
+If you are not using SSL to access Cassandra, Datomic configures a KeyStore for the transactor and a TrustStore for peers automatically.
+
+The code below shows how to create and connect to a database using the Datomic shell.
+
+```
+<pre class="src src-java">bin/shell
+```
+
+
+
+```
+<pre class="src src-java">datomic % uri = <uri-<span style="color: #a020f0;">for</span>-storage-service>;
+```
+
+
+
+```
+<pre class="src src-java">datomic % Peer.createDatabase(uri);
+```
+
+
+
+```
+<pre class="src src-java">datomic % conn = Peer.connect(uri);
+```
+
+
+
+
+
+
+
+Configuring Options
+-------------------
+
+Once you have verified that your transactor is working with your storage configuration, you can configure and test additional options, such as [memcached](./caching.html).
+
+To enable transparent use of memcached, first ensure that your transactor is configured with a paid Datomic Pro license key. Then, uncomment the *memcached* entry in your transactor properties file, and set its value to a comma-delimited list of host:port pairs naming your memcached endpoints:
+
+```
+<pre class="example" id="org35ff01a">
+memcached=m1.example.com:11211,m2.example.com:11211
+```
+
+When you restart the transactor, it will transparently use memcached. For more information on configuring Memcached, please see the [Caching documentation](./caching.html).
+
+
+
+
+
+Running on AWS
+--------------
+
+Once you know everything is working, you may want to run your Transactor on the Amazon cloud. See [Running on AWS](aws.html) for instructions.
+
+
+
+
+
+Troubleshooting SSL Connections
+-------------------------------
+
+The following error message indicates that the transactor or peer cannot communicate with the storage nodes. Verify that you can connect to the storage nodes using other tools; for instance a simple Cassandra cqlsh. Also verify that the TrustStore contains the certificates necessary for connecting to the storage nodes.
+
+Typical error message when unable to connect to Cassandra via SSL:
+
+noslide
+
+```
+<pre class="example" id="org35d03af">
+com.datastax.driver.core.exceptions.NoHostAvailableException: All host(s) tried for query failed
+```
+
+If you see the following error message, this indicates that the transactor and peer are not configured with the same SSL information. Verify that the transactor KeyStore and peer TrustStore are properly configured.
+
+noslide
+
+```
+<pre class="example" id="org749aa1d">
+HornetQNotConnectedException HQ119007: Cannot connect to server(s). Tried with all available servers.  org.hornetq.core.client.impl.ServerLocatorImpl.createSessionFactory
+```

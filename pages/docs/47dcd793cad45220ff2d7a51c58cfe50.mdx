@@ -1,0 +1,249 @@
+Changing Schema
+===============
+
+Schema Alteration
+-----------------
+
+Because Datomic maintains a single set of physical indexes, and supports query across time, a db value utilizes the single schema associated with its basis, i.e. before any call to asOf/since/history, for all views of that db (including asOf/since/history). Thus traveling back in time does not take the working schema back in time, as the infrastructure to support it may no longer exist. Many alterations are backwards compatible - any nuances are detailed separately below.
+
+Datomic provides two categories of alterations you can make to existing schemas. The first is renaming a *:db/ident*. Idents provide names for things - specifically schema attributes and enumerated values. Both types of names can be altered via a schema alteration.
+
+The second category of alteration is altering schema attributes of attributes. The supported attributes to alter include *:db/cardinality*, *:db/isComponent*, *:db/noHistory*, *:db/index* and *:db/unique*.
+
+You can never alter *:db/valueType*, *:db/fulltext*, *:db/tupleAttrs*, *:db/tupleTypes*, or *:db/tupleType*.
+
+
+
+### Backup Before Altering Schema
+
+Schema alterations are not irrevocable, but they can be difficult to undo. For example, if you drop a unique constraint and then add non-unique data, you will have to find and retract the non-unique data before re-enabling the unique constraint.
+
+Given the difficulty of fixing schema mistakes, you are encouraged to [backup](../operation/backup.html) a database before making schema changes.
+
+
+
+
+
+### Renaming an Identity
+
+To rename a *:db/ident*, submit a transaction with the *:db/id* and the value of the new *:db/ident*. This alteration will take place synchronously, and will be immediately visible in the database returned by the transaction.
+
+Both the new ident and the old ident will refer to the entity. [entid](../javadoc/datomic/Database.html#entid-java.lang.Object-) will return the same entity id for both the new and the old ident. [ident](../javadoc/datomic/Database.html) will return the new ident, so there is asymmetry between what entid returns and what ident returns for the old ident. *:db/ident* in the entity map, returned from [entity](../javadoc/datomic/Database.html#entid-java.lang.Object-), will be the new ident.
+
+This example alters the *:db/ident* of *:person/name* to be *:person/full-name*.
+
+```
+<pre class="src src-clojure">[{<span style="color: #008b8b;">:db/id</span> <span style="color: #008b8b;">:person/name</span>
+  <span style="color: #008b8b;">:db/ident</span> <span style="color: #008b8b;">:person/full-name</span>}]
+```
+
+
+
+We don't recommend repurposing a *:db/ident*, but if you find you need to use the name for a different purpose, you can install the name again as described in the [Installing an attribute definition](schema.html#installing-attribute-definition) section. This repurposed *:db/ident* will cease to point to the entity it was previously pointing to and [ident](../javadoc/datomic/Database.html#ident-java.lang.Object-) will return the newly installed entity.
+
+
+
+
+
+### Altering Schema Attributes
+
+Altering an attribute is similar to installing an attribute: you submit a transaction with the new facts, including the *:db/id* and the new value(s) of the attribute(s). You can also retract optional schema attributes.
+
+All alterations happen synchronously, except for adding an AVET index. If you want to know when the AVET index is available, call [syncSchema](../javadoc/datomic/Connection.html#syncSchema-long-). In order to add *:db/unique*, you must first have an AVET index including that attribute.
+
+The possible alterations are listed below, with more details about each one in the sections following the table.
+
+FromToEffect on Attribute:db/cardinality :db.cardinality/one:db/cardinality :db.cardinality/manyAllow multiple values per entity:db/cardinality :db.cardinality/many:db/cardinality :db.cardinality/oneLimit to single value per entity:db/isComponent true:db/isComponent false or unsetDo not treat as a component:db/isComponent false or unset:db/isComponent trueTreat as a component:db/noHistory true:db/noHistory false or unsetKeep history:db/noHistory false or unset:db/noHistory trueDo not keep history:db/index false or unset, :db/unique unset:db/index trueKeep AVET index, do not enforce unique:db/index true, :db/unique unset:db/index false or unsetDrop AVET index, do not enforce unique:db/index true, :db/unique unset:db/unique setKeep AVET index, enforce unique:db/index false or unset, :db/unique unset:db/unique setKeep AVET index, enforce unique:db/index false or unset, :db/unique set:db/unique unsetDrop AVET index, stop enforcing unique:db/index true, :db/unique set:db/unique unsetKeep AVET index, stop enforcing unique:db/unique :db.unique/identity:db/unique :db.unique/valueKeep AVET index, enforce unique value:db/unique :db.unique/value:db/unique :db.unique/identityKeep AVET index, enforce unique identity
+
+#### Altering Cardinality
+
+When altering from a multivalued attribute to a single valued attribute there must be at most a single value for every entity in the set of current assertions, otherwise the alteration will not be accepted and the transaction will fail.
+
+After you alter the cardinality of an attribute, entity lookups will return values specified by the new cardinality - either a single value in the case of *:db.cardinality/one* or a set of values in the case of *:db.cardinality/many*. This includes queries against historical databases. An entity from an [asOf](../javadoc/datomic/Database.html#asOf-java.lang.Object-), [since](../javadoc/datomic/Database.html#since-java.lang.Object-) or [history](../javadoc/datomic/Database.html#history--) database that has an attribute with multiple values will return a single one of those values if the schema attribute has been altered to be single-valued.
+
+The example below alters the cardinality of *:person/favorite-food* to many and the cardinality of *:person/email* to single.
+
+```
+<pre class="src src-clojure">[{<span style="color: #008b8b;">:db/id</span> <span style="color: #008b8b;">:person/favorite-food</span>
+  <span style="color: #008b8b;">:db/cardinality</span> <span style="color: #008b8b;">:db.cardinality/many</span>}
+ {<span style="color: #008b8b;">:db/id</span> <span style="color: #008b8b;">:person/email</span>
+  <span style="color: #008b8b;">:db/cardinality</span> <span style="color: #008b8b;">:db.cardinality/one</span>}]
+```
+
+
+
+
+
+
+
+#### Altering Component Attribute
+
+Altering a component attribute will cause Datomic to start enforcing the semantics for the new [component](https://blog.datomic.com/2013/06/component-entities.html) value of the attribute. For example, when you set *:db/isComponent* to true, values of that attribute will be included recursively by [Entity.touch](../javadoc/datomic/Entity.html#touch--).
+
+The example below alters *:order/line-items* to be a component, and *:customer/orders* not to be a component.
+
+```
+<pre class="src src-clojure">[{<span style="color: #008b8b;">:db/id</span> <span style="color: #008b8b;">:order/line-items</span>
+  <span style="color: #008b8b;">:db/isComponent</span> true}
+ {<span style="color: #008b8b;">:db/id</span> <span style="color: #008b8b;">:customer/orders</span>
+  <span style="color: #008b8b;">:db/isComponent</span> false}]
+```
+
+
+
+You can also revoke component status by retracting the *:db/isComponent* attribute. The example below revokes component status for *:customer/orders* via retraction.
+
+```
+<pre class="src src-clojure">[[<span style="color: #008b8b;">:db/retract</span> <span style="color: #008b8b;">:customer/orders</span> <span style="color: #008b8b;">:db/isComponent</span> true]
+ [<span style="color: #008b8b;">:db/add</span> <span style="color: #008b8b;">:db.part/db</span> <span style="color: #008b8b;">:db.alter/attribute</span> <span style="color: #008b8b;">:customer/orders</span>]]
+```
+
+
+
+
+
+
+
+#### Altering noHistory Attribute
+
+To start retaining history for an attribute with *:db/noHistory* set to *true*, alter its *:db/noHistory* value to be *false*. To stop retaining history for an attribute, alter its *:db/noHistory* value to be *true*. Note that *:db/noHistory*controls the operation of future indexing jobs, and does nothing to current historical values. See [excision](../reference/excision.html) if you need to excise history.
+
+The example below alters *:person/encrypted-password* to stop retaining history forward, and alters *:person/address* to start retaining history.
+
+```
+<pre class="src src-clojure">[{<span style="color: #008b8b;">:db/id</span> <span style="color: #008b8b;">:person/encrypted-password</span>
+  <span style="color: #008b8b;">:db/noHistory</span> true}
+ {<span style="color: #008b8b;">:db/id</span> <span style="color: #008b8b;">:person/address</span>
+  <span style="color: #008b8b;">:db/noHistory</span> false}]
+```
+
+
+
+You can also revoke *:db/noHistory* (when set to *true*) by retracting the *:db/noHistory* attribute from the attribute entity.
+
+```
+<pre class="src src-clojure">[[<span style="color: #008b8b;">:db/retract</span> <span style="color: #008b8b;">:person/encrypted-password</span> <span style="color: #008b8b;">:db/noHistory</span> true]
+ [<span style="color: #008b8b;">:db/add</span> <span style="color: #008b8b;">:db.part/db</span> <span style="color: #008b8b;">:db.alter/attribute</span> <span style="color: #008b8b;">:person/encrypted-password</span>]]
+```
+
+
+
+
+
+
+
+#### Altering AVET index and uniqueness attributes
+
+The effects of the *:db/index* and *:db/unique* attributes are correlated, so the two will be described together.
+
+
+
+
+
+
+
+
+
+Removing an AVET index from an attribute
+----------------------------------------
+
+If *:db/index* is false or unset and *:db/unique* is unset, Datomic will not keep an AVET index.
+
+The example below will retract the unique identity constraint and drop the AVET index for *:person/external-id*.
+
+```
+<pre class="src src-clojure">[[<span style="color: #008b8b;">:db/retract</span> <span style="color: #008b8b;">:person/external-id</span> <span style="color: #008b8b;">:db/unique</span> <span style="color: #008b8b;">:db.unique/identity</span>]
+ [<span style="color: #008b8b;">:db/retract</span> <span style="color: #008b8b;">:person/external-id</span> <span style="color: #008b8b;">:db/index</span> true]
+ [<span style="color: #008b8b;">:db/add</span> <span style="color: #008b8b;">:db.part/db</span> <span style="color: #008b8b;">:db.alter/attribute</span> <span style="color: #008b8b;">:person/external-id</span>]]
+```
+
+
+
+
+
+
+
+Adding an AVET index to an attribute
+------------------------------------
+
+If *:db/index* is true or *:db/unique* is set, Datomic will keep an AVET index. When you alter an existing attribute to have an AVET index, the AVET index may not be available immediately. To find out when the AVET index is available, call [syncSchema](../javadoc/datomic/Connection.html#syncSchema-long-).
+
+The example below will keep an AVET index for *:person/external-id*.
+
+```
+<pre class="src src-clojure">[{<span style="color: #008b8b;">:db/id</span> <span style="color: #008b8b;">:person/external-id</span>
+  <span style="color: #008b8b;">:db/index</span> true}]
+```
+
+
+
+
+
+
+
+Altering an attribute to be unique
+----------------------------------
+
+If *:db/unique* is set, Datomic will enforce a uniqueness constraint on the attribute.
+
+In order to add a unique constraint to an attribute, Datomic must already be maintaining an AVET index on the attribute, or the attribute must have never had any values asserted. Furthemore, if there are values present for that attribute, they must be unique in the set of current assertions. If either of these constraints are not met, the alteration will not be accepted and the transaction will fail.
+
+Adding a unique constraint does not change history, therefore historical databases may contain non-unique values. Code that expects to find a unique value may find multiple values when querying against history.
+
+The example below will alter the attribute *:person/external-id* to be a unique identity.
+
+```
+<pre class="src src-clojure">[{<span style="color: #008b8b;">:db/id</span> <span style="color: #008b8b;">:person/external-id</span>
+  <span style="color: #008b8b;">:db/unique</span> <span style="color: #008b8b;">:db.unique/identity</span>}]
+```
+
+
+
+
+
+
+
+Removing a uniqueness constraint
+--------------------------------
+
+If *db:unique* is unset, Datomic will stop enforcing the uniqueness constraint.
+
+The example below will retract the unique value constraint on *:person/external-id*.
+
+```
+<pre class="src src-clojure">[[<span style="color: #008b8b;">:db/retract</span> <span style="color: #008b8b;">:person/external-id</span> <span style="color: #008b8b;">:db/unique</span> <span style="color: #008b8b;">:db.unique/value</span>]
+ [<span style="color: #008b8b;">:db/add</span> <span style="color: #008b8b;">:db.part/db</span> <span style="color: #008b8b;">:db.alter/attribute</span> <span style="color: #008b8b;">:person/external-id</span>]]
+```
+
+
+
+
+
+
+
+Explicit :db.install/attribute and :db.alter/attribute
+------------------------------------------------------
+
+Older versions of Datomic require that you explicitly associate schema entities with the *:db.part/db* entity by including *:db.install/attribute* when installing an attribute, and *:db.alter/attribute* when altering an attribute:
+
+```
+<pre class="src src-clojure">{<span style="color: #008b8b;">:db/ident</span> <span style="color: #008b8b;">:person/name</span>
+ <span style="color: #008b8b;">:db/valueType</span> <span style="color: #008b8b;">:db.type/string</span>
+ <span style="color: #008b8b;">:db/cardinality</span> <span style="color: #008b8b;">:db.cardinality/one</span>
+ <span style="color: #008b8b;">:db/doc</span> <span style="color: #8b2252;">"A person's name"</span>
+ <span style="color: #b22222;">;; </span><span style="color: #b22222;">explicit install</span>
+ <span style="color: #008b8b;">:db.install/_attribute</span> <span style="color: #008b8b;">:db.part/db</span>}
+```
+
+
+
+```
+<pre class="src src-clojure">{<span style="color: #008b8b;">:db/ident</span> <span style="color: #008b8b;">:person/name</span>
+ <span style="color: #008b8b;">:db/cardinality</span> <span style="color: #008b8b;">:db.cardinality/many</span>
+ <span style="color: #b22222;">;; </span><span style="color: #b22222;">explicit alter</span>
+ <span style="color: #008b8b;">:db.alter/_attribute</span> <span style="color: #008b8b;">:db.part/db</span>}
+```
+
+
+
+Newer versions of Datomic add this information to transactions automatically. You never need to explicitly use *:db.install/attribute* or *:db.alter/attribute* in a transaction, but it is fine if you do.

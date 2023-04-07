@@ -1,0 +1,478 @@
+Release Notices
+===============
+
+This document is a list of critical release notices that all Datomic users should be aware of. Some pertain to specific versions of Datomic. Others refer to changes occurring on specific dates.
+
+This document **is not** a comprehensive change log. Changes to Datomic can be found in `CHANGES.md` in the root of the Datomic distribution.
+
+Releases with four version number components are bugfix-only releases based on their three-component parents, e.g. 0.8.4020.24 is a bugfix release for 0.8.4020.
+
+2023-03-03 Java 8 will be no longer supported
+---------------------------------------------
+
+Datomic releases after March 31st, 2023 will no longer support running on Java 8. This is in accordance with the announcement last year Oracle has ended public updates for Java 8 for Commercial use.
+
+See: <https://forum.datomic.com/t/release-notice-datomic-on-prem-after-march-31st-2023-on-prem-releases-will-no-longer-support-running-on-java-8/2193>
+
+
+
+
+
+2020-02-13 0.9.6045 Bug fix for datoms.
+---------------------------------------
+
+Release 0.9.6045 fixes regression introduced in 0.9.6014 where `datoms`, `seek-datoms`, and `index-range` return incorrect results if `Iterable.iterator` is called more than once on the returned value.
+
+Moving to this release is strongly advised.
+
+
+
+
+
+2018-03-28 0.9.5697 Important Security Update
+---------------------------------------------
+
+Release 0.9.5697 fixes two security vulnerabilities in Datomic On-Prem transactors running the free: or dev: storage protocol. Users of dev: and free: are encourage to upgrade as quickly as possible.
+
+See <https://forum.datomic.com/t/important-security-update-0-9-5697/379>.
+
+
+
+
+
+2017-06-06 0.9.5561.50 Bug fix for Catalog
+------------------------------------------
+
+Release 0.9.5561.50 fixes a bug in the catalog that, in the unlikely circumstance where one has deleted a database and restored it from a backup without first having called *gc-deleted-dbs*, can cause a subsequent *gc-deleted-dbs* to delete that (active) database.
+
+Moving to this release is strongly advised.
+
+
+
+
+
+2016-11-28 0.9.5530 Unlimited Peers and Clients
+-----------------------------------------------
+
+As of this release all Datomic licenses are valid for Unlimited Peers and/or Clients.
+
+
+
+
+
+2016-09-28 0.9.5404 ActiveMQ Artemis 1.4.0
+------------------------------------------
+
+Peers from this release forward **cannot** connect to older transactors. Attempting to connect a peer from this release (or newer) to an older transactor will result in the following exception:
+
+```
+<pre class="src src-sample">ActiveMQConnectionTimedOutException AMQ119013: Timed out waiting to receive cluster topology. Group:null  org.apache.activemq.artemis.core.client.impl.ServerLocatorImpl.createSessionFactory (ServerLocatorImpl.java:816)
+```
+
+
+
+When upgrading to (or past) this release, you must upgrade transactors prior to upgrading peers.
+
+
+
+
+
+2016-06-29 0.9.5385 HornetQ 2.4.7
+---------------------------------
+
+Peers from this release forward **cannot** connect to older transactors. Attempting to connect a peer from this release (or newer) to an older transactor will result in the following exception:
+
+```
+<pre class="src src-sample">HornetQConnectionTimedOutException HQ119013: Timed out waiting to receive cluster topology. Group:null  org.hornetq.core.client.impl.ServerLocatorImpl.createSessionFactory (ServerLocatorImpl.java:946)
+```
+
+
+
+When upgrading to (or past) this release, you must upgrade transactors prior to upgrading peers.
+
+
+
+
+
+2016-05-31 0.9.5372 Clojure 1.8
+-------------------------------
+
+The transactor, peer, and console now require Clojure 1.8 or greater
+
+
+
+
+
+2015-12-03 0.9.5344 AWS SDK Change
+----------------------------------
+
+The full Amazon AWS SDK for Java is no longer shipped with the Datomic peer library. If you are using AWS, see the section in the [storage docs](overview/storage.html#provisioning-dynamo)about including the AWS SDK for Java for help with configuring your peer with this upgrade.
+
+
+
+
+
+2015-10-09 0.9.5327 Bug fix for Cassandra storage
+-------------------------------------------------
+
+Release 0.9.5327 fixes a bug that could cause a transactor to terminate when deleting a database against Cassandra storage. We recommend all Cassandra users adopt this release as soon as possible
+
+
+
+
+
+Updating to Clojure 1.7
+-----------------------
+
+Datomic 0.9.5327 will be the last feature release that runs on Clojure 1.6. Starting with the following release, new Datomic feature releases will require Clojure 1.7.
+
+Clojure applications that use the Datomic Peer library will have to upgrade to Clojure 1.7. Users of Datomic from other languages will not be affected.
+
+Until then, you can use maven/leiningen dependency settings, on a peer-by-peer basis, to adopt Clojure 1.7 sooner.
+
+Leiningen dependencies:
+
+```
+<pre class="src src-clojure">[org.clojure/clojure <span style="color: #8b2252;">"1.7.0"</span>]
+[com.datomic/datomic-pro <span style="color: #8b2252;">"0.9.5327"</span>
+ <span style="color: #008b8b;">:exclusions</span> [... org.clojure/clojure]]
+```
+
+
+
+Maven dependencies:
+
+```
+<pre class="src src-xml"><<span style="color: #0000ff;">dependency</span>>
+  <<span style="color: #0000ff;">groupId</span>>org.clojure</<span style="color: #0000ff;">groupId</span>>
+  <<span style="color: #0000ff;">artifactId</span>>clojure</<span style="color: #0000ff;">artifactId</span>>
+  <<span style="color: #0000ff;">version</span>>1.7.0</<span style="color: #0000ff;">version</span>>
+</<span style="color: #0000ff;">dependency</span>>
+<<span style="color: #0000ff;">dependency</span>>
+  <<span style="color: #0000ff;">groupId</span>>com.datomic</<span style="color: #0000ff;">groupId</span>>
+  <<span style="color: #0000ff;">artifactId</span>>datomic-pro</<span style="color: #0000ff;">artifactId</span>>
+  <<span style="color: #0000ff;">version</span>>0.9.5327</<span style="color: #0000ff;">version</span>>
+  <<span style="color: #0000ff;">exclusions</span>>
+    <<span style="color: #0000ff;">exclusion</span>>
+      <<span style="color: #0000ff;">groupId</span>>org.clojure</<span style="color: #0000ff;">groupId</span>>
+      <<span style="color: #0000ff;">artifactId</span>>clojure</<span style="color: #0000ff;">artifactId</span>>
+    </<span style="color: #0000ff;">exclusion</span>>
+  </<span style="color: #0000ff;">exclusions</span>>
+</<span style="color: #0000ff;">dependency</span>>
+```
+
+
+
+You can also update the Clojure version of a transactor you are running on your own behalf by replacing the Clojure jar in the `lib`directory. Just like the Peer library, the Datomic Transactor currently includes Clojure 1.6 by default, but is compatible with Clojure 1.7. Starting with the next feature released, the Transactor will run exclusively on Clojure 1.7.
+
+
+
+
+
+2015-09-17 0.9.5302 Important fix for all users
+-----------------------------------------------
+
+Release 0.9.5302 eliminates a bug where, given a particular and extremely unlikely interleaving of indexing failures and transactor successions, some transactions can be incorporated in the log but not in the indexes.
+
+We encourage all users to update their transactors to this release.
+
+
+
+
+
+2014-10-09 0.9.4956 PostgreSQL Driver Change
+--------------------------------------------
+
+Release 0.9.4956 no longer ships the PostgreSQL driver in the peer library. If you are using PostgreSQL, see the section in the storage docs about JDBC drivers for help with [configuring your peers with this upgrade](overview/storage.html#sql-database)
+
+
+
+
+
+2014-09-09 0.9.4899 Clojure 1.6
+-------------------------------
+
+The transactor, peer, and console now require Clojure 1.6 or greater
+
+
+
+
+
+2014-08-21 0.9.4880.6
+---------------------
+
+Release 0.9.4880.6 fixes a bug in HA that affects 0.9.4880.2 only. All HA users should adopt this release as soon as possible.
+
+
+
+
+
+2014-08-11 0.9.4880.2
+---------------------
+
+Release 0.9.4880.2 fixes a bug where some indexed retractions are not enforced. This can cause old values to reappear, or uniqueness constraints to consider retracted values. Upgrading the transactor to this release will repair the problem during the next indexing job.
+
+All users of Datomic are encouraged to move to this release. As always, we recommend taking a backup before adopting a new release.
+
+The first indexing job after upgrading to 0.9.4880 or later will take longer and perform more I/O than a normal indexing job.
+
+
+
+
+
+Updating to Clojure 1.6
+-----------------------
+
+Datomic will run on Clojure 1.5 until August 31, 2014. After that date, all new Datomic feature releases will run exclusively on Clojure 1.6.
+
+After August 31, Clojure applications that use the Datomic Peer library will have to upgrade to Clojure 1.6. Users of Datomic from other languages will not be affected.
+
+Until then, you can use maven/leiningen dependency settings, on a peer-by-peer basis, to adopt Clojure 1.6 sooner.
+
+Leiningen dependencies:
+
+```
+<pre class="src src-clojure">[org.clojure/clojure <span style="color: #8b2252;">"1.6.0"</span>]
+[com.datomic/datomic-pro <span style="color: #8b2252;">"0.9.4815.10"</span>
+ <span style="color: #008b8b;">:exclusions</span> [... org.clojure/clojure]]
+```
+
+
+
+Maven dependencies:
+
+```
+<pre class="src src-xml"><<span style="color: #0000ff;">dependency</span>>
+  <<span style="color: #0000ff;">groupId</span>>org.clojure</<span style="color: #0000ff;">groupId</span>>
+  <<span style="color: #0000ff;">artifactId</span>>clojure</<span style="color: #0000ff;">artifactId</span>>
+  <<span style="color: #0000ff;">version</span>>1.6.0</<span style="color: #0000ff;">version</span>>
+</<span style="color: #0000ff;">dependency</span>>
+<<span style="color: #0000ff;">dependency</span>>
+  <<span style="color: #0000ff;">groupId</span>>com.datomic</<span style="color: #0000ff;">groupId</span>>
+  <<span style="color: #0000ff;">artifactId</span>>datomic-pro</<span style="color: #0000ff;">artifactId</span>>
+  <<span style="color: #0000ff;">version</span>>0.9.4815.10</<span style="color: #0000ff;">version</span>>
+  <<span style="color: #0000ff;">exclusions</span>>
+    <<span style="color: #0000ff;">exclusion</span>>
+      <<span style="color: #0000ff;">groupId</span>>org.clojure</<span style="color: #0000ff;">groupId</span>>
+      <<span style="color: #0000ff;">artifactId</span>>clojure</<span style="color: #0000ff;">artifactId</span>>
+    </<span style="color: #0000ff;">exclusion</span>>
+  </<span style="color: #0000ff;">exclusions</span>>
+</<span style="color: #0000ff;">dependency</span>>
+```
+
+
+
+You can also update the Clojure version of a transactor you are running on your own behalf by replacing the Clojure jar in the `lib`directory. Just like the Peer library, the Datomic Transactor currently includes Clojure 1.5 by default, but is compatible with Clojure 1.6. After August 31, the Transactor will run exclusively on Clojure 1.6.
+
+
+
+
+
+2014-06-06 0.9.4815
+-------------------
+
+Release 0.9.4815 now requires Java 7 or later for the transactor. Peers continue to work with Java 6 or later.
+
+
+
+
+
+2014-04-16 0.9.4724
+-------------------
+
+The 0.9.4724 release upgrades the backup format to improve backup capacity against large databases. Datomic now stores backups using a subdirectory structure.
+
+0.9.4724 is able to restore backups taken by previous versions of Datomic. However, previous versions of Datomic will not be able to restore newer backups.
+
+Attempting to use an older version of Datomic to restore a newer backup will result in the following stacktrace:
+
+```
+<pre class="src src-example">java.lang.IllegalArgumentException: No matching clause: 3
+	at datomic.backup$backup__GT_mem.invoke(backup.clj:301)
+	at datomic.backup$read_roots.invoke(backup.clj:320)
+	at datomic.backup$create_restore_job.invoke(backup.clj:392)
+	at datomic.backup$restore_db.invoke(backup.clj:438)
+	at datomic.backup$restore.invoke(backup.clj:533)
+	at datomic.backup_cli$restore.invoke(backup_cli.clj:31)
+```
+
+
+
+
+
+
+
+2014-03-24: 0.9.4699 Changes to Index Format
+--------------------------------------------
+
+[Adaptive indexing](https://blog.datomic.com/2014/03/datomic-adaptive-indexing.html) changes the format of Datomic indexes. Both transactors and peers must upgrade, and cannot go back to a previous release.
+
+Users should backup existing databases before upgrading to this release.
+
+Adaptive indexing automatically manages the memory index for you, and should generally be used with the following default settings, regardless of the shape of your transaction load.
+
+```
+<pre class="src src-example">memory-index-threshold=32m
+memory-index-max=512m
+```
+
+
+
+If you have an older transactor properties file with different memory-index settings, you should change them to match the settings above.
+
+Peers can read old versions of the index format, and thus can be upgraded first while continuing to run existing transactors.
+
+Transactors will automatically upgrade indexes to the new adaptive format. There is no one-time cost associated with this upgrade.
+
+In order to realize the benefits of adaptive indexing, we've had to move away from synchronous updating of fulltext indexes. Fulltext indexes are now updated in the background, and are not guaranteed to be aware of the most recent transaction(s). You should not consider fulltext to be part of the basis of a db, but rather an eventually consistent supplement to a db. (In practice, fulltext indexes will typically be complete up to within a few moments of the most recent transaction.)
+
+Datomic versions prior to 0.9.4699 cannot read adaptive indexes, and will fail with the following stacktrace:
+
+```
+<pre class="src src-sample">java.lang.NullPointerException
+at com.google.common.base.Preconditions.checkNotNull(Preconditions.java:191)
+at com.google.common.cache.LocalCache.getIfPresent(LocalCache.java:3988)
+at com.google.common.cache.LocalCache$LocalManualCache.getIfPresent(LocalCache.java:4783)
+at datomic.cache$eval2673$fn__2674.invoke(cache.clj:65)
+```
+
+
+
+
+
+
+
+2014-03-13: 0.9.4609 breaks peer/transactor compatibility
+---------------------------------------------------------
+
+In version 0.9.4609, Datomic upgraded to HornetQ 2.3.17.Final. However, HornetQ had introduced a backwards-compatibility breaking change between the older version Datomic used prior to 0.9.4609 and HornetQ 2.3.17.Final.
+
+This change breaks compatibility with versions before 0.9.4609, so peers and transactors must be upgraded together across this version.
+
+
+
+
+
+2014-02-07: Log Format v2
+-------------------------
+
+Version 0.9.4532 upgrades the database log to format version 2. All peers and transactors in a system must move together to this version or later.
+
+The transactor and peers are backwards compatible with log version 1. Transactors will automatically upgrade database logs to version 2 when a database is used. The performance cost of this upgrade is negligible and upgrades can be performed against production systems.
+
+Older versions of the peer and transactor are **not** forward compatible with log version 2, and will report the following error:
+
+```
+<pre class="src src-java"><span style="color: #228b22;">NullPointerException</span>   <span style="color: #008b8b;">java</span>.<span style="color: #008b8b;">util</span>.UUID.<span style="color: #a0522d;">fromString</span>
+```
+
+
+
+Downgrading to log version 1 is possible. This release includes a command line tool that can be used to downgrade a database to log version 1:
+
+```
+<pre class="src src-shx">bin/datomic revert-to-log-version-1 {your-database-uri}
+```
+
+
+
+
+
+
+
+2014-01-22: Alter Schema
+------------------------
+
+Alter Schema (<https://blog.datomic.com/2014/01/schema-alteration.html>) breaks compatibility with older versions. Once a schema alteration has been performed on a database, only connect peers and transactors running at least version 0.9.4470 to that database.
+
+
+
+
+
+2013-07-31: Three important changes
+-----------------------------------
+
+Memory settings for the transactor must be explicitly specified in the transactor properties file. There are no default settings, so existing transactor property files that lack these settings will no longer work. The transactor properties sample files include three complete examples, representing ongoing usage, one-time imports, and constrained-memory usage during development.
+
+Stricter validation of datoms within a single transaction, preventing duplication of the same datom and multiple assertions of cardinality-one attributes. This will cause transactions that would formerly have succeeded to fail with a validation error.
+
+The transactor and peer now require Clojure 1.5.1 or greater.
+
+
+
+
+
+2013-05-23: Important fix for all users
+---------------------------------------
+
+Release 0.8.3971 fixes a bug where some active log segments are marked as garbage, which can result in log corruption after a call to *gcStorage*. Moving to this release is strongly advised.
+
+
+
+
+
+2013-05-16: Important fix for HA users
+--------------------------------------
+
+Release 0.8.3952 fixes a bug where an HA transactor pool can become stuck and no transactor can start. All HA users should adopt this release as soon as possible.
+
+
+
+
+
+2013-04-09: Updating Clojure to 1.5
+-----------------------------------
+
+Datomic will run on Clojure 1.4 until June 1, 2013. After that date, all Datomic releases will run exclusively on Clojure 1.5.
+
+After June 1, Clojure applications that use the Datomic Peer library will have to upgrade to Clojure 1.5. Users of Datomic from other languages will not be affected.
+
+Until then, you can use maven/leiningen dependency settings, on a peer-by-peer basis, to adopt Clojure 1.5 sooner.
+
+Leiningen dependencies:
+
+```
+<pre class="src src-clojure">[org.clojure/clojure <span style="color: #8b2252;">"1.5.1"</span>]
+[com.datomic/datomic-pro <span style="color: #8b2252;">"0.8.3862"</span>
+ <span style="color: #008b8b;">:exclusions</span> [... org.clojure/clojure]]
+```
+
+
+
+Maven dependencies:
+
+```
+<pre class="src src-xml"><<span style="color: #0000ff;">dependency</span>>
+  <<span style="color: #0000ff;">groupId</span>>org.clojure</<span style="color: #0000ff;">groupId</span>>
+  <<span style="color: #0000ff;">artifactId</span>>clojure</<span style="color: #0000ff;">artifactId</span>>
+  <<span style="color: #0000ff;">version</span>>1.5.1</<span style="color: #0000ff;">version</span>>
+</<span style="color: #0000ff;">dependency</span>>
+<<span style="color: #0000ff;">dependency</span>>
+  <<span style="color: #0000ff;">groupId</span>>com.datomic</<span style="color: #0000ff;">groupId</span>>
+  <<span style="color: #0000ff;">artifactId</span>>datomic-pro</<span style="color: #0000ff;">artifactId</span>>
+  <<span style="color: #0000ff;">version</span>>0.8.3862</<span style="color: #0000ff;">version</span>>
+  <<span style="color: #0000ff;">exclusions</span>>
+    <<span style="color: #0000ff;">exclusion</span>>
+      <<span style="color: #0000ff;">groupId</span>>org.clojure</<span style="color: #0000ff;">groupId</span>>
+      <<span style="color: #0000ff;">artifactId</span>>clojure</<span style="color: #0000ff;">artifactId</span>>
+    </<span style="color: #0000ff;">exclusion</span>>
+  </<span style="color: #0000ff;">exclusions</span>>
+</<span style="color: #0000ff;">dependency</span>>
+```
+
+
+
+The Datomic Peer currently includes Clojure 1.4 by default, but is compatible with Clojure 1.5.
+
+You can also update the Clojure version of a transactor you are running on your own behalf by replacing the Clojure jar in the `lib`directory. Just like the Peer library, the Datomic Transactor currently includes Clojure 1.4 by default, but is compatible with Clojure 1.5. After June 1, the Transactor will run exclusively on Clojure 1.5.
+
+
+
+
+
+2013-01-09: 0.8.3705 breaks peer/transactor compatibility
+---------------------------------------------------------
+
+In version 0.8.3705, Datomic upgraded to HornetQ 2.2.21, in order to get key bugfixes and enhancements to HornetQ. However, HornetQ had introduced a backwards-compatibility breaking change between the older version Datomic used prior to 0.8.3705 and HornetQ 2.2.21.
+
+This change breaks compatibility with versions before 0.8.3705, so peers and transactors must be upgraded together across this version.

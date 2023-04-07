@@ -1,0 +1,82 @@
+Local Dev Setup
+===============
+
+Datomic is a [distributed system](../operation/deployment.html). Storage services, transactors, peers, peer servers, and clients are designed so that load on one process has minimal impact on other processes (while delivering on Datomic's semantic promises).
+
+As a convenience for development, you can 'undistribute' Datomic by running more than one process on the same virtual or physical hardware, running storage, transactor, and peer on a developer laptop.
+
+Please note that **'development mode' cannot deliver the reliability or performance of a production deployment**, since it takes place on a single machine. Processes are competing for a single resource, and that single resource is a single point of failure. A single machine failure brings all processes down.
+
+> This "Getting Started" guide uses the [Peer library](../peer/peer-introduction.html). The setup process for [using the Client library and Peer Servers](../client/client-getting-started.html) is different.
+
+The steps for running a local 'development mode' of Datomic, using the [Peer library](../peer/peer-introduction.html) include:
+
+- [Obtaining a Datomic Starter or Datomic Pro license](https://www.datomic.com/get-datomic.html)
+- [Running a Transactor using the dev storage protocol](#run-dev-transactor)
+- [Integrate the Peer library in your project](../peer/integrating-peer-lib.html)
+
+> All steps in this process assume you're running commands from the root of the unzipped Datomic distribution.
+
+Introduction
+------------
+
+This guide requires Datomic Starter or Datomic Pro. If you do not yet have Datomic, please visit [My Datomic](https://my.datomic.com/login) to register and download Datomic Starter.
+
+Throughout this tutorial, shell commands are run from the root directory of the Datomic distribution. This will be the version qualified directory name. For example:
+
+```
+<pre class="example" id="orgc4349eb">
+cd /home/user/datomic/datomic-pro-1.0.6644
+```
+
+The **bin** directory contains executable scripts for launching a REPL, installing the peer library locally, running a transactor, etc. It also contains storage configuration scripts.
+
+For this example, we will use a local in-memory database, which does not require a transactor to run. For steps on running a transactor please see [Running a dev transactor](../getting-started/dev-setup.html#run-dev-transactor).
+
+
+
+
+
+Storage
+-------
+
+This guide can be followed by using a local in-memory database, or with your data persisted to local storage.
+
+The in-memory (`mem`) database does not require any special configuration, only a db-uri of `datomic:mem://<db-name>`. The rest of the tutorial assumes that you will be using `mem` storage unless you wish to [run a transactor](transactor.html)with `dev` storage to persist your changes to disk.
+
+
+
+
+
+Integrating Peer Library
+------------------------
+
+The [Peer library](../clojure/index.html) must be on the classpath to be used to interact with Datomic.
+
+Follow [the instructions](../peer/integrating-peer-lib.html) to setup your project *or* [run your REPL](#repl) with the included script in your Datomic pro distribution.
+
+
+
+### Run the included REPL
+
+```
+<pre class="src src-sh">bin/repl
+```
+
+
+
+The transactor which was started earlier will need to continue running. Run your REPL in another terminal window.
+
+
+
+
+
+
+
+Next Steps
+----------
+
+Now that you have configured a project to use Datomic you can choose your storage.
+
+- [Run a transactor and use `dev` storage](transactor.html) **or**
+- Continue the tutorial [using `mem` storage](connect-to-a-database.html)

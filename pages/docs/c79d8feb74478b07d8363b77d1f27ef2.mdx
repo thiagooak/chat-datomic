@@ -1,0 +1,128 @@
+Peer Server
+===========
+
+Running the Peer Server
+-----------------------
+
+A Datomic Peer Server provides an interface for Datomic clients to access databases.
+
+The Peer Server communicates with storage and the Transactor to service both reads from and writes to Datomic databases. As such, the system running the Peer Server must have appropriate permissions to access storage, as specified in the [Storage Documentation](../overview/storage.html).
+
+The Peer Server must also be able to connect to the live Transactor at the location specified by the `host` property in the [transactor properties](../configuration/system-properties.html#transactor-properties) file. For more information on the connection between the Peer Server and the Transactor see the [Deployment Documentation](../operation/deployment.html).
+
+It is important to note that Peer Servers do not own databases. As such, the Peer Server cannot create or destory a database.
+
+You can launch a Peer Server for one or more databases with the peer-server command:
+
+```
+<pre class="src src-sh">bin/run -m datomic.peer-server<span style="color: #8b2252;">\</span>
+        -h host<span style="color: #8b2252;">\</span>
+        -p port<span style="color: #8b2252;">\ </span>
+        -a access-key,secret<span style="color: #8b2252;">\</span>
+        -d dbname,URI<span style="color: #8b2252;">\</span>
+```
+
+
+
+The `access-key` and `secret` are opaque strings. Clients must provide a matching `access-key` and `secret` to connect.
+
+A `dbname` can consist of alphanumeric characters plus the hyphen '-'.
+
+The database URI is described in the [documentation for connect](../javadoc/datomic/Peer.html#connect-java.lang.Object-), e.g.
+
+```
+<pre class="src src-sh">datomic:ddb://us-east-1/my-datomic-table/my-db
+```
+
+
+
+The `-d` option may be passed multiple times to serve multiple databases from a single peer server. As a development convenience, a Peer Server can also serve transient, memory-only databases by passing a mem URI to the Peer Server command.
+
+The `-a` option may be passed multiple time to allow multiple access keys and secrets, e.g. to support a key rotation scheme.
+
+
+
+
+
+Connecting to the Peer Server
+-----------------------------
+
+To connect to a Peer Server, call [connect](https://docs.datomic.com/client-api/datomic.client.api.html#var-connect), passing a [client](https://docs.datomic.com/client-api/datomic.client.api.html#var-client) created with the the arguments you used to create the peer server:
+
+- Peer Server `host:port` for `:endpoint`
+- Peer Server `secret` for `:secret`
+- Peer Server `access-key` for `:access-key`
+
+with the other connect arguments hard-coded as shown in the example below:
+
+```
+<pre class="src src-clojure">(<span style="color: #a0522d;">require</span>
+ '[datomic.client.api <span style="color: #008b8b;">:as</span> d])
+
+(<span style="color: #a020f0;">def</span> <span style="color: #0000ff;">client</span>
+  (d/client
+   {<span style="color: #008b8b;">:server-type</span> <span style="color: #008b8b;">:peer-server</span>
+    <span style="color: #008b8b;">:endpoint</span> <span style="color: #8b2252;">"localhost:8998"</span>
+    <span style="color: #008b8b;">:secret</span> <span style="color: #8b2252;">"my-secret"</span>
+    <span style="color: #008b8b;">:access-key</span> <span style="color: #8b2252;">"my-access-key"</span>
+    <span style="color: #008b8b;">:validate-hostnames</span> false}))
+
+(<span style="color: #a020f0;">def</span> <span style="color: #0000ff;">conn</span> (d/connect client {<span style="color: #008b8b;">:db-name</span> <span style="color: #8b2252;">"my-db"</span>}))
+```
+
+
+
+> The connection between clients and the Peer Server does not support SSL hostname validation. Both should be run within trusted network boundaries.
+
+
+
+### Health Check
+
+The peer server exposes /health as a health check endpoint, and will respond with a 2xx status code to HTTPS requests for {host}:{port}/health. Given a peer server runnnig with
+
+```
+<pre class="src src-sh">bin/run -m datomic.peer-server -a k,s -d test,datomic:mem://test
+```
+
+
+
+The health check will respond:
+
+```
+<pre class="src src-sh">curl -v -k https://localhost:8998/health
+```
+
+
+
+```
+<pre class="src src-sh">=>
+> Trying 127.0.0.1...
+> Connected to localhost (127.0.0.1) port 8998 (<span style="color: #b22222;">#</span><span style="color: #b22222;">0)</span>
+> TLS 1.2 connection using TLS_ECDHE_RSA_WITH_AES_256_CBC_SHA384
+> Server certificate: Unknown
+> GET /health HTTP/1.1
+> Host: localhost:8998
+> User-Agent: curl/7.43.0
+> Accept: */*
+> 
+< HTTP/1.1 200 OK
+< Date: Thu, 28 Mar 2019 20:52:37 GMT
+< Content-Type: text/plain
+< Content-Length: 2
+< Server: Jetty(9.3.7.v20160115)
+< 
+Connection 0 to host localhost left intact
+```
+
+
+
+
+
+
+
+
+
+Limitations
+-----------
+
+The use of iteration in the Client API (i.e. taking from a query or datoms result channel repeatedly) requires that the client communicate with the same Peer Server instance that served the original request. In a system with multiple Peer Servers behind a load balancer we recommend you enable [sticky sessions](https://docs.aws.amazon.com/elasticloadbalancing/latest/application/sticky-sessions.html) to ensure iterative requests are routed to the same Peer Server instance. If sticky sessions are unavailable, it is also possible to handle chunking and iteration manually using the `:limit` and `:offset`arguments.

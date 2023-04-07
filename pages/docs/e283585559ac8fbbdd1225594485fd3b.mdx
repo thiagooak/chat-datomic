@@ -1,0 +1,68 @@
+Get Connected
+=============
+
+> This page only applies to [Datomic 781-9041](../changes.html#781-9041) and lower.
+
+This page walks your through configuring Client API connectivity to a Datomic system from outside the Datomic VPC. This takes two steps:
+
+- [connect to the access gateway](../operation/cli-tools.html#client-access)
+- [test the access gateway connection](#test-access-gateway)
+
+> The latest Datomic Cloud [setup process](start-system.html) does not require these steps.
+
+Prerequisites
+-------------
+
+This page assumes that an administrator has already:
+
+- [started a Datomic System](../getting-started/start-system.html)
+- [configured user access](../getting-started/configure-access.html)
+
+Before you configure Client API connectivity to a Datomic database from outside the VPC, you need to:
+
+- Install [Clojure](https://clojure.org/guides/getting_started) 1.9 or later.
+- Install the [AWS CLI](../operation/howto.html#install-cli) version 1.11.170 or greater.
+- Install the [Datomic CLI Tools](../operation/cli-tools.html)
+- Configure a shell environment with [AWS access keys](../operation/howto.html#aws-access-keys) for Datomic
+- Know the [region and name](../operation/howto.html#system-name) of the Datomic System you want to connect to
+
+
+
+
+
+Connect to the Access Gateway
+-----------------------------
+
+To connect to the access gateway, run the [datomic access](../operation/cli-tools.html#client-access) command to create an SOCKS proxy connection, passing your [system name](../operation/howto.html#system-name):
+
+```
+<pre class="example" copyable="true" id="org43b4257">
+datomic client access <system>
+```
+
+The script will continue to run once launched.
+
+
+
+
+
+Test Access Gateway Connection
+------------------------------
+
+Run the following command to test your system's ability to reach Datomic through the SOCKS proxy, replacing `[system]`, `[region]`. and `[port]` with your [system-name, region](../operation/howto.html#system-name) and port.
+
+```
+<pre class="example" copyable="true" id="org8447a04">
+curl -x socks5h://localhost:8182 http://entry.[system].[region].datomic.net:8182/
+```
+
+On success, this command will return text like:
+
+```
+<pre class="example" id="org9cb9316">
+{:s3-auth-path [bucket-name]}
+```
+
+Any other response indicates a failure to connect. Carefully review the prerequisites and steps on this page. If you feel that you have completed each step correctly, see the [troubleshooting documentation](../troubleshooting.html#troubleshooting-socks).
+
+If you are trying Datomic for the first time, a good next step is the [Client API Tutorial](../tutorial/client.html).

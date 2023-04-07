@@ -1,0 +1,43 @@
+Client Synchronization
+======================
+
+Background
+----------
+
+Datomic stores data immutably. When you ask a client connection for a db value, you are given a recent value of the db. All clients see a valid, [consistent](../transactions/acid.html) view. You can never see partial transactions, corruption/regression of timelines, causal anomalies etc. Datomic is always '[business rules](https://en.wikipedia.org/wiki/Business_rule)' valid, and causally consistent.
+
+
+
+
+
+Motivation
+----------
+
+That does not mean that every client sees the same thing simultaneously. Just as in the real world, it is never the case that everyone sees the same thing "at the same time" in a live distributed system. There is no inherent shared truth: you might convey a message to me about X at the speed of light but I can only perceive X at the speed of sound. Thus, I know X is coming, but I might have to wait for it.
+
+This means that some client A might commit a transaction and tell client B about it before B is informed via the normal channels. This is an interesting case, as it has to do with perception and propagation delays. It is not a question of consistency, it is a question of communication synchronization.
+
+This comes up when you would like to read-your-own-writes via clients (e.g. when requests hit different cluster nodes via a load balancer), and when there is out-of-band communication of writes (A tells B about its write before Datomic's propagation does).
+
+
+
+
+
+Sync
+----
+
+[Client sync](https://docs.datomic.com/client-api/datomic.client.api.html#var-sync) takes a basis point `t`, and it returns a database value that includes point `t`. This does not cause any additional network traffic, and it saves you from having to poll for arrival. `sync` is the preferred method to use for synchronizing between Datomic clients:
+
+- Client A gets the basis `t` for some transaction of interest
+- Client A records the `t` value in it communication to B, e.g. via cookie.
+
+You can [easily get the basis](https://docs.datomic.com/client-api/datomic.client.api.html#var-db) `t` for any db value you have in hand.
+
+
+
+
+
+Conclusion
+----------
+
+`sync` is powerful, and removes the need to find a particular server to handle a synchronization between clients. That said, use `sync`only when necessary. Datomic is designed to leverage the inherent parallelism possible given immutable data and distributed storage. Notifications to cluster nodes are sent at the same time as the acknowledgment to the client submitting the transaction, and thus are as 'simultaneous' as network communication can be. Use `sync` only to enforce cross-client causal relationships.

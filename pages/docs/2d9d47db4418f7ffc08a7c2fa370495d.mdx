@@ -1,0 +1,105 @@
+Read Revisited: More Query
+==========================
+
+First, don't forget to acquire the latest value of the database, **after** the transaction that added the order.
+
+```
+<pre class="src src-clojure">(<span style="color: #a020f0;">def</span> <span style="color: #0000ff;">db</span> (d/db conn))
+```
+
+
+
+Parameterized Query
+-------------------
+
+Now let's try a more complex query. We would like to be able to suggest additional items to shoppers. We need a query that, given any inventory item, finds all the other items that have ever appeared in the same order.
+
+The "related items" query will have two parameters:
+
+- a database value
+- an inventory entity id
+
+Parameters enter query via additional arguments to `q`, and they are named by a corresponding `:in` clause. The special `$` name is a placeholder for the database value.
+
+The query below finds the SKUs for all items that have appeared in an order with SKU-25:
+
+noslide
+
+```
+<pre class="src src-clojure">(d/q
+ '[<span style="color: #008b8b;">:find</span> ?sku
+   <span style="color: #008b8b;">:in</span> $ ?inv
+   <span style="color: #008b8b;">:where</span>
+   [?item <span style="color: #008b8b;">:item/id</span> ?inv]
+   [?order <span style="color: #008b8b;">:order/items</span> ?item]
+   [?order <span style="color: #008b8b;">:order/items</span> ?other-item]
+   [?other-item <span style="color: #008b8b;">:item/id</span> ?other-inv]
+   [?other-inv <span style="color: #008b8b;">:inv/sku</span> ?sku]]
+ db [<span style="color: #008b8b;">:inv/sku</span> <span style="color: #8b2252;">"SKU-25"</span>])
+
+```
+
+
+
+```
+<pre class="src src-clojure">=> [[<span style="color: #8b2252;">"SKU-25"</span>] [<span style="color: #8b2252;">"SKU-26"</span>]]
+```
+
+
+
+Notice how variables are used to join:
+
+- `?inv` is bound on input to the entity id for *SKU-25*, which
+- joins to every order `?item` mentioning `?inv`, which
+- joins to every `?order` of that `?item`, which
+- joins to every `?other-item` in those orders, which
+- joins to every `?other-inv` inventory entity, which
+- joins to all the skus `?sku`
+
+
+
+
+
+Rules
+-----
+
+The "related items" feature is so nice that we would like to use it in a bunch of different queries. You can name query logic as a *rule* and reuse it in multiple queries.
+
+Create a rule named `ordered-together` that binds two variables `?inv`and `?other-inv` if they have ever appeared in the same order:
+
+noslide
+
+```
+<pre class="src src-clojure">(<span style="color: #a020f0;">def</span> <span style="color: #0000ff;">rules</span>
+  '[[(ordered-together ?inv ?other-inv)
+     [?item <span style="color: #008b8b;">:item/id</span> ?inv]
+     [?order <span style="color: #008b8b;">:order/items</span> ?item]
+     [?order <span style="color: #008b8b;">:order/items</span> ?other-item]
+     [?other-item <span style="color: #008b8b;">:item/id</span> ?other-inv]]])
+```
+
+
+
+Now you can pass these *rules* to a query, using the special `:in` name `%`, and then refer to the rules by name:
+
+noslide
+
+```
+<pre class="src src-clojure">(d/q
+ '[<span style="color: #008b8b;">:find</span> ?sku
+   <span style="color: #008b8b;">:in</span> $ % ?inv
+   <span style="color: #008b8b;">:where</span>
+   (ordered-together ?inv ?other-inv)
+   [?other-inv <span style="color: #008b8b;">:inv/sku</span> ?sku]]
+ db rules [<span style="color: #008b8b;">:inv/sku</span> <span style="color: #8b2252;">"SKU-25"</span>])
+```
+
+
+
+```
+<pre class="src src-clojure">=> [[<span style="color: #8b2252;">"SKU-25"</span>] [<span style="color: #8b2252;">"SKU-26"</span>]]
+```
+
+
+
+So far we have created and accumulated data. Now let's look at what happens when things [change over time](retract.html).

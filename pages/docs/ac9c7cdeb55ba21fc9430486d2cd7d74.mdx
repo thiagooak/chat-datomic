@@ -1,0 +1,187 @@
+Database Filters
+================
+
+Filters take a database value and return a new database value that exposes only datoms that satisfy a predicate. This makes it possible to have a single set of queries and index traversals that can be used without change against different filtered views of your data.
+
+Datomic databases can be filtered with the time-based predicates `asOf`and `since`. In addition, you can get an unfiltered view of all history via `history`.
+
+Each of these APIs is described below.
+
+Example Database
+----------------
+
+All of the examples below use an [example inventory database](https://github.com/cognitect-labs/day-of-datomic-cloud/blob/master/tutorial/filters.clj), looking specifically at an entity that tracks the quantity of dilithium crystals on hand at a given point in time. The subset of the data relevant to the examples is
+
+eavtxadded0x00000c00000003e9:db/txInstantMon Dec 31 19:00:000xc00000003e9true0x00001000000003ea:item/idDLC-0420xc00000003e9true0x00001000000003ea:item/descriptionDilitihium Crystals0xc00000003e9true0x00001000000003ea:item/count1000xc00000003e9true0x00000c00000003eb:db/txInstantThu Jan 31 19:00:000xc00000003ebtrue0x00001000000003ea:item/count1000xc00000003ebfalse0x00001000000003ea:item/count2500xc00000003ebtrue0x00000c00000003ec:db/txInstantThu Feb 27 19:00:000xc00000003ectrue0x00001000000003ea:item/count2500xc00000003ecfalse0x00001000000003ea:item/count500xc00000003ectrue0x00000c00000003ed:db/txInstantMon Mar 31 20:00:000xc00000003edtrue0x00000c00000003ed:tx/errortrue0xc00000003edtrue0x00001000000003ea:item/count500xc00000003edfalse0x00001000000003ea:item/count99990xc00000003edtrue0x00000c00000003ee:db/txInstantWed May 14 20:00:000xc00000003eetrue0x00001000000003ea:item/count99990xc00000003eefalse0x00001000000003ea:item/count1000xc00000003eetrue
+
+
+
+asOf
+----
+
+An `asOf` filter returns a database "as of" a particular point in time, ignoring any transactions after that point. The time specification can be any time-point, i.e.
+
+- a Datomic transaction id. Use a transaction id when you want a database as of a specific transaction.
+- a Datomic point in time. Use with, e.g., the basis-t value of the `:db-after` returned by derefing the future returned by `transact`.
+- an instant in time (a `java.util.Date`). An instant should be used when you have a wall clock time for the database you want but do not have a transaction id or basis-t value, as an instant is not as precise as Datomic's t or tx values.
+
+Because the `item/count` of dilithium crystals is changing over time, different `asOf` views will show different counts:
+
+```
+<pre class="src src-clojure">(<span style="color: #a020f0;">def</span> <span style="color: #0000ff;">db</span> (d/db conn))
+(d/pull db '[*] [<span style="color: #008b8b;">:item/id</span> <span style="color: #8b2252;">"DLC-042"</span>])
+```
+
+
+
+```
+<pre class="src src-clojure">=>
+{<span style="color: #008b8b;">:db/id</span> 55301036830621764, 
+ <span style="color: #008b8b;">:item/id</span> <span style="color: #8b2252;">"DLC-042"</span>, 
+ <span style="color: #008b8b;">:item/description</span> <span style="color: #8b2252;">"Dilitihium Crystals"</span>, 
+ <span style="color: #008b8b;">:item/count</span> 100}
+
+```
+
+
+
+```
+<pre class="src src-clojure">(<span style="color: #a020f0;">def</span> <span style="color: #0000ff;">as-of-eoy-2013</span> (d/as-of db #inst <span style="color: #8b2252;">"2014-01-01"</span>))
+(d/pull as-of-eoy-2013 '[*] [<span style="color: #008b8b;">:item/id</span> <span style="color: #8b2252;">"DLC-042"</span>])
+```
+
+
+
+```
+<pre class="src src-clojure">=>
+{<span style="color: #008b8b;">:db/id</span> 55301036830621764, 
+ <span style="color: #008b8b;">:item/id</span> <span style="color: #8b2252;">"DLC-042"</span>, 
+ <span style="color: #008b8b;">:item/description</span> <span style="color: #8b2252;">"Dilitihium Crystals"</span>, 
+ <span style="color: #008b8b;">:item/count</span> 250}
+```
+
+
+
+
+
+
+
+since
+-----
+
+A `since` filter is the opposite of `asOf`. Taking the same point-in-time arguments as `asOf`, `since` returns a value of the database that includes only datoms added by transactions after that point in time.
+
+There is an important subtlety to consider when using `since`. Typically, the identifying information used to lookup an entity is established in the first transaction about that entity, so a `since` view may not be able to see the information needed for lookup. Our example has exactly this problem trying to find the entity in question by its `:item/id`:
+
+```
+<pre class="src src-clojure">(<span style="color: #a020f0;">def</span> <span style="color: #0000ff;">since-2014</span> (d/since db #inst <span style="color: #8b2252;">"2014-01-01"</span>))
+
+(d/pull since-2014 '[*] [<span style="color: #008b8b;">:item/id</span> <span style="color: #8b2252;">"DLC-042"</span>])
+```
+
+
+
+```
+<pre class="src src-clojure">=> #<span style="color: #008b8b;">:db</span>{<span style="color: #008b8b;">:id</span> nil} <span style="color: #b22222;">;; </span><span style="color: #b22222;">!!!</span>
+```
+
+
+
+Most callers of `since` will refer to the database twice: one reference to the default "now" db to find entities, and a second reference to the `since` db to shave off the past. With entities, this looks like
+
+```
+<pre class="src src-clojure">(d/pull since-2014 '[*] (<span style="color: #008b8b;">:db/id</span> (d/pull db [<span style="color: #008b8b;">:db/id</span>] [<span style="color: #008b8b;">:item/id</span> <span style="color: #8b2252;">"DLC-042"</span>])))
+```
+
+
+
+```
+<pre class="src src-clojure">=>
+{<span style="color: #008b8b;">:db/id</span> 55301036830621764, 
+ <span style="color: #008b8b;">:item/count</span> 100}
+```
+
+
+
+Notice that the "now" `db` is used to resolve the lookup ref, and the `since-2014` db is then used to pull the associated attributes.
+
+In query, this can take the form of passing two different filters of the same db as separate inputs:
+
+```
+<pre class="src src-clojure">(d/q ('[<span style="color: #008b8b;">:find</span> ?count 
+        <span style="color: #008b8b;">:in</span> $ $since ?id 
+        <span style="color: #008b8b;">:where</span> [$ ?e <span style="color: #008b8b;">:item/id</span> ?id] 
+               [$since ?e <span style="color: #008b8b;">:item/count</span> ?count]]) 
+  db since-2014 <span style="color: #8b2252;">"DLC-042"</span>)
+```
+
+
+
+Here, the `db` argument is named `$` inside the query, and used to resolve the `:item/id`. Then the `since-2014` is named `$since` inside the query, and used to find the `:item/count`.
+
+
+
+
+
+history
+-------
+
+The history view of the database includes the present and all of the past, unfiltered. This makes the history view ideal for querying the complete history of an entity, or group of entities.
+
+Here is a query for all assertions about dilithium crystals:
+
+```
+<pre class="src src-clojure">(<span style="color: #a020f0;">def</span> <span style="color: #0000ff;">history</span> (d/history db))
+
+(<span style="color: #483d8b;">->></span> (d/q '[<span style="color: #008b8b;">:find</span> ?aname ?v ?inst
+            <span style="color: #008b8b;">:in</span> $ ?e
+            <span style="color: #008b8b;">:where</span> [?e ?a ?v ?tx true]
+                   [?tx <span style="color: #008b8b;">:db/txInstant</span> ?inst]
+                   [?a <span style="color: #008b8b;">:db/ident</span> ?aname]]
+          history [<span style="color: #008b8b;">:item/id</span> <span style="color: #8b2252;">"DLC-042"</span>])
+     (<span style="color: #a0522d;">sort-by</span> #(<span style="color: #a0522d;">nth</span> % 2)))
+```
+
+
+
+Note that the query joins through `:db/txInstant` to return wall clock time, and joins through `:db/ident` to return human-readable attribute names.
+
+Simplified views of data that do not account for time are incompatible with `history`, since a history database can see multiple different values for the "same" fact at different times. In particular, an entity is a point-in-time view and cannot be created from a `history`database.
+
+
+
+
+
+Usage Considerations
+--------------------
+
+
+
+### As-of Is Not a Branch
+
+Filters are applied to an unfiltered database value obtained from `db`or `with`. In particular, the combination of `with` and `as-of` means "`with` followed by `as-of`", regardless of which API call you make first. `with` plus `as-of` lets you see a speculative db with recent datoms filtered out, but it does **not** let you branch the past.
+
+
+
+
+
+### The Present Pays No Penalty
+
+The original database value returned from connection does no filtering. It sees only the present, without having to filter the past. So queries about "now" are as efficient as possible–they do not consider history and pay no penalty for history, no matter how much history is stored in the system.
+
+
+
+
+
+### Filter or Log?
+
+Filters are applied to database indexes, filtering out data that does not match a predicate. Filters cannot do anything that could not be done directly with indexes, but they do allow you to separate some aspect of a query, reusing query logic across different filtered views.
+
+Consider the following two queries:
+
+- "What happened between 8:00 and 9:00 this morning?"
+- "What did entity 42 look like at 8:00 this morning?"
+
+The first query is limited **only** by time. Such a query can be answered directly from the log, which is a time index. Answering the same question via `asOf` and `since` would require a filtering scan of the entire database.
+
+The second query is limited by both entity and by time. Thus it makes sense to augment indexes with a filter, calling a query on an `asOf`view of the database. The query will use the EAVT index to jump straight to the requested datoms, which are then filtered to exclude the most recent datoms. Because all the time-related work is done by `asOf`, the query can be time-agnostic and can work with any point-in-time. You can use the same approach in your own queries, writing queries that are agnostic about time (or about some domain value), and using filters to allow reuse of those queries across different domain values.

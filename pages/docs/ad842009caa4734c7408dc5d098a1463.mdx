@@ -1,0 +1,197 @@
+Introduction
+============
+
+Datomic is a distributed database designed to enable scalable, flexible and intelligent applications, running on next-generation cloud architectures.​
+
+Datomic does this by:
+---------------------
+
+- Bringing declarative data manipulation into the application, and the data with it
+- Getting time, process and perception right
+- Process (writes) require coordination
+- Perception (reads) require none
+- The past doesn't change
+- Leveraging immutability, and a sound model of state
+
+
+
+
+
+Datomic has:
+------------
+
+- ACID Transactions
+- Joins
+- A sound data model
+- A logical query language - Datalog
+
+Thus, Datomic avoids the compromises and losses of many NoSQL solutions. In addition, it offers flexibility and power over the traditional model in supporting:
+
+- Hierarchy
+- Multi-valued attributes
+- Minimal schema
+- Reliable operation on unreliable, ephemeral cloud instances
+- Time
+
+Datomic avoids manual caching and replication, complex configuration, sharding (automatic or manual), logging, locking, latching and disk management of traditional servers.
+
+
+
+
+
+The Database, Deconstructed
+---------------------------
+
+The vast majority of databases today reflect designs from decades ago, when memory and disks were very small and very expensive. Now they are a million times more capacious and cheaper, and many of the presumptions underlying database design should be revisited in that light. Most significantly, databases of the past were defined in terms of updating places, in an effort to conserve disk space and memory. Place-oriented programming needs to be abandoned if we are to move away from efficiency-in-the-small to capability in the large.
+
+It is interesting that we use the terms 'memory' and 'records' when talking about update-in-place databases, as records of the past (predating computers) were not in fact erased as new records were made. Nor do we erase our old mental memories in order to form new ones. It is likely we will look back at the last few decades of the 20th century as an unfortunate time when the economics of computers kept us from doing the right thing. The time to change that is now.
+
+Databases have traditionally been called upon to deliver the following services, among others:
+
+- Coordination
+- Consistency
+- Indexing
+- Storage
+- Queries
+
+
+
+### The Traditional Architecture
+
+![tradarch.svg](../images/tradarch.svg)
+
+
+
+Update-in-place, even when implemented using append-only techniques, drives these services to be co-located. A traditional DBMS server is in charge of all of these, and frequently becomes a brittle, difficult to scale component of an application architecture. Some distributed architectures use sharding or other techniques to divide up the data and allow independent islands of this stack of services, but do not significantly break them apart. Breaking these services apart is exactly what is needed to enable more flexible architectures and new capabilities.
+
+Why do we want to break things apart? There are several general benefits of independence:
+
+- the ability to relocate subsystems
+- the ability to let separate services take care of part of the job
+- simplification of system components
+
+And specifically, in the case of Datomic, we seek to dislodge query capabilities from the servers and relocate them into applications, as that is the only way to get scalable and elastic intelligence for our applications.
+
+
+
+
+
+
+
+The Datomic Architecture
+------------------------
+
+Datomic divides the traditional model into independent roles:
+
+
+
+### Peers
+
+The peer component is a library that gets embedded in the applications
+
+- Submits transactions to, and accepts changes from, the transactor
+- Includes all communication components for talking to transactors and storage services
+- Provides data access, caching, and query capability to the application, reading from the storage service as needed
+
+
+
+
+
+### Clients
+
+The Client library can be used to connect lightweight processes to Datomic.
+
+- Submits transactions and queries to the Peer Server
+- Supports all query capabilities available to the Peer
+- Incurs none of the memory overhead of the full Peer library, does not perform local caching within the lightweight process
+- Can support non-JVM languages
+
+
+
+
+
+### Peer Server
+
+The Peer Server is a JVM process that provides an interface for the Datomic Client library.
+
+- Accepts queries and transactions from Datomic Clients
+- Submits transactions to, and accepts changes from, the transactor
+- Provides data access, caching, and query capability to connected Clients, reading from the storage service as needed
+
+
+
+
+
+### Transactors
+
+- Accept transactions
+- Process them serially
+- Commit the results to the storage service
+- all writes are synchronously made to redundant storage
+- Transmit changes to the peers
+- Index in the background, place indexes in storage service
+
+
+
+
+
+### Storage services
+
+- Provide an interface to highly reliable, redundant storage
+- Available from third-parties (e.g. Amazon DynamoDB is a supported storage service)
+
+![clientarch_orig.svg](../images/clientarch_orig.svg)
+
+
+
+
+
+
+
+### Many benefits fall out of this decomposition
+
+
+
+#### Separating reads and writes
+
+When reads are separated from writes, writes are never held up by queries. In the Datomic architecture, the transactor is dedicated to transactions, and need not service reads at all!
+
+
+
+
+
+#### Integrated data distribution
+
+Each peer and transactor manages its own local cache of data segments, in memory. This cache self-tunes to the working set of that application. All caching is fully integrated into the system, not added on top of the system manually by the users.
+
+
+
+
+
+#### Every peer gets its own brain (query engine and cache)
+
+Traditional client-server databases engender a strong sense of us vs. them, here vs. there amongst application programmers. The data isn't local, you have to communicate with the server via strings, the declarative logic runs on the server but is unavailable to application code etc. This leads to the proverbial impedance mismatch. The problem, though, isn't that databases are insufficiently object-oriented, rather, that applications are insufficiently declarative. Moving a proper, index-supported, declarative query engine into applications will enable them to work with data at a higher level than ever before, and at application-memory speeds.
+
+
+
+
+
+#### Elasticity
+
+Application servers are frequently scaled up and down as demand fluctuates, but traditional databases, even with read-replication configured, have difficulty scaling query capability similarly. Putting query engines in peers makes query capability as elastic as the applications themselves. In addition, putting query engines into the applications themselves means they never wait on each other's queries.
+
+
+
+
+
+#### Ready for the cloud
+
+All components are designed to run on commodity servers, with expectations that they, and their attached storage, are ephemeral.
+
+
+
+
+
+#### The speed of memory
+
+While the (disk-backed) storage service constitutes the data of record, the rest of the system operates primarily in memory. Since memory prices are falling faster than business information is growing, it is only a matter of time before most businesses' data will fit in memory.

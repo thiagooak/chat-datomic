@@ -1,0 +1,120 @@
+History
+=======
+
+asOf Query
+----------
+
+Imagine that SKU-22 requires cold storage. Pat notices the databaseentry showing we have some SKU-22 in stock and turns the thermostat down to 56F. This turns out to be very unpopular with everybody that works there. By the time somebody else checks the database to verify Pat's finding, the data error has been fixed.
+
+This example shows why systems of record should *never delete data, even if that data is mistaken.* Other parties may have acted on that data, and a key job of record-keeping is to provide an audit trail in these situations.
+
+With Datomic, you can make a database query as-of any previous point in time, where time can be specified either as an instant or as a transaction id. If you are following along in code, you probably don't remember the exact instant in time that you made the correction above–and you don't have to. You can query the system for the most recent transactions:
+
+noslide
+
+```
+<pre class="src src-clojure">(d/q '[<span style="color: #008b8b;">:find</span> (<span style="color: #a0522d;">max</span> 3 ?tx)
+       <span style="color: #008b8b;">:where</span> [?tx <span style="color: #008b8b;">:db/txInstant</span>]]
+     db)
+```
+
+
+
+```
+<pre class="src src-clojure">=> [[[13194139534402 13194139534401 13194139534400]]]
+```
+
+
+
+The *max* in find limits the results to the three highest valued (most recent) transaction ids. Take the smallest of these, and use *as-of*to back up past the two "correction" transactions. Now you can see the data about SKU-22 that justifies Pat's unpopular decision:
+
+noslide
+
+```
+<pre class="src src-clojure">(<span style="color: #a020f0;">def</span> <span style="color: #0000ff;">txid</span> (<span style="color: #483d8b;">->></span> (d/q '[<span style="color: #008b8b;">:find</span> (<span style="color: #a0522d;">max</span> 3 ?tx)
+                      <span style="color: #008b8b;">:where</span> [?tx <span style="color: #008b8b;">:db/txInstant</span>]]
+                    db)
+               first first last))
+
+(<span style="color: #a020f0;">def</span> <span style="color: #0000ff;">db-before</span> (d/as-of db txid))
+```
+
+
+
+```
+<pre class="src src-clojure">(d/q '[<span style="color: #008b8b;">:find</span> ?sku ?count
+       <span style="color: #008b8b;">:where</span> [?inv <span style="color: #008b8b;">:inv/sku</span> ?sku]
+              [?inv <span style="color: #008b8b;">:inv/count</span> ?count]]
+     db-before)
+```
+
+
+
+```
+<pre class="src src-clojure">=> [[<span style="color: #8b2252;">"SKU-42"</span> 100] [<span style="color: #8b2252;">"SKU-21"</span> 7] [<span style="color: #8b2252;">"SKU-22"</span> 7]]
+```
+
+
+
+
+
+
+
+history Query
+-------------
+
+In addition to point-in-time auditing, you can also review the entire history of your data. When you query against a *history* database value, the query will return all assertions and retractions, regardless of when they were in effect. The following query shows the complete history of *:inv/count* data for items that have a SKU:
+
+noslide
+
+```
+<pre class="src src-clojure">(<span style="color: #a0522d;">require</span> '[clojure.pprint <span style="color: #008b8b;">:as</span> pp])
+(<span style="color: #a020f0;">def</span> <span style="color: #0000ff;">db-hist</span> (d/history db))
+```
+
+
+
+```
+<pre class="src src-clojure">(<span style="color: #483d8b;">->></span> (d/q '[<span style="color: #008b8b;">:find</span> ?tx ?sku ?val ?op
+            <span style="color: #008b8b;">:where</span> [?inv <span style="color: #008b8b;">:inv/count</span> ?val ?tx ?op]
+                   [?inv <span style="color: #008b8b;">:inv/sku</span> ?sku]]
+          db-hist)
+     (<span style="color: #a0522d;">sort-by</span> first)
+     (pp/pprint))
+```
+
+
+
+```
+<pre class="src src-clojure">=> ([13194139534399 <span style="color: #8b2252;">"SKU-21"</span> 7 true]
+    [13194139534399 <span style="color: #8b2252;">"SKU-42"</span> 100 true]
+    [13194139534399 <span style="color: #8b2252;">"SKU-22"</span> 7 true]
+    [13194139534400 <span style="color: #8b2252;">"SKU-22"</span> 7 false]
+    [13194139534402 <span style="color: #8b2252;">"SKU-42"</span> 1000 true]
+    [13194139534402 <span style="color: #8b2252;">"SKU-42"</span> 100 false])
+```
+
+
+
+The *?op* is true for assertions, and false for retractions. You can see that:
+
+- Transaction *…399* set the count for three SKUs.
+- Transaction *…400* retracted the count for SKU-22.
+- Transaction *…402* "changed" the count for SKU-42.
+
+
+
+
+
+Next Steps
+----------
+
+In Datomic, information is open, flexible, associative, and indelible. This matches well with the original, non-software definitions of "record" and "data", and supports building systems that
+
+- accurately record the past
+- provide powerful access to those records
+- evolve easily and naturally
+
+> The memory database is great for exploring Datomic, but when you're ready for a database with a persistent storage for more in-depth exploration, see the [Local Dev Setup Documentation](../getting-started/dev-setup.html) for information about starting a Datomic system on your local file system.
+
+While this tutorial has introduced the core ideas, it has only scratched the surface of Datomic's capabilities. As you build your database, consult the reference section of [docs.datomic.com](https://docs.datomic.com) for more in-depth coverage.

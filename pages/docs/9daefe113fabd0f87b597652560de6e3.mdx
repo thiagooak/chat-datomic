@@ -1,0 +1,42 @@
+Datomic Cloud Releases
+======================
+
+This page lists the releases for all [Datomic Cloud software](#software):
+
+- [current releases](#current)
+- [critical notices](#critical-notices)
+- [release history](changes.html)
+
+Datomic Software
+----------------
+
+Datomic Cloud software includes:
+
+- CloudFormation templates to [start](operation/new-system.html) or [upgrade](operation/upgrading.html) a system
+- the [Client API library](client/client-api.html)
+- [Ion libraries](ions/ions-reference.html)
+- the [Datomic CLI tools](operation/cli-tools.html)
+
+Track dev-local releases via the [dev-local documentation](dev-local.html).
+
+
+
+
+
+Critical Notices
+----------------
+
+If you are using any version of Datomic Cloud older than 470-8654.1 (April 2019), follow the recommendations in the table below. See the release link for full details.
+
+AffectedDateReleaseRecommendationProduction, Solo, Query Groups2022/12/12[981-9188](changes.html#981-9188)[Upgrade as soon as possible](changes.html#990-9202)Production, Solo, Query Groups2021/07/13[884-9095](changes.html#884-9095)[Review Upgrading Documentation](changes.html#884-9095)Production, Solo, Query Groups2020/11/30[732-8992](changes.html#732-8992)Upgrade as soon as possibleProduction, Solo, Query Groups2020/02/21[616-8879](changes.html#616-8879)Introduced with 569-8835, Upgrade as soon as possibleProduction, Solo, Query Groups2019/04/25[470-8654.1](changes.html#470-8654.1)Upgrade as soon as possibleProduction, Query Groups2019/02/22[470-8654](changes.html#470-8654)See Note if upgrading to or past this versionProduction, Query Groups2018/10/11[441-8505](changes.html#441-8505)upgrade as soon as possible
+
+
+
+Current Releases
+----------------
+
+- Ion libraries (`ion` and `ion-dev`) are available on the [datomic-cloud repository](ions/ions-reference.html#libraries).
+- The `Client API` library is available on the maven [Central Repository](https://search.maven.org/).
+- CloudFormation templates and CLI tool are linked directly in the table below. Clicking on the file icons below will copy the CF template URL into your clipboard.
+
+  Artifact Release Date Version Release       [Client API](client/client-api.html#installing)   2023/02/28   1.0.123   com.datomic/client-cloud "1.0.123"        [ion-dev](operation/howto.html#ion-dev)   2022/04/06   1.0.306   com.datomic/ion-dev "1.0.306"        [ion](operation/howto.html#ion)   2022/11/29   1.0.62   com.datomic/ion "1.0.62"        [CLI Tools](operation/cli-tools.html)   2022/01/14   1.0.91   [Download](https://datomic-releases-1fc2183a.s3.amazonaws.com/tools/datomic-cli/datomic-cli-1.0.91.zip)        [Datomic Presto Server](analytics/analytics-configuring.html)   2021/07/13   0.9.96   [Download (1.17GB)](https://downloads.datomic.com/builds/datomic-presto-server/datomic-presto-server-96.zip)        [REBL](other-tools/REBL.html)   2022/04/06   0.9.245   [Get dev-tools](https://www.cognitect.com/dev-tools)        [dev-local](dev-local.html)   2022/04/06   1.0.243   [Get dev-tools](https://www.cognitect.com/dev-tools)        [Storage](operation/upgrading.html#storage-only-upgrade)   2023/02/28   990-9202   `<button class="copy-button" data-clipboard-text="https://s3.amazonaws.com/datomic-cloud-1/cft/990-9202/datomic-storage-990-9202.json" label="Copy to clipboard" title="copy CF URL to clipboard" type="button">Copy Storage Template URL</button>`        [Production](operation/upgrading.html#compute-only-upgrade)   2023/02/28   990-9202   `<button class="copy-button" data-clipboard-text="https://s3.amazonaws.com/datomic-cloud-1/cft/990-9202/datomic-compute-990-9202.json" label="Copy to clipboard" title="copy CF URL to clipboard" type="button">Copy Production Template URL</button>`        [Query Group](operation/query-groups.html#updating)   2023/02/28   990-9202   `<button class="copy-button" data-clipboard-text="https://s3.amazonaws.com/datomic-cloud-1/cft/990-9202/datomic-query-group-990-9202.json" label="Copy to clipboard" title="copy CF URL to clipboard" type="button">Copy Query Group Template URL</button>`

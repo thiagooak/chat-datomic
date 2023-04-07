@@ -1,0 +1,61 @@
+Using Jupyter Notebook
+======================
+
+[Jupyter Notebook](https://jupyter.org/) is an interactive web-based notebook frequently used for data analysis and visualization. You can access data stored in Datomic for analysis in Jupyter Notebook (or any Python-based system) using the [PyHive Presto](https://github.com/dropbox/PyHive) library.
+
+**Important**: First, follow the steps in the [Python Setup](analytics-python.html) documentation.
+
+Installing Jupyter
+------------------
+
+Using the venv [created previously](analytics-python.html#setup-venv):
+
+```
+<pre class="example" id="org3335526">
+# From the directory created when making the venv (my-python-env):
+. venv/bin/activate
+
+# Install Jupyter:
+
+pip install jupyterlab
+```
+
+
+
+
+
+Using Jupyter Notebook with Datomic Analytics
+---------------------------------------------
+
+Start a Jupyter Notebook with:
+
+```
+<pre class="example">
+jupyter notebook
+```
+
+- Browse to the URL reported by this command.
+- Create a new Python3 notebook
+
+Use the following configuration to connect to your Datomic Analytics from Jupyter:
+
+```
+<pre class="src src-python"><span style="color: #a020f0;">from</span> pyhive <span style="color: #a020f0;">import</span> presto
+<span style="color: #a0522d;">conn</span> = presto.connect(
+    host=<span style="color: #8b2252;">'<host>'</span>,
+    port=<port>,
+    catalog=<span style="color: #8b2252;">'<catalog>'</span>,
+    schema=<span style="color: #8b2252;">'<schema>'</span>,
+    username=<span style="color: #8b2252;">'presto'</span>
+)
+cur = conn.cursor()
+```
+
+
+
+Run a test query.
+
+```
+<pre class="src src-python">cur.execute(<span style="color: #8b2252;">'SELECT * FROM system.runtime.nodes'</span>)
+<span style="color: #483d8b;">print</span>(cur.fetchall())
+```

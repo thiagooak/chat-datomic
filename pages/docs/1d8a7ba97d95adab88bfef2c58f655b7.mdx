@@ -1,0 +1,73 @@
+Migrating to IAM Roles
+======================
+
+In earlier versions of Datomic, the transactor and peers used IAM user access keys to gain access to AWS resources. The transactor and peer library have have now been updated to work with IAM roles, as described in [Setting up Storage Services](../overview/storage.html). Roles are the preferred mechanism for securing access to AWS resources when running on EC2 and all future work will be done with them. IAM user access keys will continue to work to support running in environments other than EC2, but EC2 users should migrate to using roles as soon as it's convenient. Please see [AWS Access Control](../operation/aws-access-control.html) for more information.
+
+Migrating the transactor
+------------------------
+
+To migrate a transactor running on EC2 to use roles, do the following:
+
+- Edit your transactor properties file.
+- Add a *aws-transactor-role* property. You can leave the value blank or specify the name of a role to use. If the role does not exist, it will be created for you later in this process.
+- Comment out the *aws-dynamodb-user*, *aws-dynamodb-access-key-id*and *aws-dynamodb-secret-key* properties.
+- If S3 log rotation is enabled, comment out the *aws-s3-log-user*, *aws-s3-log-access-key-id* and *aws-s3-log-secret-key* properties.
+- If CloudWatch metrics are enabled, comment out the *aws-cloudwatch-user*, *aws-cloudwatch-access-key-id* and *aws-cloudwatch-secret-key* properties.
+- Once you've made these changes, run the *ensure-transactor* command, which will create the specified role, if necessary, and assign the policies required to access your DynamoDB table, S3 bucket and Cloudwatch:
+
+```
+<pre class="src src-sh">bin/datomic ensure-transactor my-transactor.properties my-transactor.properties
+```
+
+
+
+- If you are using a Datomic-generated CloudFormation to start your transactor, regenerate your CloudFormation template to use a role by running this command:
+
+```
+<pre class="src src-sh">bin/datomic create-cf-template my-transactor.properties my-cf.properties cf.json
+```
+
+
+
+- Restart your CloudFormation using the new template. It will start a transactor instance using the role you specified in your properties file.
+- If you start your transactor server instance some other way, make sure it is running under the role you specified for *aws-transactor-role*, restarting it if necessary.
+
+
+
+
+
+Migrating peers
+---------------
+
+To migrate peers running on EC2 to use roles, do the following:
+
+- Edit you transactor properties file.
+- Add a *aws-peer-role* property. You can leave the value blank or specify the name of a role to use. If the role does not exist, it will be created for you later in this process.
+- Comment out the *aws-dynamodb-peer-user*, *aws-dynamodb-peer-access-key-id*and *aws-dynamodb-peer-secret-key* properties.
+- Once you've made these changes, run the *ensure-transactor* command, which will create the specified role, if necessary, and assign the policy required to access your DynamoDB table:
+
+```
+<pre class="src src-sh">bin/datomic ensure-transactor my-transactor.properties my-transactor.properties
+```
+
+
+
+- Make sure your peer server is running under the role you specified for *aws-peer-role*, restarting it if necessary.
+
+
+
+
+
+Using IAM user access keys
+--------------------------
+
+It is still possible to use IAM user access keys to access resources. Please see [AWS Access Control](../operation/aws-access-control.html) for more details.
+
+
+
+
+
+Required role policies
+----------------------
+
+The specific role policies required by the transactor and peer library are documented in [Setting Up Storage Services](../overview/storage.html) and [Backup and Restore](../operation/backup.html). If you follow the procedures above, you do not have to configure these policies yourself. If, however, you use other tools to manage your AWS resources, then having the specific policies may be helpful.

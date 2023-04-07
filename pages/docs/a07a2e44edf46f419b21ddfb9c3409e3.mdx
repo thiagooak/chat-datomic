@@ -1,0 +1,28 @@
+Client Introduction
+===================
+
+The Client library can be used to connect lightweight processes to Datomic.
+
+- Submits transactions and queries to the Peer Server
+- Supports all query capabilities available to the Peer
+- Incurs none of the memory overhead of the full Peer library, does not perform local caching within the lightweight process
+- Can support non-JVM languages
+
+![clientarch_client.svg](../images/clientarch_client.svg)
+
+
+
+[Peer applications](../peer/integrating-peer-lib.html) can co-exist with Client applications. Compare a [Client-based architecture](../images/clientarch_client.svg) (grey indicating an unused option) with an architecture using [both Peers and Clients](../images/clientarch_orig.svg)
+
+Peer Server
+-----------
+
+The Peer Server is a JVM process that provides an interface for the Datomic Client library.
+
+- Accepts queries and transactions from Datomic Clients
+- Submits transactions to, and accepts changes from, the transactor
+- Provides data access, caching, and query capability to connected Clients, reading from the storage service as needed
+
+The Datomic Peer Server is a JVM process that provides an interface for the Datomic Client Library. The Peer Server provides a gateway to the database, submitting transactions and accepting changes from the transactor. Like the Peer Library, the Peer Server provides caching and query capability for connected Datomic Clients.
+
+The client library requires that one or more [Peer Servers](peer-server.html) is running. Peer servers are special intermediate nodes that handle queries and caching. Peer servers can be scaled horizontally just like Peers. Clients have a network hop for read operations as the queries are sent to Peer Servers. The Client library is much lighter weight than the Peer library at the cost of increasing latency on reads.

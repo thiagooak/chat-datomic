@@ -1,0 +1,35 @@
+Transaction Functions
+=====================
+
+In addition to using the built-in transactions below, you can also write your own [transaction functions](../reference/database-functions.html#transaction-functions).
+
+:db/retractEntity
+-----------------
+
+The *:db/retractEntity* function takes an entity id as an argument. It retracts all the attribute values where the given id is either the entity or value, effectively retracting the entity's own data and any references to the entity as well. Entities that are components of the given entity are also recursively retracted.
+
+The following example transaction data retracts two entities, specifying one of the entities by id, and the other by a [lookup ref](../schema/identity.html#lookup-refs).
+
+```
+<pre class="src src-clojure">[[<span style="color: #008b8b;">:db/retractEntity</span> id-of-jane]
+ [<span style="color: #008b8b;">:db/retractEntity</span> [<span style="color: #008b8b;">:person/email</span> <span style="color: #8b2252;">"jdoe@example.com"</span>]]]
+```
+
+
+
+
+
+
+
+:db/cas
+-------
+
+The *:db/cas* (compare-and-swap) function takes four arguments: an entity id, an attribute, an old value, and a new value. The attribute must be *:db.cardinality/one*. If the entity has the old value for attribute, then the new value will be asserted. Otherwise, the transaction will abort and throw an exception.
+
+You can use *nil* for the old value to specify that the new value should be asserted only if no value currently exists.
+
+The following example transaction data sets entity 42's *:account/balance* to 110, if and only if *:account/balance* is 100 at the time the transaction executes:
+
+```
+<pre class="src src-clojure">[[<span style="color: #008b8b;">:db/cas</span> 42 <span style="color: #008b8b;">:account/balance</span> 100 110]]
+```

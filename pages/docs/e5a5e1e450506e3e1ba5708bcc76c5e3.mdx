@@ -1,0 +1,51 @@
+System Properties
+=================
+
+Datomic's Java system properties are all named via the convention *datomic.somePropertyName*.
+
+Memory settings can be specified in plain bytes, or use k / m / g suffixes for kilobytes / megabytes / gigabytes, e.g. *256m*.
+
+Peer properties
+---------------
+
+Datomic Peer properties should be set using command line arguments, for example:
+
+```
+<pre class="src src-sh">-Ddatomic.txTimeoutMsec=60000
+```
+
+
+
+propertyuseunitsdefaultdatomic.memcachedExpirationDaysPlease contact [support](mailto:support@cognitect.com) before attempting to use this settinginteger30[datomic.memcachedPassword](../overview/caching.html#memcached)memcached passwordstring{none}[datomic.memcachedServers](../overview/caching.html#memcached)memcached server listhost:port(,host:port)\*{none}[datomic.memcachedUsername](../overview/caching.html#memcached)memcached usernamestring{none}[datomic.memcachedAutoDiscovery](../overview/caching.html#node-auto-discovery)auto discovery of memcached nodesbooleanfalse[datomic.memcachedConfigTimeoutMsec](../overview/caching.html#node-auto-discovery)timeout for Elasticache auto-discoveryinteger milliseconds100[datomic.objectCacheMax](../overview/caching.html#object-cache)size of object cachebytes50% of VM RAM, min 32mdatomic.readConcurrencysoft limit on concurrent storage readsinteger2x write concurrency[datomic.txTimeoutMsec](../javadoc/datomic/Connection.html#transact-java.util.List-)timeout for Connection.transactinteger milliseconds10000datomic.metricsCallback[callback](../operation/monitoring.html#custom) for reporting peer metricsstring{none}datomic.valcachePathValcache [SSD directory](../operation/valcache.html#prerequisites)string{none}datomic.valcacheMaxGbmaximum GB Valcache will try to usegigabytes{none}
+
+
+
+Transactor properties
+---------------------
+
+The equivalent names in the transactor properties file have no namespace, and are hyphen delimited lower case, e.g. *some-property-name*. The exception to this rule is the transactor property corresponding to `datomic.memcachedServers`, which is called `memcached`.
+
+The `transactor` script provided with Datomic expects the properties file to be the last argument.
+
+Please note that JVM args other than `-Xmx` and `-Xms` passed to `bin/transactor` (including Java system properties passed via `-D`) override Datomic's default Java options, including the GC settings.
+
+system propertyuseunitsdefaultwhere to set[datomic.cassandraClusterCallback](../overview/storage.html)name of a callback method/fn returning a [Cluster](https://docs.datastax.com/en/drivers/java/2.0/com/datastax/driver/core/Cluster.html)string{none}transactor properties file[datomic.heartbeatIntervalMsec](../operation/ha.html)interval between heartbeat write to storageinteger milliseconds5000, also the minimumtransactor properties filedatomic.licenseKeytransactor license keystring{none}transactor properties file[datomic.memcachedPassword](../overview/caching.html#memcached)memcached passwordstring{none}transactor properties file[datomic.memcachedServers](../overview/caching.html#memcached)memcached server listhost:port (,host:port)\*{none}transactor properties file[datomic.memcachedUsername](../overview/caching.html#memcached)memcached usernamestring{none}transactor properties file[datomic.memcachedAutoDiscovery](../overview/caching.html#node-auto-discovery)auto discovery of memcached nodesbooleanfalsecommand line arg or transactor properties file[datomic.memcachedConfigTimeoutMsec](../overview/caching.html#node-auto-discovery)timeout for Elasticache auto-discoveryinteger milliseconds100command line arg or transactor properties file[datomic.memoryIndexThreshold](../operation/capacity.html)size that kicks off indexing jobbytes{see [recommendations](../operation/capacity.html#memory-index-defaults)}transactor properties file[datomic.memoryIndexMax](../operation/capacity.html)transactions throttle to let index job catch upbytes{see [recommendations](../operation/capacity.html#memory-index-defaults)}transactor properties file[datomic.gcStoragePaceMsec](../operation/capacity.html#garbage-collection-deleted-production)paces gc-storage delete operationsinteger (msec)0command line arg[datomic.metricsCallback](../operation/monitoring.html)the name of a static Java method or Clojure fnstringRAMtransactor properties file[datomic.objectCacheMax](../overview/caching.html#object-cache)size of object cachebytes50% of VM RAM, min 32mbtransactor properties filedatomic.pidFilewrite pid to this file on startupfilename{none}transactor properties filedatomic.printConnectionInfoprint connection info at startupbooleanfalsecommand line argdatomic.sqlUserusername for SQL storagestring{none}command line arg or transactor properties filedatomic.sqlPasswordpassword for SQL storagestring{none}command line arg or transactor properties file[datomic.sqlValidationQuery](../overview/storage.html#validation-query)query used to validate JDBC connectionsstring{see [storage docs](../overview/storage.html#validation-query)}transactor properties filedatomic.readConcurrencysoft limit on concurrent storage readsinteger2x write concurrencytransactor properties filedatomic.writeConcurrencysoft limit on concurrent storage writesinteger4transactor properties file
+
+
+
+Backup properties
+-----------------
+
+propertyuseunitsdefault[datomic.backupPaceMsec](../operation/backup.html#performance)interval to pause between backup writesinteger milliseconds{none}[datomic.fileBackupConcurrency](../operation/backup.html#performance)number of threads used for file backup/restoreinteger5[datomic.s3BackupConcurrency](../operation/backup.html#performance)number of threads used for s3 backup/restoreinteger25`backupPaceMsec` can reduce I/O pressure by slowing the pace of backups.
+
+`datomic.fileBackupConcurrency` affects the number of concurrent read/writes on local storage. `datomic.s3BackupConcurrency` affects the number of concurrent read/writes when backing up to S3.
+
+
+
+
+
+Properties Changes
+------------------
+
+- In 0.8.3814, *datomic.objectCacheBytes* was deprecated, and renamed to *datomic.objectCacheMax*.
+- In 0.8.4110, the defaults for *datomic.objectCacheMax*, *datomic.memoryIndexThreshold*, and *datomic.memoryIndexMax* were removed on the transactor, so that the transactor properties file must now specify values for these properties. Peer defaults remain as described above.

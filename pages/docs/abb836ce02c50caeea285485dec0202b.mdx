@@ -1,0 +1,61 @@
+Start a System
+==============
+
+This page contains instructions for creating a *split stack* Datomic system, which provides operational flexibility by dividing the system into separate storage and compute CloudFormation stacks. If you are new to AWS or trying Datomic for the first time you should instead create a master stack per the [AWS Marketplace instructions](../getting-started/start-system.html).
+
+Checklist
+---------
+
+To start a Datomic [system](../whatis/architecture.html#system):
+
+- [setup your AWS account](../operation/account-setup.html)
+- [choose a system name](#naming)
+- [create a storage stack](#storage)
+- [create a compute stack](#compute)
+
+
+
+
+
+Naming Systems and Applications
+-------------------------------
+
+System and application names cannot be changed, so choose good names. Points to consider:
+
+- Datomic creates AWS resources named "datomic-\[system\]-\[subresource\]", so you should keep your system name short – and don't name your system "datomic".
+- Multiple systems might serve the same primary database in different development stages. So you might name systems via the convention "\[db\]-\[stage\]", e.g."inventory-dev", "inventory-staging" and "inventory-prod".
+- A system can serve more than one application via different query groups, although one application is often primary. So you might name applications "\[db\](-\[app\])", e.g. "inventory" and "inventory-analytics".
+
+
+
+
+
+Create a Storage Stack
+----------------------
+
+To create a storage stack from the [CloudFormation console](http://console.aws.amazon.com/cloudformation/home?#/stacks?filter=active)
+
+- Click "Create Stack"
+- Click "With new resources (standard)"
+- Choose "Amazon S3 URL" as a template source.
+- Set the Amazon S3 URL to the latest
+
+`<button class="copy-button" data-clipboard-text="https://s3.amazonaws.com/datomic-cloud-1/cft/990-9202/datomic-storage-990-9202.json" label="Copy to clipboard" title="copy CF URL to clipboard" type="button">Storage Template 990-9202</button>`
+
+You will need to choose a stack name, but you can generally leave all stack parameters set to their default values. The [storage template reference](storage-template.html) has details.
+
+
+
+
+
+Create a Compute Stack
+----------------------
+
+To create a compute stack from the [CloudFormation console](http://console.aws.amazon.com/cloudformation/home?#/stacks?filter=active)
+
+- Click "Create Stack"
+- Click "With new resources (standard)"
+- Choose "Amazon S3 URL" as a template source.
+- Set the Amazon S3 URL to the latest `<button class="copy-button" data-clipboard-text="https://s3.amazonaws.com/datomic-cloud-1/cft/990-9202/datomic-compute-990-9202.json" label="Copy to clipboard" title="copy CF URL to clipboard" type="button">Primary Compute Template 990-9202</button>`
+
+Unlike the storage stack, the compute stack has a number of parameters that you should review and adjust to match your specific needs. See the [compute template reference](compute-template.html) for details.

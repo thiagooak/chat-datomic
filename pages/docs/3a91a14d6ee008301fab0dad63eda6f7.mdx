@@ -1,0 +1,2375 @@
+Query Reference
+===============
+
+This topic documents the data format for Datomic datalog queries and rules. If you want to follow along at a REPL, most of the examples on this page work use the [mbrainz-subset](https://github.com/Datomic/mbrainz-importer#readme) database and are in the [Day of Datomic Cloud](https://github.com/cognitect-labs/day-of-datomic-cloud/blob/master/tutorial/query.clj) repository.
+
+Notes on the Examples
+---------------------
+
+- The ellipsis `...` is used in query results to shows that a large result set has been elided for brevity.
+- Entity ids vary from one database to another, so do not expect to see the same entity ids as shown here.
+
+
+
+
+
+Query Grammar
+-------------
+
+
+
+### Syntax Used In Grammar
+
+```
+<pre class="example" id="orge05abe3">
+'' literal
+"" string
+[] = list or vector
+{} = map {k1 v1 ...}
+() grouping
+| choice
+? zero or one
++ one or more
+```
+
+
+
+
+
+### Query Arg Grammar
+
+```
+<pre class="example" id="orgcd6db6f" linkedtable="true"><span><a href="#queries">query</a><span>             = [find-spec return-map-spec? with-clause? inputs? where-clauses?]</span><br></br><a href="#find-specs">find-spec</a><span>         = ':find' find-rel</span><br></br><a href="#return-maps">return-map-spec</a><span>   = (return-keys | return-syms | return-strs)</span><br></br><a href="#find-specs">find-rel</a><span>          = find-elem+</span><br></br><span>return-keys</span><span>       = ':keys' symbol+</span><br></br><span>return-syms</span><span>       = ':syms' symbol+</span><br></br><span>return-strs</span><span>       = ':strs' symbol+</span><br></br><a href="#find-specs">find-elem</a><span>         = (variable | pull-expr | aggregate)</span><br></br><a href="#pull-expressions">pull-expr</a><span>         = ['pull' variable pattern]</span><br></br><a href="#pull-expressions">pattern</a><span>           = (pattern-name | pattern-data-literal)</span><br></br><span>pattern-name</span><span>      = plain-symbol</span><br></br><a href="#aggregates">aggregate</a><span>         = [aggregate-fn-name fn-arg+]</span><br></br><a href="#functions">fn-arg</a><span>            = (variable | constant | src-var)</span><br></br><a href="#with">with-clause</a><span>       = ':with' variable+</span><br></br><a href="#where-clauses">where-clauses</a><span>     = ':where' clause+</span><br></br><a href="#inputs">inputs</a><span>            = ':in' (src-var | binding | pattern-name | rules-var)+</span><br></br><span>src-var</span><span>           = symbol starting with "$"</span><br></br><a href="#variables">variable</a><span>          = symbol starting with "?"</span><br></br><a href="#using-rule">rules-var</a><span>         = the symbol </span><br></br><span>plain-symbol</span><span>      = symbol that does not begin with "$", "?", or "%"</span><br></br><a href="#and-clause">and-clause</a><span>        = [ 'and' clause+ ]</span><br></br><span>expression-clause</span><span> = (data-pattern | pred-expr | fn-expr | rule-expr)</span><br></br><a href="#using-rule">rule-expr</a><span>         = [ src-var? rule-name (variable | constant | '_')+]</span><br></br><a href="#not-clauses">not-clause</a><span>        = [ src-var? 'not' clause+ ]</span><br></br><a href="#not-join">not-join-clause</a><span>   = [ src-var? 'not-join' [variable+] clause+ ]</span><br></br><a href="#or-clauses">or-clause</a><span>         = [ src-var? 'or' (clause | and-clause)+]</span><br></br><a href="#or-join">or-join-clause</a><span>    = [ src-var? 'or-join' [variable+] (clause | and-clause)+ ]</span><br></br><a href="#rules">rule-vars</a><span>         = [variable+ | ([variable+] variable*)]</span><br></br><span>clause</span><span>            = (not-clause | not-join-clause | or-clause | or-join-clause | expression-clause)</span><br></br><a href="#data-patterns">data-pattern</a><span>      = [ src-var? (variable | constant | '_')+ ]</span><br></br><span>constant</span><span>          = any non-variable data literal</span><br></br><a href="#predicates">pred-expr</a><span>         = [ [pred fn-arg+] ]</span><br></br><a href="#functions">fn-expr</a><span>           = [ [fn fn-arg+] binding]</span><br></br><a href="#binding-forms">binding</a><span>           = (bind-scalar | bind-tuple | bind-coll | bind-rel)</span><br></br><span>bind-scalar</span><span>       = variable</span><br></br><a href="#tuple-binding">bind-tuple</a><span>        = [ (variable | '_')+]</span><br></br><a href="#collection-binding">bind-coll</a><span>         = [variable '...']</span><br></br><a href="#relation-binding">bind-rel</a><span>          = = [ [(variable | '_')+] ]</span><br></br></span>
+```
+
+See [the pull pattern grammar](query-pull.html#pull-grammar) for the description of the pattern-data-literal rule.
+
+
+
+
+
+### Query Rule Grammar
+
+Note that the rule grammar reuses some terms from the query grammar above.
+
+```
+<pre class="example" id="org58728ef">
+rule                       = [ [rule-head clause+]+ ]
+rule-head                  = [rule-name rule-vars]
+rule-name                  = plain-symbol
+```
+
+
+
+
+
+
+
+Queries
+-------
+
+```
+<pre class="example" id="org2cedaf9">
+query                      = [find-spec with-clause? inputs? where-clauses?]
+```
+
+A query consists of:
+
+- a *find-spec* that specifies variables and aggregates to return
+- an optional *with-clause* to control how duplicate find values are handled
+- an optional *inputs* clause that names the databases, data, and rules available to the query engine
+- optional *where-clauses* that constrain and transform data
+
+At least one of *inputs* or *where-clauses* must be specified.
+
+
+
+### Query Example
+
+This query limits datoms to `:artist/name` "The Beatles", and returns the entity ids for such results:
+
+```
+<pre class="src src-clojure"><span style="color: #b22222;">;; </span><span style="color: #b22222;">query</span>
+[<span style="color: #008b8b;">:find</span> ?e
+ <span style="color: #008b8b;">:where</span> [?e <span style="color: #008b8b;">:artist/name</span> <span style="color: #8b2252;">"The Beatles"</span>]]
+
+<span style="color: #b22222;">;; </span><span style="color: #b22222;">args</span>
+db
+
+<span style="color: #b22222;">;; </span><span style="color: #b22222;">Example query using the clojure API</span>
+(d/q '[<span style="color: #008b8b;">:find</span> ?e
+      <span style="color: #008b8b;">:where</span> [?e <span style="color: #008b8b;">:artist/name</span> <span style="color: #8b2252;">"The Beatles"</span>]]
+     db)
+
+<span style="color: #b22222;">;; </span><span style="color: #b22222;">The previous example also works with datomic.client.api used for Datomic Cloud</span>
+<span style="color: #b22222;">;; </span><span style="color: #b22222;">Example query using the datomic.client.api arity-1</span>
+
+(d/q {<span style="color: #008b8b;">:query</span> '[<span style="color: #008b8b;">:find</span> ?e
+               <span style="color: #008b8b;">:where</span> [?e <span style="color: #008b8b;">:artist/name</span> <span style="color: #8b2252;">"The Beatles"</span>]]
+     <span style="color: #008b8b;">:args</span> [db]})
+
+```
+
+
+
+```
+<pre class="src src-clojure">=> [[26757714973567138]] <span style="color: #b22222;">;; </span><span style="color: #b22222;">Result. Your exact value may differ.</span>
+```
+
+
+
+[datomic.client.api/q](https://docs.datomic.com/client-api/datomic.client.api.html#var-q) provides a 1-arity and a multi-arity form.
+
+This document will mostly utilize the multi-arity form so you can following along utilizing [Datomic Starter](https://www.datomic.com/get-datomic.html#_datomic_starter)and the [mbrainz sample project](https://github.com/Datomic/mbrainz-sample) or [Day of Datomic Cloud](https://github.com/cognitect-labs/day-of-datomic-cloud/blob/master/tutorial/query.clj). Examples utilizing the arity-1 form will be shown occasionally for demonstrational purposes.
+
+Note as well the quoted vector `[:find ...]` . `q` requires a quoted sequence passed to it for the query. Failure to quote the query will result in a `Unable to resolve symbol:` error.
+
+
+
+
+
+
+
+Find Specs
+----------
+
+```
+<pre class="example" id="org6f6a70a">
+find-spec                  = ':find' find-rel
+find-rel                   = find-elem+
+find-elem                  = (variable | pull-expr | aggregate)
+```
+
+A *find-spec* is the literal `:find` followed by one or more *find-elems*, which can be
+
+- a [*variable*](#variables) that returns variables directly
+- a [*pull-expr*](#pull-expressions) that hierarchically selects data about an entity variable
+- an [*aggregate*](#aggregates) that summarizes all values of a variable
+
+The order of *find-elems* determines the order variables appear in a result tuple.
+
+
+
+
+
+Variables
+---------
+
+```
+<pre class="example" id="org46d041b">
+variable                   = symbol starting with "?"
+```
+
+A *variable* is a symbol that begins with `?`. In a *find-spec*, variables control which variables are returned, and what order those variables appear in the result tuple.
+
+Like the rest of Clojure, variables are case-sensitive. `?track` and `?Track` are different variables.
+
+
+
+### Find Variables Example
+
+The query below specifies that the result tuples should contain the track name and duration. Note that the `?track` and `?e` variables are used in the query but are not returned
+
+```
+<pre class="src src-clojure"><span style="color: #b22222;">;; </span><span style="color: #b22222;">query</span>
+[<span style="color: #008b8b;">:find</span> ?name ?duration
+ <span style="color: #008b8b;">:where</span> [?e <span style="color: #008b8b;">:artist/name</span> <span style="color: #8b2252;">"The Beatles"</span>]
+        [?track <span style="color: #008b8b;">:track/artists</span> ?e]
+        [?track <span style="color: #008b8b;">:track/name</span> ?name]
+        [?track <span style="color: #008b8b;">:track/duration</span> ?duration]]
+
+<span style="color: #b22222;">;; </span><span style="color: #b22222;">args</span>
+db
+
+<span style="color: #b22222;">;; </span><span style="color: #b22222;">multi-arity version</span>
+(d/q  '[<span style="color: #008b8b;">:find</span> ?name ?duration
+        <span style="color: #008b8b;">:where</span> [?e <span style="color: #008b8b;">:artist/name</span> <span style="color: #8b2252;">"The Beatles"</span>]
+               [?track <span style="color: #008b8b;">:track/artists</span> ?e]
+               [?track <span style="color: #008b8b;">:track/name</span> ?name]
+               [?track <span style="color: #008b8b;">:track/duration</span> ?duration]]
+       db)
+```
+
+
+
+```
+<pre class="src src-clojure">=>
+[[<span style="color: #8b2252;">"Here Comes the Sun"</span> 186000]
+ [<span style="color: #8b2252;">"Come Together"</span> 257000]
+ [<span style="color: #8b2252;">"Hey Jude"</span> 428000]
+ ...]
+```
+
+
+
+In this example, the variable `?track` [unifies](query-executing.html#unification). The clauses for `:track/artists`, `:track/name` and `:track/duration` all must have have
+
+
+
+
+
+
+
+Pull Expressions
+----------------
+
+```
+<pre class="example" id="orgc0d0106">
+pull-expr                  = ['pull' variable pattern]
+pattern                    = (pattern-name | pattern-data-literal)
+```
+
+A pull expression returns information about a variable as specified by a pattern. Pull expressions are fully described in the [Pull reference](query-pull.html).
+
+> **NOTE** Each variable can appear in at most one pull expression.
+
+
+
+### Finding Pull Expression Example
+
+Rather than returning just a variable, this query uses a pull expression to return specific details about The Beatles:
+
+```
+<pre class="src src-clojure"><span style="color: #b22222;">;; </span><span style="color: #b22222;">query</span>
+[<span style="color: #008b8b;">:find</span> (pull ?e [<span style="color: #008b8b;">:artist/startYear</span> <span style="color: #008b8b;">:artist/endYear</span>])
+ <span style="color: #008b8b;">:where</span> [?e <span style="color: #008b8b;">:artist/name</span> <span style="color: #8b2252;">"The Beatles"</span>]]
+
+<span style="color: #b22222;">;; </span><span style="color: #b22222;">args</span>
+db
+
+<span style="color: #b22222;">;; </span><span style="color: #b22222;">multi-arity version</span>
+(d/q '[<span style="color: #008b8b;">:find</span> (pull ?e [<span style="color: #008b8b;">:artist/startYear</span> <span style="color: #008b8b;">:artist/endYear</span>])
+       <span style="color: #008b8b;">:where</span> [?e <span style="color: #008b8b;">:artist/name</span> <span style="color: #8b2252;">"The Beatles"</span>]]
+     db)
+
+```
+
+
+
+```
+<pre class="src src-clojure">=>
+[[#<span style="color: #008b8b;">:artist</span>{<span style="color: #008b8b;">:startYear</span> 1957, <span style="color: #008b8b;">:endYear</span> 1970}]]
+```
+
+
+
+
+
+
+
+### Separation of Concerns
+
+The pull API separates the process of finding entities and acquiring information about the entities. Pull expressions allow you to utilize queries to find entities and return an explicit map with the desired information about each entity.
+
+This example uses `songs-by-artist` to find all tracks for an artist, then uses different pull patterns to pull different information about the resulting entities.
+
+```
+<pre class="src src-clojure">(<span style="color: #a020f0;">def</span> <span style="color: #0000ff;">songs-by-artist</span>
+  '[<span style="color: #008b8b;">:find</span> (pull ?t pattern)
+    <span style="color: #008b8b;">:in</span> $ pattern ?artist-name
+    <span style="color: #008b8b;">:where</span>
+    [?a <span style="color: #008b8b;">:artist/name</span> ?artist-name]
+    [?t <span style="color: #008b8b;">:track/artists</span> ?a]])
+
+(<span style="color: #a020f0;">def</span> <span style="color: #0000ff;">track-releases-and-artists</span>
+  [<span style="color: #008b8b;">:track/name</span>
+   {<span style="color: #008b8b;">:medium/_tracks</span>
+    [{<span style="color: #008b8b;">:release/_media</span>
+      [{<span style="color: #008b8b;">:release/artists</span> [<span style="color: #008b8b;">:artist/name</span>]}
+       <span style="color: #008b8b;">:release/name</span>]}]}])
+
+<span style="color: #b22222;">;; </span><span style="color: #b22222;">Pull only the :track/name</span>
+(d/q songs-by-artist db [<span style="color: #008b8b;">:track/name</span>] <span style="color: #8b2252;">"Bob Dylan"</span>)
+```
+
+
+
+```
+<pre class="src src-clojure">=>
+([#<span style="color: #008b8b;">:track</span>{<span style="color: #008b8b;">:name</span> <span style="color: #8b2252;">"California"</span>}]
+ [#<span style="color: #008b8b;">:track</span>{<span style="color: #008b8b;">:name</span> <span style="color: #8b2252;">"Grasshoppers in My Pillow"</span>}]
+ [#<span style="color: #008b8b;">:track</span>{<span style="color: #008b8b;">:name</span> <span style="color: #8b2252;">"Baby Please Don't Go"</span>}]
+ [#<span style="color: #008b8b;">:track</span>{<span style="color: #008b8b;">:name</span> <span style="color: #8b2252;">"Man of Constant Sorrow"</span>}]
+ [#<span style="color: #008b8b;">:track</span>{<span style="color: #008b8b;">:name</span> <span style="color: #8b2252;">"Only a Hobo"</span>}]
+...)
+```
+
+
+
+```
+<pre class="src src-clojure"><span style="color: #b22222;">;; </span><span style="color: #b22222;">Use a different pull pattern to get the track name, the release name, and the artists on the release.</span>
+(d/q songs-by-artist db track-releases-and-artists <span style="color: #8b2252;">"Bob Dylan"</span>)
+```
+
+
+
+```
+<pre class="src src-clojure">=>
+([{<span style="color: #008b8b;">:track/name</span> <span style="color: #8b2252;">"California"</span>,
+   <span style="color: #008b8b;">:medium/_tracks</span>
+   #<span style="color: #008b8b;">:release</span>{<span style="color: #008b8b;">:_media</span> #<span style="color: #008b8b;">:release</span>{<span style="color: #008b8b;">:artists</span> [#<span style="color: #008b8b;">:artist</span>{<span style="color: #008b8b;">:name</span> <span style="color: #8b2252;">"Bob Dylan"</span>}], <span style="color: #008b8b;">:name</span> <span style="color: #8b2252;">"A Rare Batch of Little White Wonder"</span>}}]
+ [{<span style="color: #008b8b;">:track/name</span> <span style="color: #8b2252;">"Grasshoppers in My Pillow"</span>,
+   <span style="color: #008b8b;">:medium/_tracks</span>
+   #<span style="color: #008b8b;">:release</span>{<span style="color: #008b8b;">:_media</span> #<span style="color: #008b8b;">:release</span>{<span style="color: #008b8b;">:artists</span> [#<span style="color: #008b8b;">:artist</span>{<span style="color: #008b8b;">:name</span> <span style="color: #8b2252;">"Bob Dylan"</span>}], <span style="color: #008b8b;">:name</span> <span style="color: #8b2252;">"A Rare Batch of Little White Wonder"</span>}}]
+ [{<span style="color: #008b8b;">:track/name</span> <span style="color: #8b2252;">"Baby Please Don't Go"</span>,
+   <span style="color: #008b8b;">:medium/_tracks</span>
+   #<span style="color: #008b8b;">:release</span>{<span style="color: #008b8b;">:_media</span> #<span style="color: #008b8b;">:release</span>{<span style="color: #008b8b;">:artists</span> [#<span style="color: #008b8b;">:artist</span>{<span style="color: #008b8b;">:name</span> <span style="color: #8b2252;">"Bob Dylan"</span>}], <span style="color: #008b8b;">:name</span> <span style="color: #8b2252;">"A Rare Batch of Little White Wonder"</span>}}]
+ [{<span style="color: #008b8b;">:track/name</span> <span style="color: #8b2252;">"Man of Constant Sorrow"</span>,
+   <span style="color: #008b8b;">:medium/_tracks</span>
+   #<span style="color: #008b8b;">:release</span>{<span style="color: #008b8b;">:_media</span> #<span style="color: #008b8b;">:release</span>{<span style="color: #008b8b;">:artists</span> [#<span style="color: #008b8b;">:artist</span>{<span style="color: #008b8b;">:name</span> <span style="color: #8b2252;">"Bob Dylan"</span>}], <span style="color: #008b8b;">:name</span> <span style="color: #8b2252;">"A Rare Batch of Little White Wonder"</span>}}]
+ [{<span style="color: #008b8b;">:track/name</span> <span style="color: #8b2252;">"Only a Hobo"</span>,
+   <span style="color: #008b8b;">:medium/_tracks</span>
+   #<span style="color: #008b8b;">:release</span>{<span style="color: #008b8b;">:_media</span> #<span style="color: #008b8b;">:release</span>{<span style="color: #008b8b;">:artists</span> [#<span style="color: #008b8b;">:artist</span>{<span style="color: #008b8b;">:name</span> <span style="color: #8b2252;">"Bob Dylan"</span>}], <span style="color: #008b8b;">:name</span> <span style="color: #8b2252;">"A Rare Batch of Little White Wonder"</span>}}]
+ ...)
+```
+
+
+
+
+
+
+
+
+
+Custom Query Functions
+----------------------
+
+You can write your own custom functions for use as [aggregate](#aggregates), [predicate](#predicates), or [function](#functions) clauses in query. To make these functions available to a Datomic compute group:
+
+- Include your functions in an [ion project](../ions/ions-reference.html#developing).
+- Add your functions' fully-qualified names under the `:allow` key in your [ion-config.edn file](../ions/ions-reference.html#ion-config).
+- [Push and deploy](../ions/ions-reference.html#push) your ion to the compute group that will use the functions.
+
+You can [cancel](../transactions/transaction-processing#cancel) custom query functions.
+
+
+
+
+
+Return Maps
+-----------
+
+> **NOTE** Return maps are available in [client 0.8.78](../releases.html#client-08-78).
+
+Supplying a return-map will cause the query to return maps instead of tuples. Each entry in the `:keys` / `:strs` / `:syms` clause will become a key mapped to the corresponding item in the `:find` clause.
+
+keywordsymbols become:keyskeyword keys:strsstring keys:symssymbol keysIn the example below, the `:keys` `artist` and `release` are used to construct a map for reach row returned.
+
+```
+<pre class="src src-clojure"><span style="color: #b22222;">;; </span><span style="color: #b22222;">query</span>
+[<span style="color: #008b8b;">:find</span> ?artist-name ?release-name
+ <span style="color: #008b8b;">:keys</span> artist release
+ <span style="color: #008b8b;">:where</span> [?release <span style="color: #008b8b;">:release/name</span> ?release-name]
+ [?release <span style="color: #008b8b;">:release/artists</span> ?artist]
+ [?artist <span style="color: #008b8b;">:artist/name</span> ?artist-name]]
+
+<span style="color: #b22222;">;; </span><span style="color: #b22222;">inputs</span>
+db
+
+```
+
+
+
+```
+<pre class="src src-clojure">=>
+#{{<span style="color: #008b8b;">:artist</span> <span style="color: #8b2252;">"George Jones"</span> <span style="color: #008b8b;">:release</span> <span style="color: #8b2252;">"With Love"</span>}
+  {<span style="color: #008b8b;">:artist</span> <span style="color: #8b2252;">"Shocking Blue"</span> <span style="color: #008b8b;">:release</span> <span style="color: #8b2252;">"Hello Darkness / Pickin' Tomatoes"</span>} 
+  {<span style="color: #008b8b;">:artist</span> <span style="color: #8b2252;">"Junipher Greene"</span> <span style="color: #008b8b;">:release</span> <span style="color: #8b2252;">"Friendship"</span>}
+  ...}
+```
+
+
+
+Return maps also preserve the order of the `:find` clause. In particular, return maps
+
+- implement `clojure.lang.Indexed`
+- support `nth`
+- support vector style destructuring
+
+For example, the first result from the previous query can be destructured in two ways:
+
+```
+<pre class="src src-clojure"><span style="color: #b22222;">;; </span><span style="color: #b22222;">positional destructure</span>
+(<span style="color: #483d8b;">let</span> [[artist release] (<span style="color: #a0522d;">first</span> result)]
+  ...)
+
+<span style="color: #b22222;">;; </span><span style="color: #b22222;">key destructure</span>
+(<span style="color: #483d8b;">let</span> [{<span style="color: #008b8b;">:keys</span> [artist release]} (<span style="color: #a0522d;">first</span> result)]
+  ...)
+```
+
+
+
+
+
+
+
+Aggregates
+----------
+
+```
+<pre class="example" id="org4c454a5">
+aggregate                  = [aggregate-fn-name fn-arg+]
+fn-arg                     = (variable | constant | src-var)
+```
+
+An aggregate function appears in the find clause and transforms a result. Aggregate functions can take variables, constants, or src-vars as arguments.
+
+Aggregates appear as lists in a find-spec. Query variables not in aggregate expressions will group the results and appear intact in the result.
+
+
+
+### Example Aggregate
+
+This query binds `?a ?b ?c ?d`, then groups by `?a`and `?c`, and produces a result for each aggregate expression for each group, yielding 5-tuples.
+
+```
+<pre class="src src-clojure">[<span style="color: #008b8b;">:find</span> ?a (<span style="color: #a0522d;">min</span> ?b) (<span style="color: #a0522d;">max</span> ?b) ?c (sample 12 ?d)
+ <span style="color: #008b8b;">:where</span> ...]
+```
+
+
+
+
+
+
+
+### Built-In Aggregates
+
+Each of these is described in more detail below.
+
+aggregate\# returnednotesavg1 count1counts duplicatescount-distinct1counts only unique valuesdistinctnset of distinct valuesmax1compares all types, not just numbersmax nnreturns up to n largestmedian1 min1compares all types, not just numbersmin nnreturns up to n smallestrand nnrandom up to n with duplicatessample nnsample up to n, no duplicatesstddev1 sum1 variance1 
+
+
+
+### Aggregates Returning a Single Value
+
+The aggregation functions that return a single value are listed below, and all behave as their names suggest.
+
+
+
+- <a id="min-and-max"></a>*min* and *max*  
+    The following query finds the smallest and largest track lengths:
+    
+    ```
+    <pre class="src src-clojure"><span style="color: #b22222;">;; </span><span style="color: #b22222;">query </span>
+    [<span style="color: #008b8b;">:find</span> (<span style="color: #a0522d;">min</span> ?dur) (<span style="color: #a0522d;">max</span> ?dur)
+     <span style="color: #008b8b;">:where</span> [_ <span style="color: #008b8b;">:track/duration</span> ?dur]]
+    
+    <span style="color: #b22222;">;; </span><span style="color: #b22222;">inputs</span>
+    db
+    
+    <span style="color: #b22222;">;; </span><span style="color: #b22222;">multi-arity version</span>
+    (d/q '[<span style="color: #008b8b;">:find</span> (<span style="color: #a0522d;">min</span> ?dur) (<span style="color: #a0522d;">max</span> ?dur)
+           <span style="color: #008b8b;">:where</span> [_ <span style="color: #008b8b;">:track/duration</span> ?dur]]
+         db)
+    ```
+    
+    
+    
+    ```
+    <pre class="src src-clojure">=> [[3000 3894000]]
+    ```
+    
+    
+    
+    The *min* and *max* aggregation functions support all database types (via comparators), not just numbers.
+- <a id="sum"></a>*sum*  
+    The following query uses *sum* to find the total number of tracks on all media in the database.
+    
+    ```
+    <pre class="src src-clojure"><span style="color: #b22222;">;; </span><span style="color: #b22222;">query</span>
+    [<span style="color: #008b8b;">:find</span> (sum ?count) 
+     <span style="color: #008b8b;">:with</span> ?medium
+     <span style="color: #008b8b;">:where</span> [?medium <span style="color: #008b8b;">:medium/trackCount</span> ?count]]
+    
+    <span style="color: #b22222;">;; </span><span style="color: #b22222;">inputs</span>
+    db
+    
+    <span style="color: #b22222;">;; </span><span style="color: #b22222;">multi-arity version</span>
+    (d/q '[<span style="color: #008b8b;">:find</span> (sum ?count)
+           <span style="color: #008b8b;">:with</span> ?medium
+           <span style="color: #008b8b;">:where</span> [?medium <span style="color: #008b8b;">:medium/trackCount</span> ?count]]
+         db)
+    ```
+    
+    
+    
+    ```
+    <pre class="src src-clojure">=> [[100759]]
+    ```
+- <a id="count-and-count-distinct"></a>*count* and *count-distinct*  
+    More than one artist can have the same name. The following query uses *count* to report the total number of artist names, and *count-distinct*to report the total number of unique artist names.
+    
+    ```
+    <pre class="src src-clojure"><span style="color: #b22222;">;; </span><span style="color: #b22222;">query</span>
+    [<span style="color: #008b8b;">:find</span> (<span style="color: #a0522d;">count</span> ?name) (count-distinct ?name)
+     <span style="color: #008b8b;">:with</span> ?artist
+     <span style="color: #008b8b;">:where</span> [?artist <span style="color: #008b8b;">:artist/name</span> ?name]]
+    
+    <span style="color: #b22222;">;; </span><span style="color: #b22222;">inputs</span>
+    db
+    
+    <span style="color: #b22222;">;; </span><span style="color: #b22222;">multi-arity version</span>
+    (d/q '[<span style="color: #008b8b;">:find</span> (<span style="color: #a0522d;">count</span> ?name) (count-distinct ?name)
+           <span style="color: #008b8b;">:with</span> ?artist
+           <span style="color: #008b8b;">:where</span> [?artist <span style="color: #008b8b;">:artist/name</span> ?name]]
+         db)
+    
+    ```
+    
+    
+    
+    ```
+    <pre class="src src-clojure">=> [[4601 4588]]
+    ```
+    
+    
+    
+    Note the use of a [with-clause](#with) so that equal names do not coalesce.
+- <a id="statistics"></a>Statistics: *median*, *avg*, *variance*, and *stddev*  
+    Are musicians becoming more verbose when naming songs? The following query reports the *median*, *avg*, and *stddev* of song title lengths (in characters), and includes *year* in the find set to break out the results by year.
+    
+    ```
+    <pre class="src src-clojure"><span style="color: #b22222;">;; </span><span style="color: #b22222;">query</span>
+    [<span style="color: #008b8b;">:find</span> ?year (median ?namelen) (avg ?namelen) (stddev ?namelen)
+     <span style="color: #008b8b;">:with</span> ?track
+     <span style="color: #008b8b;">:where</span> [?track <span style="color: #008b8b;">:track/name</span> ?name]
+            [(<span style="color: #a0522d;">count</span> ?name) ?namelen]
+            [?medium <span style="color: #008b8b;">:medium/tracks</span> ?track]
+            [?release <span style="color: #008b8b;">:release/media</span> ?medium]
+            [?release <span style="color: #008b8b;">:release/year</span> ?year]]
+    
+    <span style="color: #b22222;">;; </span><span style="color: #b22222;">inputs </span>
+    db
+    
+    
+    <span style="color: #b22222;">;; </span><span style="color: #b22222;">multi-arity version</span>
+    (d/q '[<span style="color: #008b8b;">:find</span> ?year (median ?namelen) (avg ?namelen) (stddev ?namelen)
+           <span style="color: #008b8b;">:with</span> ?track
+           <span style="color: #008b8b;">:where</span> [?track <span style="color: #008b8b;">:track/name</span> ?name]
+                  [(<span style="color: #a0522d;">count</span> ?name) ?namelen]
+                  [?medium <span style="color: #008b8b;">:medium/tracks</span> ?track]
+                  [?release <span style="color: #008b8b;">:release/media</span> ?medium]
+                  [?release <span style="color: #008b8b;">:release/year</span> ?year]]
+         db)
+    
+    ```
+    
+    
+    
+    ```
+    <pre class="src src-clojure">=>
+    [[1968 16 18.92181098534824 12.898760656290333] 
+     [1969 16 18.147895557287608 11.263945894977244] 
+     [1970 15 18.007481296758105 12.076103750401026] 
+     [1971 15 18.203682039283294 13.715552693168124] 
+     [1972 15 17.907170949841063 11.712941060399375] 
+     [1973 16 18.19300100438759 12.656827911058622]]
+    ```
+
+
+
+### Aggregates Returning Collections
+
+Where *n* is specified, fewer than *n* items may be returned if not enough items are available.
+
+
+
+- <a id="distinct"></a>*distinct*  
+    The *distinct* aggregate returns the set of distinct values in the collection.
+    
+    ```
+    <pre class="src src-clojure"><span style="color: #b22222;">;; </span><span style="color: #b22222;">query</span>
+    [<span style="color: #008b8b;">:find</span> (<span style="color: #a0522d;">distinct</span> ?<span style="color: #483d8b;">sortName</span>)
+     <span style="color: #008b8b;">:with</span> ?artist
+     <span style="color: #008b8b;">:where</span> [?artist <span style="color: #008b8b;">:artist/name</span> <span style="color: #8b2252;">"Fire"</span>]
+            [?artist <span style="color: #008b8b;">:artist/sortName</span> ?<span style="color: #483d8b;">sortName</span>]]
+    
+    <span style="color: #b22222;">;; </span><span style="color: #b22222;">inputs</span>
+    db
+    
+    <span style="color: #b22222;">;; </span><span style="color: #b22222;">multi-arity version</span>
+    (d/q '[<span style="color: #008b8b;">:find</span> (<span style="color: #a0522d;">distinct</span> ?<span style="color: #483d8b;">sortName</span>)
+           <span style="color: #008b8b;">:with</span> ?artist
+           <span style="color: #008b8b;">:where</span> [?artist <span style="color: #008b8b;">:artist/name</span> <span style="color: #8b2252;">"Fire"</span>]
+                  [?artist <span style="color: #008b8b;">:artist/sortName</span> ?<span style="color: #483d8b;">sortName</span>]]
+         db)
+    
+    ```
+    
+    
+    
+    ```
+    <pre class="src src-clojure">=> [[#{<span style="color: #8b2252;">"Fire"</span>}]]
+    ```
+- <a id="min-n-and-max-n"></a>*min n* and *max n*  
+    The *min n* and *max n* aggregates return up to n least/greatest items. The following query returns the five shortest and five longest track lengths in the database.
+    
+    ```
+    <pre class="src src-clojure"><span style="color: #b22222;">;; </span><span style="color: #b22222;">query</span>
+    [<span style="color: #008b8b;">:find</span> (<span style="color: #a0522d;">min</span> 5 ?millis) (<span style="color: #a0522d;">max</span> 5 ?millis)
+     <span style="color: #008b8b;">:where</span> [?track <span style="color: #008b8b;">:track/duration</span> ?millis]]
+    
+    <span style="color: #b22222;">;; </span><span style="color: #b22222;">inputs </span>
+    db
+    
+    <span style="color: #b22222;">;; </span><span style="color: #b22222;">multi-arity version</span>
+    (d/q '[<span style="color: #008b8b;">:find</span> (<span style="color: #a0522d;">min</span> 5 ?millis) (<span style="color: #a0522d;">max</span> 5 ?millis)
+           <span style="color: #008b8b;">:where</span> [?track <span style="color: #008b8b;">:track/duration</span> ?millis]]
+         db)
+    
+    ```
+    
+    
+    
+    ```
+    <pre class="src src-clojure">=>
+    [[[3000 4000 5000 6000 7000] 
+      [3894000 3407000 2928000 2802000 2775000]]]
+    ```
+- <a id="rand-n-and-sample-n"></a>*rand n and sample n*  
+    The *rand n* aggregate selects exactly *n* items with potential for duplicates, and the *sample n* aggregate returns up to *n* distinct items.
+    
+    The following query returns two random and two sampled artist names.
+    
+    ```
+    <pre class="src src-clojure"><span style="color: #b22222;">;; </span><span style="color: #b22222;">query</span>
+    [<span style="color: #008b8b;">:find</span> (<span style="color: #a0522d;">rand</span> 2 ?name) (sample 2 ?name)
+     <span style="color: #008b8b;">:where</span> [_ <span style="color: #008b8b;">:artist/name</span> ?name]]
+    
+    <span style="color: #b22222;">;; </span><span style="color: #b22222;">inputs</span>
+    db
+    
+    <span style="color: #b22222;">;; </span><span style="color: #b22222;">multi-arity version</span>
+    (d/q '[<span style="color: #008b8b;">:find</span> (<span style="color: #a0522d;">rand</span> 2 ?name) (sample 2 ?name)
+           <span style="color: #008b8b;">:where</span> [_ <span style="color: #008b8b;">:artist/name</span> ?name]]
+         db)
+    
+    ```
+    
+    
+    
+    ```
+    <pre class="src src-clojure">=>
+    [[(<span style="color: #8b2252;">"Four Tops"</span> <span style="color: #8b2252;">"Ethel McCoy"</span>) 
+     [<span style="color: #8b2252;">"Gábor Szabó"</span> <span style="color: #8b2252;">"Zapata"</span>]]]
+    ```
+
+
+
+
+
+Inputs
+------
+
+```
+<pre class="example" id="org6861f86">
+inputs                     = ':in' (src-var | binding | pattern-name | rules-var)+
+```
+
+The inputs clause names and orders the inputs to a query. Inputs can be
+
+- a database name, i.e. a symbol starting with `$`
+- a variable binding, e.g. a symbol starting with `?`
+- a pattern name, i.e. a plain symbol
+- the rules var, i.e. the symbol `%`
+
+A query has as many inputs as it has `:args` values, and the inputs bind the `:args` values for use inside the query.
+
+
+
+### Inputs Example
+
+The query below takes the artist name as an input, so that this parameterized query can be re-used with different artist names.
+
+Inside the query, `$` is bound to `db`, and `?name` is bound to "The Beatles".
+
+`in $` has been implicit in the previous queries.
+
+The following query example utilizes the [arity-1 version of `q`](https://docs.datomic.com/client-api/datomic.client.api.html#var-q).
+
+```
+<pre class="src src-clojure"><span style="color: #b22222;">;; </span><span style="color: #b22222;">query</span>
+'[<span style="color: #008b8b;">:find</span> (pull ?e [<span style="color: #008b8b;">:artist/startYear</span> <span style="color: #008b8b;">:artist/endYear</span>])
+  <span style="color: #008b8b;">:in</span> $ ?name
+  <span style="color: #008b8b;">:where</span> [?e <span style="color: #008b8b;">:artist/name</span> ?name]]
+
+<span style="color: #b22222;">;; </span><span style="color: #b22222;">args</span>
+[db <span style="color: #8b2252;">"The Beatles"</span>]
+
+<span style="color: #b22222;">;; </span><span style="color: #b22222;">multi-arity version</span>
+(d/q '[<span style="color: #008b8b;">:find</span> (pull ?e [<span style="color: #008b8b;">:artist/startYear</span> <span style="color: #008b8b;">:artist/endYear</span>])
+       <span style="color: #008b8b;">:in</span> $ ?name
+       <span style="color: #008b8b;">:where</span> [?e <span style="color: #008b8b;">:artist/name</span> ?name]]
+      db <span style="color: #8b2252;">"The Beatles"</span>)
+```
+
+
+
+```
+<pre class="src src-clojure">=> [[#<span style="color: #008b8b;">:artist</span>{<span style="color: #008b8b;">:startYear</span> 1957, <span style="color: #008b8b;">:endYear</span> 1970}]]
+```
+
+
+
+
+
+
+
+### Default Inputs
+
+Most queries operate against a single database. So as a convenience, the inputs clause can be elided, and will default to a single database whose name is the dollar sign *$*.
+
+For example, the following three queries are equivalent:
+
+```
+<pre class="src src-clojure"><span style="color: #b22222;">;; </span><span style="color: #b22222;">use $data to name the database</span>
+[<span style="color: #008b8b;">:find</span> ?e 
+ <span style="color: #008b8b;">:in</span> $data ?age 
+ <span style="color: #008b8b;">:where</span> [$data ?e <span style="color: #008b8b;">:age</span> ?age]]
+
+<span style="color: #b22222;">;; </span><span style="color: #b22222;">use the shorter name $, which can be omitted from where clauses</span>
+[<span style="color: #008b8b;">:find</span> ?e 
+ <span style="color: #008b8b;">:in</span> $ ?age 
+ <span style="color: #008b8b;">:where</span> [?e <span style="color: #008b8b;">:age</span> ?age]]
+
+<span style="color: #b22222;">;; </span><span style="color: #b22222;">with only $ as input, the :in clause can be dropped</span>
+[<span style="color: #008b8b;">:find</span> ?e 
+ <span style="color: #008b8b;">:where</span> [?e <span style="color: #008b8b;">:age</span> ?age]]
+```
+
+
+
+
+
+
+
+### Pattern Inputs
+
+An input can be a pattern var, specifying a pattern to be used in pull expressions in the find clause.
+
+The query below binds `pattern` to the artist's start year and end year.
+
+```
+<pre class="src src-clojure"><span style="color: #b22222;">;; </span><span style="color: #b22222;">query</span>
+'[<span style="color: #008b8b;">:find</span> (pull ?e pattern)
+  <span style="color: #008b8b;">:in</span> $ ?name pattern
+  <span style="color: #008b8b;">:where</span> [?e <span style="color: #008b8b;">:artist/name</span> ?name]]
+
+<span style="color: #b22222;">;; </span><span style="color: #b22222;">args</span>
+[db <span style="color: #8b2252;">"The Beatles"</span> [<span style="color: #008b8b;">:artist/startYear</span> <span style="color: #008b8b;">:artist/endYear</span>]]
+
+<span style="color: #b22222;">;; </span><span style="color: #b22222;">example in 1-arity form</span>
+(d/q {<span style="color: #008b8b;">:query</span> '[<span style="color: #008b8b;">:find</span> (pull ?e pattern)
+               <span style="color: #008b8b;">:in</span> $ ?name pattern
+               <span style="color: #008b8b;">:where</span> [?e <span style="color: #008b8b;">:artist/name</span> ?name]]
+      <span style="color: #008b8b;">:args</span> [db <span style="color: #8b2252;">"The Beatles"</span> [<span style="color: #008b8b;">:artist/startYear</span> <span style="color: #008b8b;">:artist/endYear</span>]]})
+
+```
+
+
+
+```
+<pre class="src src-clojure">=> [[#<span style="color: #008b8b;">:artist</span>{<span style="color: #008b8b;">:startYear</span> 1957, <span style="color: #008b8b;">:endYear</span> 1970}]]
+```
+
+
+
+
+
+
+
+
+
+Binding Forms
+-------------
+
+A *binding form* tells how to map data onto variables. A variable name like *?artist-name* is the simplest kind of *binding*, assigning its value directly to variable. Other forms support destructuring the data into a tuple, a collection, or a relation:
+
+Binding FormBinds?ascalar\[?a ?b\]tuple\[?a …\]collection\[ \[?a ?b \] \]relation
+
+### Tuple Binding
+
+```
+<pre class="example" id="orgd44d51b">
+bind-tuple                 = [ (variable | '_')+]
+```
+
+A tuple binding binds a set of variables to a single value each, passed in as a collection. The query below binds both artist name and release name to find the entity ids for releases of John Lennon's *Mind Games*:
+
+```
+<pre class="src src-clojure"><span style="color: #b22222;">;; </span><span style="color: #b22222;">query</span>
+[<span style="color: #008b8b;">:find</span> ?release
+ <span style="color: #008b8b;">:in</span> $ [?artist-name ?release-name]
+ <span style="color: #008b8b;">:where</span> [?artist <span style="color: #008b8b;">:artist/name</span> ?artist-name]
+        [?release <span style="color: #008b8b;">:release/artists</span> ?artist]
+        [?release <span style="color: #008b8b;">:release/name</span> ?release-name]]
+
+<span style="color: #b22222;">;; </span><span style="color: #b22222;">args</span>
+[db [<span style="color: #8b2252;">"John Lennon"</span> <span style="color: #8b2252;">"Mind Games"</span>]]
+
+<span style="color: #b22222;">;; </span><span style="color: #b22222;">example in 1-arity form</span>
+(d/q {<span style="color: #008b8b;">:query</span> '[<span style="color: #008b8b;">:find</span> ?release
+               <span style="color: #008b8b;">:in</span> $ [?artist-name ?release-name]
+               <span style="color: #008b8b;">:where</span> [?artist <span style="color: #008b8b;">:artist/name</span> ?artist-name]
+                      [?release <span style="color: #008b8b;">:release/artists</span> ?artist]
+                      [?release <span style="color: #008b8b;">:release/name</span> ?release-name]]
+      <span style="color: #008b8b;">:args</span> [db [<span style="color: #8b2252;">"John Lennon"</span> <span style="color: #8b2252;">"Mind Games"</span>]]})
+
+```
+
+
+
+```
+<pre class="src src-clojure">=>
+#{[17592186157686]
+  [17592186157672]
+  [17592186157690]
+  [17592186157658]}
+```
+
+
+
+
+
+
+
+### Collection Binding
+
+```
+<pre class="example" id="org40a9e60">
+bind-coll                  = [variable '...']
+```
+
+A collection binding binds a single variable to multiple values passed in as a collection. This can be used to ask "or" questions like "What releases are associated with either Paul McCartney *or* George Harrison?"
+
+```
+<pre class="src src-clojure"><span style="color: #b22222;">;; </span><span style="color: #b22222;">query</span>
+[<span style="color: #008b8b;">:find</span> ?release-name
+ <span style="color: #008b8b;">:in</span> $ [?artist-name ...]
+ <span style="color: #008b8b;">:where</span> [?artist <span style="color: #008b8b;">:artist/name</span> ?artist-name]
+        [?release <span style="color: #008b8b;">:release/artists</span> ?artist]
+        [?release <span style="color: #008b8b;">:release/name</span> ?release-name]]
+
+<span style="color: #b22222;">;; </span><span style="color: #b22222;">args</span>
+[db [<span style="color: #8b2252;">"Paul McCartney"</span> <span style="color: #8b2252;">"George Harrison"</span>]]
+
+<span style="color: #b22222;">;; </span><span style="color: #b22222;">multi-arity version</span>
+(d/q '[<span style="color: #008b8b;">:find</span> ?release-name
+        <span style="color: #008b8b;">:in</span> $ [?artist-name ...]
+        <span style="color: #008b8b;">:where</span> [?artist <span style="color: #008b8b;">:artist/name</span> ?artist-name]
+               [?release <span style="color: #008b8b;">:release/artists</span> ?artist]
+               [?release <span style="color: #008b8b;">:release/name</span> ?release-name]]
+     db [<span style="color: #8b2252;">"Paul McCartney"</span> <span style="color: #8b2252;">"George Harrison"</span>])
+
+```
+
+
+
+```
+<pre class="src src-clojure">=>
+#{[<span style="color: #8b2252;">"My Sweet Lord"</span>]
+  [<span style="color: #8b2252;">"Electronic Sound"</span>]
+  [<span style="color: #8b2252;">"Give Me Love (Give Me Peace on Earth)"</span>]
+  [<span style="color: #8b2252;">"All Things Must Pass"</span>]
+  ...}
+```
+
+
+
+
+
+
+
+### Relation Binding
+
+```
+<pre class="example" id="orgf9a11e6">
+bind-rel                   = [ [(variable | '_')+] ]
+```
+
+A relation binding is fully general, binding multiple variables positionally to a relation (collection of tuples) passed in. This can be used to ask "or" questions involving multiple variables. For example, what releases are associated with either John Lennon's *Mind Games* or Paul McCartney's *Ram*?
+
+```
+<pre class="src src-clojure"><span style="color: #b22222;">;; </span><span style="color: #b22222;">query</span>
+[<span style="color: #008b8b;">:find</span> ?release
+ <span style="color: #008b8b;">:in</span> $ [[?artist-name ?release-name]]
+ <span style="color: #008b8b;">:where</span> [?artist <span style="color: #008b8b;">:artist/name</span> ?artist-name]
+        [?release <span style="color: #008b8b;">:release/artists</span> ?artist]
+        [?release <span style="color: #008b8b;">:release/name</span> ?release-name]]
+
+<span style="color: #b22222;">;; </span><span style="color: #b22222;">args</span>
+[db [[<span style="color: #8b2252;">"John Lennon"</span> <span style="color: #8b2252;">"Mind Games"</span>]
+      [<span style="color: #8b2252;">"Paul McCartney"</span> <span style="color: #8b2252;">"Ram"</span>]]]
+
+<span style="color: #b22222;">;; </span><span style="color: #b22222;">example in 1-arity form</span>
+(d/q {<span style="color: #008b8b;">:query</span> '[<span style="color: #008b8b;">:find</span> ?release
+                <span style="color: #008b8b;">:in</span> $ [[?artist-name ?release-name]]
+                <span style="color: #008b8b;">:where</span> [?artist <span style="color: #008b8b;">:artist/name</span> ?artist-name]
+                       [?release <span style="color: #008b8b;">:release/artists</span> ?artist]
+                       [?release <span style="color: #008b8b;">:release/name</span> ?release-name]]
+
+     <span style="color: #008b8b;">:args</span> [db [[<span style="color: #8b2252;">"John Lennon"</span> <span style="color: #8b2252;">"Mind Games"</span>]
+                [<span style="color: #8b2252;">"Paul McCartney"</span> <span style="color: #8b2252;">"Ram"</span>]]]})
+
+```
+
+
+
+```
+<pre class="src src-clojure">=>
+#{[17592186157686]
+  [17592186157672]
+  [17592186157690]
+  [17592186157658]
+  [17592186063566]}
+```
+
+
+
+
+
+
+
+
+
+Where Clauses
+-------------
+
+```
+<pre class="example" id="orga3af5aa">
+where-clauses              = ':where' clause+
+clause                     = (not-clause | not-join-clause | or-clause | or-join-clause | expression-clause)
+expression-clause          = (data-pattern | pred-expr | fn-expr | rule-expr)
+```
+
+A where clause limits the results returned. The most common kind of where clause is a data pattern that is matched against datoms in the database, but there are many other kinds of clauses to support negation, disjunction, predicates, and functions.
+
+
+
+
+
+Implicit Joins
+--------------
+
+`where` clauses implicitly join. If a variable appears in the same place in a multiple clauses then those matches must [unify](query-executing.html#unification).
+
+To start we'll form two queries to find the years of releases of The Beatles and Janis Joplin separately. (Remember the database covers only from 1968 to 1973).
+
+```
+<pre class="src src-clojure"><span style="color: #b22222;">;; </span><span style="color: #b22222;">query to find years of all Beatles Releases</span>
+
+[<span style="color: #008b8b;">:find</span> ?year
+ <span style="color: #008b8b;">:where</span> [?artist <span style="color: #008b8b;">:artist/name</span> <span style="color: #8b2252;">"The Beatles"</span>]
+        [?release <span style="color: #008b8b;">:release/artists</span> ?artist]
+        [?release <span style="color: #008b8b;">:release/year</span> ?year]]
+
+<span style="color: #b22222;">;; </span><span style="color: #b22222;">query to find years of all Janis Joplin Releases</span>
+
+
+<span style="color: #b22222;">;; </span><span style="color: #b22222;">args for both</span>
+db
+
+<span style="color: #b22222;">;; </span><span style="color: #b22222;">multi-arity versions of the queries</span>
+(d/q '[<span style="color: #008b8b;">:find</span> ?year
+       <span style="color: #008b8b;">:where</span> [?artist <span style="color: #008b8b;">:artist/name</span> <span style="color: #8b2252;">"The Beatles"</span>]
+              [?release <span style="color: #008b8b;">:release/artists</span> ?artist]
+              [?release <span style="color: #008b8b;">:release/year</span> ?year]]
+     db)
+```
+
+
+
+```
+<pre class="src src-clojure">=> [[1969] [1970] [1973] [1968]] <span style="color: #b22222;">;; </span><span style="color: #b22222;">(trivia question: where is that 1973 result from?)</span>
+```
+
+
+
+(d/q '\[:find ?year :where \[?artist :artist/name "Janis Joplin"\] \[?release :release/artists ?artist\] \[?release :release/year ?year\]\] db) #+end\_src
+
+```
+<pre class="src src-clojure">=> [[1969] [1971] [1972] [1973]]
+```
+
+
+
+We can take advantage of implicit joins by combining these queries but utilizing the same `?year`variable in the `:release/year` clause while looking for the artists separately
+
+Now the years when both The Beatles and Janis Joplin released an album can be found.
+
+```
+<pre class="src src-clojure">
+<span style="color: #b22222;">;; </span><span style="color: #b22222;">query</span>
+[<span style="color: #008b8b;">:find</span> ?year
+  <span style="color: #008b8b;">:where</span> [?artist <span style="color: #008b8b;">:artist/name</span> <span style="color: #8b2252;">"The Beatles"</span>]
+         [?release <span style="color: #008b8b;">:release/artists</span> ?artist]
+         [?release <span style="color: #008b8b;">:release/year</span> ?year]
+         [?artist2 <span style="color: #008b8b;">:artist/name</span> <span style="color: #8b2252;">"Janis Joplin"</span>]
+         [?release2 <span style="color: #008b8b;">:release/artists</span> ?artist2]
+         [?release2 <span style="color: #008b8b;">:release/year</span> ?year]]
+
+<span style="color: #b22222;">;; </span><span style="color: #b22222;">args</span>
+db
+
+<span style="color: #b22222;">;; </span><span style="color: #b22222;">Multi-arity version</span>
+(d/q '[<span style="color: #008b8b;">:find</span> ?year
+       <span style="color: #008b8b;">:where</span> [?artist <span style="color: #008b8b;">:artist/name</span> <span style="color: #8b2252;">"The Beatles"</span>]
+              [?release <span style="color: #008b8b;">:release/artists</span> ?artist]
+              [?release <span style="color: #008b8b;">:release/year</span> ?year]
+              [?artist2 <span style="color: #008b8b;">:artist/name</span> <span style="color: #8b2252;">"Janis Joplin"</span>]
+              [?release2 <span style="color: #008b8b;">:release/artists</span> ?artist2]
+              [?release2 <span style="color: #008b8b;">:release/year</span> ?year]]
+     db)
+```
+
+
+
+```
+<pre class="src src-clojure">=> [[1969] [1973]]
+```
+
+
+
+`?year` was matched for both `?release` and `release2`.
+
+
+
+
+
+Data Patterns
+-------------
+
+```
+<pre class="example" id="org4a55b5e">
+data-pattern               = [ src-var? (variable | constant | '_')+ ]
+```
+
+A data pattern is a tuple that begins with an optional src-var which binds to a relation. The src-var is followed one or more elements that match the tuples of that relation in order. The relation is almost always a Datomic database, so the components are E, A, V, Tx, and Op. The elements of data pattern can be
+
+- variables, which unify and bind to values
+- constants, which limit results to tuples that match the constant
+- the blank `_` which matches anything
+
+The example below, [utilizing the mbrainz database via the mbrainz importer](https://github.com/Datomic/mbrainz-importer), has a single data pattern which operates as follows:
+
+- `$mbrainz` binds to the db argument
+- the constant `:artist/name` limits results to datoms with that value in their Attribute (A) position
+- the constant "The Beatles" limits results to datoms with that value in their Value (V) position
+- the variables `?e`, `?tx`, and `?op` bind to those positions in the matching datoms, if any
+
+```
+<pre class="src src-clojure"><span style="color: #b22222;">;;</span><span style="color: #b22222;">query</span>
+[<span style="color: #008b8b;">:find</span> ?e ?tx ?op
+ <span style="color: #008b8b;">:in</span> $mbrainz
+ <span style="color: #008b8b;">:where</span> [$mbrainz ?e <span style="color: #008b8b;">:artist/name</span> <span style="color: #8b2252;">"The Beatles"</span> ?tx ?op]]
+
+<span style="color: #b22222;">;; </span><span style="color: #b22222;">args</span>
+db
+
+<span style="color: #b22222;">;; </span><span style="color: #b22222;">multi-arity version</span>
+(d/q '[<span style="color: #008b8b;">:find</span> ?e ?tx ?op
+            <span style="color: #008b8b;">:in</span> $mbrainz
+            <span style="color: #008b8b;">:where</span> [$mbrainz ?e <span style="color: #008b8b;">:artist/name</span> <span style="color: #8b2252;">"The Beatles"</span> ?tx ?op]]
+     db)
+
+```
+
+
+
+```
+<pre class="src src-clojure">=> [[26757714973567138 13194139533421 true]]
+```
+
+
+
+
+
+
+
+Blanks
+------
+
+Sometimes you don't care about certain elements of the tuples in a query, but you must put something in the clause in order to get to the positions that you **do** care about. The underscore symbol (`_`) is a blank placeholder, and matches anything without [binding](#binding-forms) or [unifying](query-executing.html#unification).
+
+For example, if you wanted a random artist name, you would need a data pattern that that talked about A and V, but you would not care about the E component which precedes them. The following query uses the blank in the E position:
+
+```
+<pre class="src src-clojure"><span style="color: #b22222;">;; </span><span style="color: #b22222;">query</span>
+[<span style="color: #008b8b;">:find</span> (sample 1 ?name)
+ <span style="color: #008b8b;">:where</span> [_ <span style="color: #008b8b;">:artist/name</span> ?name]]
+
+<span style="color: #b22222;">;; </span><span style="color: #b22222;">args</span>
+db
+
+<span style="color: #b22222;">;; </span><span style="color: #b22222;">multi-arity version</span>
+(d/q '[<span style="color: #008b8b;">:find</span> (sample 1 ?name)
+       <span style="color: #008b8b;">:where</span> [_ <span style="color: #008b8b;">:artist/name</span> ?name]]
+     db)
+
+```
+
+
+
+```
+<pre class="src src-clojure">=> [[[<span style="color: #8b2252;">"Aerosmith"</span>]]]
+```
+
+
+
+*Do not use a dummy variable instead of the blank.* This will make the query engine do extra work by tracking binding and unification for a variable that you never intend to use. It will also make human readers do extra work, puzzling out that the dummy variable is intentionally not used.
+
+Blanks do not cause [unification.](query-executing.html#unification)Clauses with multiple blanks will not unify despite appearing to have the same symbol used.
+
+
+
+### Implicit Blanks
+
+In data patterns, you should elide any trailing components you don't care about, rather than explicitly padding with blanks. The previous examples already demonstrates this by omitting the Tx and Op components from the pattern
+
+```
+<pre class="src src-clojure"><span style="color: #b22222;">;; </span><span style="color: #b22222;">unnecessary trailing blanks</span>
+[_ <span style="color: #008b8b;">:artist/name</span> ?name _ _] 
+
+<span style="color: #b22222;">;; </span><span style="color: #b22222;">better</span>
+[_ <span style="color: #008b8b;">:artist/name</span> ?name] 
+```
+
+
+
+
+
+
+
+
+
+Predicates
+----------
+
+```
+<pre class="example" id="org12aed31">
+pred-expr                  = [ [pred fn-arg+] ]
+```
+
+A predicate is an arbitrary Java or Clojure function. Predicates must be pure functions, i.e. they must be free of side effects and always return the same thing given the same arguments.
+
+Predicates are invoked against variables are that are already bound to further constrain the result set. If the predicate returns `false` or `nil` for a set of variable bindings, that set is removed.
+
+
+
+### Predicate Example
+
+The query below uses the built-in predicates `<=` and `<` to limit the results to artists whose name sorts less than or equal to "Q" and less than "R", i.e. the artists whose name begins with "Q":
+
+```
+<pre class="src src-clojure"><span style="color: #b22222;">;; </span><span style="color: #b22222;">query</span>
+[<span style="color: #008b8b;">:find</span> ?name
+ <span style="color: #008b8b;">:where</span> [_ <span style="color: #008b8b;">:artist/name</span> ?name]
+        [(<span style="color: #a0522d;"><=</span> <span style="color: #8b2252;">"Q"</span> ?name)]
+        [(<span style="color: #a0522d;"><</span> ?name <span style="color: #8b2252;">"R"</span>)]]
+
+<span style="color: #b22222;">;; </span><span style="color: #b22222;">args</span>
+db
+
+<span style="color: #b22222;">;; </span><span style="color: #b22222;">multi-arity version</span>
+(d/q '[<span style="color: #008b8b;">:find</span> ?name
+       <span style="color: #008b8b;">:where</span> [_ <span style="color: #008b8b;">:artist/name</span> ?name]
+              [(<span style="color: #a0522d;"><=</span> <span style="color: #8b2252;">"Q"</span> ?name)]
+              [(<span style="color: #a0522d;"><</span> ?name <span style="color: #8b2252;">"R"</span>)]]
+     db)
+
+```
+
+
+
+```
+<pre class="src src-clojure">=>
+[[<span style="color: #8b2252;">"Quiet World"</span>]
+ [<span style="color: #8b2252;">"Queen"</span>]
+ [<span style="color: #8b2252;">"Quintessence"</span>]
+ ...]
+```
+
+
+
+You can use any pure function from the [clojure.core](https://clojure.github.io/clojure/clojure.core-api.html) namespace as a predicate.
+
+
+
+
+
+### Range Predicates
+
+The predicates `=`, `!=`, `<=`, `<`, `>`, and `>=` are special, in that they take direct advantage of Datomic's AVET index. This makes them **much** more efficient than equivalent formulations using ordinary predicates. For example, the "artists whose name starts with 'Q'" query shown above is much more efficient than an equivalent version using `starts-with?`
+
+```
+<pre class="src src-clojure"><span style="color: #b22222;">;; </span><span style="color: #b22222;">fast -- uses AVET index</span>
+[(<span style="color: #a0522d;"><=</span> <span style="color: #8b2252;">"Q"</span> ?name)]
+[(<span style="color: #a0522d;"><</span> ?name <span style="color: #8b2252;">"R"</span>)]
+
+<span style="color: #b22222;">;; </span><span style="color: #b22222;">slower -- must consider every value of ?name</span>
+[(clojure.string/starts-with? ?name <span style="color: #8b2252;">"Q"</span>)]
+```
+
+
+
+Unlike their Clojure equivalents, the Datomic range predicates require exactly two arguments.
+
+The section [Built-in Predicates and Functions](#built-in-functions) lists all built-in predicates.
+
+
+
+
+
+
+
+Functions
+---------
+
+```
+<pre class="example" id="orgd17418b">
+fn-expr                    = [ [fn fn-arg+] binding]
+```
+
+Queries can call arbitrary Java or Clojure functions. Such functions must be pure functions, i.e. they must be free of side effects and always return the same thing given the same arguments.
+
+Functions are invoked against variables are that are already bound, and their results are interpreted via *binding forms* to bind additional variables.
+
+
+
+### Function Example
+
+The example below uses the division function `quot`call to convert track lengths from milliseconds to minutes:
+
+```
+<pre class="src src-clojure"><span style="color: #b22222;">;; </span><span style="color: #b22222;">query</span>
+[<span style="color: #008b8b;">:find</span> ?track-name ?minutes
+ <span style="color: #008b8b;">:in</span> $ ?artist-name
+ <span style="color: #008b8b;">:where</span> [?artist <span style="color: #008b8b;">:artist/name</span> ?artist-name]
+        [?track <span style="color: #008b8b;">:track/artists</span> ?artist]
+        [?track <span style="color: #008b8b;">:track/duration</span> ?millis]
+        [(<span style="color: #a0522d;">quot</span> ?millis 60000) ?minutes]
+        [?track <span style="color: #008b8b;">:track/name</span> ?track-name]]
+
+<span style="color: #b22222;">;; </span><span style="color: #b22222;">args</span>
+[db <span style="color: #8b2252;">"John Lennon"</span>]
+
+<span style="color: #b22222;">;; </span><span style="color: #b22222;">example in 1-arity form</span>
+(d/q {<span style="color: #008b8b;">:query</span> '[<span style="color: #008b8b;">:find</span> ?track-name ?minutes
+               <span style="color: #008b8b;">:in</span> $ ?artist-name
+               <span style="color: #008b8b;">:where</span> [?artist <span style="color: #008b8b;">:artist/name</span> ?artist-name]
+                      [?track <span style="color: #008b8b;">:track/artists</span> ?artist]
+                      [?track <span style="color: #008b8b;">:track/duration</span> ?millis]
+                      [(<span style="color: #a0522d;">quot</span> ?millis 60000) ?minutes]
+                      [?track <span style="color: #008b8b;">:track/name</span> ?track-name]]
+
+     <span style="color: #008b8b;">:args</span> [db <span style="color: #8b2252;">"John Lennon"</span>]})
+
+```
+
+
+
+```
+<pre class="src src-clojure">=>
+#{[<span style="color: #8b2252;">"Crippled Inside"</span> 3] 
+  [<span style="color: #8b2252;">"Working Class Hero"</span> 3] 
+  [<span style="color: #8b2252;">"Sisters, O Sisters"</span> 3] 
+  [<span style="color: #8b2252;">"Only People"</span> 3] 
+  ...}
+```
+
+
+
+An alternate example utilizing a [predicate](#predicates) with a function binding to find artists with names under 7 characters and show the number of characters in their name.
+
+```
+<pre class="src src-clojure">
+<span style="color: #b22222;">;; </span><span style="color: #b22222;">query</span>
+
+'[<span style="color: #008b8b;">:find</span> ?name ?count
+  <span style="color: #008b8b;">:where</span> [_ <span style="color: #008b8b;">:artist/name</span> ?name]
+         [(<span style="color: #a0522d;"><=</span> <span style="color: #8b2252;">"Q"</span> ?name)] 
+         [(<span style="color: #a0522d;">count</span> ?name) ?count]
+         [(<span style="color: #a0522d;"><</span> 7 ?count)]]
+
+<span style="color: #b22222;">;; </span><span style="color: #b22222;">args</span>
+db
+
+
+<span style="color: #b22222;">;; </span><span style="color: #b22222;">multi-arity version</span>
+(d/q '[<span style="color: #008b8b;">:find</span> ?name ?count
+       <span style="color: #008b8b;">:where</span> [_ <span style="color: #008b8b;">:artist/name</span> ?name]
+              [(<span style="color: #a0522d;"><=</span> <span style="color: #8b2252;">"Q"</span> ?name)] 
+              [(<span style="color: #a0522d;">count</span> ?name) ?count]
+              [(<span style="color: #a0522d;"><</span> 7 ?count)]]
+db)
+
+```
+
+
+
+```
+<pre class="src src-clojure">=>
+[[<span style="color: #8b2252;">"井上陽水"</span> 4]
+ [<span style="color: #8b2252;">"Spring"</span> 6]
+ [<span style="color: #8b2252;">"頭脳警察"</span> 4]
+ [<span style="color: #8b2252;">"Sonoma"</span> 6]
+ [<span style="color: #8b2252;">"Selda"</span> 5]
+ [<span style="color: #8b2252;">"Tony"</span> 4]
+ [<span style="color: #8b2252;">"Smile"</span> 5]
+ [<span style="color: #8b2252;">"Sun Ra"</span> 6]
+ ...]
+```
+
+
+
+The section [Built-in Predicates and Functions](#built-in-functions) lists all built-in functions.
+
+
+
+
+
+
+
+Built-in Predicates and Functions
+---------------------------------
+
+Datomic provides the following built-in expression functions and predicates:
+
+- Two-argument comparison predicates: *!=*, *&lt;*, *&lt;=*, *&gt;*, and *&gt;=*.
+- Two-argument mathematical operators: *+*, *-*, *\**, and /.
+
+> **Note:** Datomic's / operator is similar to Clojure's [/](http://clojuredocs.org/clojure.core/_fs) in terms of promotion and [contagion](http://clojure.org/data_structures#Data%20Structures-Numbers)with a notable exception: Datomic's / operator does not return a *clojure.lang.Ratio* to callers. Instead, it returns a quotient as per [*quot*](https://clojuredocs.org/clojure.core/quot).
+
+- All of the functions from the [clojure.core](https://clojure.github.io/clojure/clojure.core-api.html)namespace of Clojure, except *eval*.
+- A set of functions and predicates that are aware of Datomic data structures, documented below: 
+    - [get-else](#get-else)
+    - [get-some](#get-some)
+    - [ground](#ground)
+    - [missing](#missing)
+    - [q](#q)
+    - [tuple](#tuple)
+    - [untuple](#untuple)
+
+
+
+### *get-else*
+
+```
+<pre class="src src-clojure">[(get-else src-var ent attr default) ?val-or-default]
+```
+
+
+
+The *get-else* function takes a database, [an entity identifier](../transactions/transaction-data-reference.html#entity-identifiers), a cardinality-one attribute, and a default value. It returns that entity's value for the attribute, or the default value if entity does not have a value.
+
+The query below reports "N/A" whenever an artist's *startYear* is not in the database:
+
+```
+<pre class="src src-clojure"><span style="color: #b22222;">;; </span><span style="color: #b22222;">query</span>
+  [<span style="color: #008b8b;">:find</span> ?artist-name ?year
+   <span style="color: #008b8b;">:in</span> $ [?artist-name ...]
+   <span style="color: #008b8b;">:where</span> [?artist <span style="color: #008b8b;">:artist/name</span> ?artist-name]
+          [(get-else $ ?artist <span style="color: #008b8b;">:artist/startYear</span> <span style="color: #8b2252;">"N/A"</span>) ?year]]
+
+  <span style="color: #b22222;">;; </span><span style="color: #b22222;">inputs</span>
+  db, [<span style="color: #8b2252;">"Crosby, Stills & Nash"</span> <span style="color: #8b2252;">"Crosby & Nash"</span>]
+
+  <span style="color: #b22222;">;; </span><span style="color: #b22222;">example in 1-arity form</span>
+  (d/q {<span style="color: #008b8b;">:query</span> '[<span style="color: #008b8b;">:find</span> ?artist-name ?year
+                       <span style="color: #008b8b;">:in</span> $ [?artist-name ...]
+                       <span style="color: #008b8b;">:where</span> [?artist <span style="color: #008b8b;">:artist/name</span> ?artist-name]
+                              [(get-else $ ?artist <span style="color: #008b8b;">:artist/startYear</span> <span style="color: #8b2252;">"N/A"</span>) ?year]]
+
+       <span style="color: #008b8b;">:args</span> [db [<span style="color: #8b2252;">"Crosby, Stills & Nash"</span> <span style="color: #8b2252;">"Crosby & Nash"</span>]]})
+
+```
+
+
+
+```
+<pre class="src src-clojure">=>
+#{[<span style="color: #8b2252;">"Crosby, Stills & Nash"</span> 1968] 
+  [<span style="color: #8b2252;">"Crosby & Nash"</span> <span style="color: #8b2252;">"N/A"</span>]}
+```
+
+
+
+
+
+
+
+### *get-some*
+
+```
+<pre class="src src-clojure">[(get-some src-var ent attr+) [?attr ?val]]
+```
+
+
+
+The *get-some* function takes a database, [an entity identifier](../transactions/transaction-data-reference.html#entity-identifiers), and one or more cardinality-one attributes, returning a tuple of the entity id and value for the first attribute possessed by the entity.
+
+The query below tries to find a *:country/name* for an entity, and then falls back to *:artist/name*:
+
+```
+<pre class="src src-clojure"><span style="color: #b22222;">;; </span><span style="color: #b22222;">query</span>
+[<span style="color: #008b8b;">:find</span> ?e ?attr ?name
+ <span style="color: #008b8b;">:in</span> $ ?e
+ <span style="color: #008b8b;">:where</span> [(get-some $ ?e <span style="color: #008b8b;">:country/name</span> <span style="color: #008b8b;">:artist/name</span>) [?attr ?name]]]
+
+<span style="color: #b22222;">;; </span><span style="color: #b22222;">inputs</span>
+db, <span style="color: #008b8b;">:country/US</span>
+
+<span style="color: #b22222;">;; </span><span style="color: #b22222;">example 1-arity form</span>
+(d/q {<span style="color: #008b8b;">:query</span> '[<span style="color: #008b8b;">:find</span> ?e ?attr ?name
+               <span style="color: #008b8b;">:in</span> $ ?e
+               <span style="color: #008b8b;">:where</span> [(get-some $ ?e <span style="color: #008b8b;">:country/name</span> <span style="color: #008b8b;">:artist/name</span>) [?attr ?name]]]
+      <span style="color: #008b8b;">:args</span> [db, <span style="color: #008b8b;">:country/US</span>]})
+
+```
+
+
+
+```
+<pre class="src src-clojure">=> [<span style="color: #008b8b;">:country/US</span> 84 <span style="color: #8b2252;">"United States"</span>]
+```
+
+
+
+
+
+
+
+### *ground*
+
+```
+<pre class="src src-clojure">[(ground const) binding]
+```
+
+
+
+The *ground* function takes a single argument, which must be a constant, and returns that same argument. Programs that know information at query time should prefer *ground* over e.g. *identity*, as the former can be used inside the query engine to enable optimizations.
+
+```
+<pre class="src src-clojure">[(ground [<span style="color: #008b8b;">:a</span> <span style="color: #008b8b;">:e</span> <span style="color: #008b8b;">:i</span> <span style="color: #008b8b;">:o</span> <span style="color: #008b8b;">:u</span>]) [?vowel ...]]
+```
+
+
+
+
+
+
+
+### *missing?*
+
+```
+<pre class="src src-clojure">[(missing? src-var ent attr)]
+```
+
+
+
+The *missing?* predicate takes a database, [an entity identifier](../transactions/transaction-data-reference.html#entity-identifiers), and an attribute and returns true if the entity has no value for attribute in the database.
+
+The following query finds all artists whose start year is not recorded in the database.
+
+```
+<pre class="src src-clojure"><span style="color: #b22222;">;; </span><span style="color: #b22222;">query</span>
+[<span style="color: #008b8b;">:find</span> ?name
+ <span style="color: #008b8b;">:where</span> [?artist <span style="color: #008b8b;">:artist/name</span> ?name]
+        [(missing? $ ?artist <span style="color: #008b8b;">:artist/startYear</span>)]]
+
+<span style="color: #b22222;">;; </span><span style="color: #b22222;">inputs</span>
+db
+
+<span style="color: #b22222;">;; </span><span style="color: #b22222;">multi-arity version</span>
+(d/q '[<span style="color: #008b8b;">:find</span> ?name
+       <span style="color: #008b8b;">:where</span> [?artist <span style="color: #008b8b;">:artist/name</span> ?name]
+              [(missing? $ ?artist <span style="color: #008b8b;">:artist/startYear</span>)]]
+     db)
+
+```
+
+
+
+```
+<pre class="src src-clojure">=>
+#{[<span style="color: #8b2252;">"Sigmund Snopek III"</span>]
+  [<span style="color: #8b2252;">"De Labanda's"</span>]
+  [<span style="color: #8b2252;">"Baby Whale"</span>]
+  ...}
+```
+
+
+
+
+
+
+
+### *q*
+
+The *q* function allows you to perform nested queries, and takes the same arguments as the variable-arity [q api function](https://docs.datomic.com/client-api/datomic.client.api.html#var-q).
+
+The example below shows using a nested query to bind the the `?duration` variable for use by an enclosing query that returns the entity id and name of the shortest tracks:
+
+```
+<pre class="src src-clojure"><span style="color: #b22222;">;; </span><span style="color: #b22222;">query</span>
+(d/q '[<span style="color: #008b8b;">:find</span> ?track ?name ?duration
+       <span style="color: #008b8b;">:where</span>
+       [(q '[<span style="color: #008b8b;">:find</span> (<span style="color: #a0522d;">min</span> ?duration)
+             <span style="color: #008b8b;">:where</span> [_ <span style="color: #008b8b;">:track/duration</span> ?duration]]
+           $) [[?duration]]]
+       [?track <span style="color: #008b8b;">:track/duration</span> ?duration]
+       [?track <span style="color: #008b8b;">:track/name</span> ?name]]
+     db)
+
+```
+
+
+
+```
+<pre class="src src-clojure">=>
+[[8334298138708635 <span style="color: #8b2252;">"Nutopian International Anthem"</span> 3000]
+ [9007199254790299 <span style="color: #8b2252;">"Nutopian International Anthem"</span> 3000]]
+```
+
+
+
+
+
+
+
+### *tuple*
+
+```
+<pre class="src src-clojure">[(tuple ?a ...) ?tup]
+```
+
+
+
+Given one or more values, the *tuple* function returns a [tuple](../schema/schema-reference.html#tuples)containing each value. See also [untuple](#untuple).
+
+```
+<pre class="src src-clojure"><span style="color: #b22222;">;; </span><span style="color: #b22222;">query</span>
+[<span style="color: #008b8b;">:find</span> ?tup
+ <span style="color: #008b8b;">:in</span> ?a ?b
+ <span style="color: #008b8b;">:where</span> [(tuple ?a ?b) ?tup]]
+
+<span style="color: #b22222;">;; </span><span style="color: #b22222;">inputs</span>
+1 2
+
+```
+
+
+
+```
+<pre class="src src-clojure">=> #{[[1 2]]}
+```
+
+
+
+
+
+
+
+### *untuple*
+
+```
+<pre class="src src-clojure">[(untuple ?tup) [?a ?b]]
+```
+
+
+
+Given a [tuple](../schema/schema-reference.html#tuples), the untuple function can be used to name each element of the tuple. See also [tuple](#tuple).
+
+```
+<pre class="src src-clojure"><span style="color: #b22222;">;; </span><span style="color: #b22222;">query</span>
+[<span style="color: #008b8b;">:find</span> ?b
+ <span style="color: #008b8b;">:in</span> ?tup
+ <span style="color: #008b8b;">:where</span> [(untuple ?tup) [?a ?b]]]
+
+<span style="color: #b22222;">;; </span><span style="color: #b22222;">inputs</span>
+[1 2]
+
+```
+
+
+
+```
+<pre class="src src-clojure">=> #{[2]}
+```
+
+
+
+
+
+
+
+
+
+Calling Java Methods
+--------------------
+
+Java methods can be used as query expression functions and predicates, and should be type hinted for performance. Java code used in this way must be on the Java process classpath.
+
+Java methods should only be used when there is not an equivalent function in [clojure.core](https://clojure.github.io/clojure/clojure.core-api.html).
+
+The sections below show how to call both static methods and instance methods.
+
+
+
+### Calling Static Methods
+
+Java static methods can be called with the *(ClassName/methodName …)*form. For example, the following code calls *System.getProperties*, binding property names to *?k* and property values to *?v*.
+
+```
+<pre class="src src-clojure"><span style="color: #b22222;">;; </span><span style="color: #b22222;">query</span>
+[<span style="color: #008b8b;">:find</span> ?k ?v
+ <span style="color: #008b8b;">:where</span> [(<span style="color: #483d8b;">System/getProperties</span>) [[?k ?v]]]]
+
+<span style="color: #b22222;">;; </span><span style="color: #b22222;">no args</span>
+
+```
+
+
+
+```
+<pre class="src src-clojure">=>
+#{[<span style="color: #8b2252;">"java.vendor.url.bug"</span> <span style="color: #8b2252;">"http://bugreport.sun.com/bugreport/"</span>] 
+  [<span style="color: #8b2252;">"sun.cpu.isalist"</span> <span style="color: #8b2252;">""</span>] 
+  [<span style="color: #8b2252;">"sun.jnu.encoding"</span> <span style="color: #8b2252;">"UTF-8"</span>]
+  ...}
+```
+
+
+
+
+
+
+
+### Calling Instance Methods
+
+Java instance methods can be called with the *(.methodName obj …)*form. For example, the following code finds artists whose name contains "woo"?
+
+```
+<pre class="src src-clojure"><span style="color: #b22222;">;; </span><span style="color: #b22222;">query</span>
+[<span style="color: #008b8b;">:find</span> ?name
+ <span style="color: #008b8b;">:where</span> [_ <span style="color: #008b8b;">:artist/name</span> ?name]
+        [(<span style="color: #483d8b;">.contains</span> <span style="color: #228b22;">^String</span> ?name <span style="color: #8b2252;">"woo"</span>)]]
+
+<span style="color: #b22222;">;; </span><span style="color: #b22222;">args</span>
+db
+
+<span style="color: #b22222;">;; </span><span style="color: #b22222;">multi-arity version</span>
+(d/q '[<span style="color: #008b8b;">:find</span> ?name
+       <span style="color: #008b8b;">:where</span> [_ <span style="color: #008b8b;">:artist/name</span> ?name]
+              [(<span style="color: #483d8b;">.contains</span> <span style="color: #228b22;">^String</span> ?name <span style="color: #8b2252;">"woo"</span>)]]
+     db)
+
+
+```
+
+
+
+```
+<pre class="src src-clojure">=>
+[[<span style="color: #8b2252;">"Lee Hazlewood"</span>] [<span style="color: #8b2252;">"Cottonwood"</span>] [<span style="color: #8b2252;">"Chris Harwood"</span>] [<span style="color: #8b2252;">"Mirkwood"</span>]
+ [<span style="color: #8b2252;">"Under Milkwood"</span>] [<span style="color: #8b2252;">"Dorothy Norwood"</span>] [<span style="color: #8b2252;">"Fleetwood Mac"</span>]]
+```
+
+
+
+Note the `^String` type hint on `?name`. Type hints outside java.lang will need to be fully qualified, and complex method signatures may require more than one hint to be unambiguous.
+
+
+
+
+
+
+
+Calling Clojure Functions
+-------------------------
+
+Clojure functions can be used as query expression functions and predicates. The example below uses *subs* as an expression function to extract prefixes of words:
+
+```
+<pre class="src src-clojure"><span style="color: #b22222;">;; </span><span style="color: #b22222;">query</span>
+[<span style="color: #008b8b;">:find</span> ?prefix 
+  <span style="color: #008b8b;">:in</span> [?word ...]
+  <span style="color: #008b8b;">:where</span> [(<span style="color: #a0522d;">subs</span> ?word 0 5) ?prefix]]
+
+<span style="color: #b22222;">;; </span><span style="color: #b22222;">inputs</span>
+[<span style="color: #8b2252;">"hello"</span> <span style="color: #8b2252;">"antidisestablishmentarianism"</span>]
+
+```
+
+
+
+```
+<pre class="src src-clojure">=> [[<span style="color: #8b2252;">"hello"</span>] [<span style="color: #8b2252;">"antid"</span>]]
+```
+
+
+
+Function names outside clojure.core need to be fully qualified and included in the [ion `:allow` list](../ions/ions-reference.html#ion-config). The query engine will automatically require namespaces as necessary.
+
+
+
+
+
+Not Clauses
+-----------
+
+```
+<pre class="example" id="org762f9df">
+not-clause                 = [ src-var? 'not' clause+ ]
+```
+
+With *not* clauses, you can express that one or more logic variables inside a query must **not** satisfy all of a set of predicates. removes already-bound tuples that satisfy the *clauses*. Unless you specify an explicit *src-var*, *not* clauses will target a source named *$*.
+
+
+
+### Not Example
+
+The following query uses a *not* clause to find the count of all artists who are not Canadian:
+
+```
+<pre class="src src-clojure"><span style="color: #b22222;">;; </span><span style="color: #b22222;">query</span>
+[<span style="color: #008b8b;">:find</span> (<span style="color: #a0522d;">count</span> ?eid)
+ <span style="color: #008b8b;">:where</span> [?eid <span style="color: #008b8b;">:artist/name</span>]
+        (<span style="color: #a0522d;">not</span> [?eid <span style="color: #008b8b;">:artist/country</span> <span style="color: #008b8b;">:country/CA</span>])]
+
+<span style="color: #b22222;">;; </span><span style="color: #b22222;">args</span>
+db
+
+<span style="color: #b22222;">;; </span><span style="color: #b22222;">multi-arity version</span>
+(d/q '[<span style="color: #008b8b;">:find</span> (<span style="color: #a0522d;">count</span> ?eid)
+       <span style="color: #008b8b;">:where</span> [?eid <span style="color: #008b8b;">:artist/name</span>]
+              (<span style="color: #a0522d;">not</span> [?eid <span style="color: #008b8b;">:artist/country</span> <span style="color: #008b8b;">:country/CA</span>])]
+     db)
+
+```
+
+
+
+```
+<pre class="src src-clojure">=> [[4538]]
+```
+
+
+
+
+
+
+
+### How Not Clauses Work
+
+One can understand *not* clauses as if they turn into subqueries where all of the variables and sources unified by the negation are propagated to the subquery. The results of the subquery are removed from the enclosing query via set difference. Note that, because they are implemented using set logic, *not* clauses can be much more efficient than building your own expression predicate that executes a query, as expression predicates are run on each tuple in turn.
+
+
+
+
+
+### Insufficient Binding for a Not Clause
+
+All variables used in a *not* clause will unify with the surrounding query. This includes both the arguments to nested expression clauses as well as any bindings made by nested function expressions. Datomic will attempt to push the *not* clause down until all necessary variables are bound, and will throw an `::anom/incorrect` [anomaly](../client/client-api.html#anomalies) if that is not possible
+
+The query below demonstrates the problem. It attempts to remove eids that are not associated with an `:artist/country`, without ever finding a set of eids to begin with:
+
+```
+<pre class="src src-clojure"><span style="color: #b22222;">;; </span><span style="color: #b22222;">query </span>
+[<span style="color: #008b8b;">:find</span> (<span style="color: #a0522d;">count</span> ?eid)
+ <span style="color: #008b8b;">:where</span> (<span style="color: #a0522d;">not</span> [?eid <span style="color: #008b8b;">:artist/country</span> <span style="color: #008b8b;">:country/CA</span>])]
+
+<span style="color: #b22222;">;; </span><span style="color: #b22222;">args</span>
+db
+
+<span style="color: #b22222;">;; </span><span style="color: #b22222;">multi-arity version</span>
+(d/q '[<span style="color: #008b8b;">:find</span> (<span style="color: #a0522d;">count</span> ?eid)
+       <span style="color: #008b8b;">:where</span> (<span style="color: #a0522d;">not</span> [?eid <span style="color: #008b8b;">:artist/country</span> <span style="color: #008b8b;">:country/CA</span>])]
+     db)
+```
+
+
+
+```
+<pre class="src src-clojure">=> <span style="color: #b22222;">;; </span><span style="color: #b22222;">an ::anom/incorrect anomaly</span>
+```
+
+
+
+
+
+
+
+
+
+Not-join Clauses
+----------------
+
+```
+<pre class="src src-clojure">not-join-clause            = (src-var? 'not-join' [var+] clause+)
+```
+
+
+
+A *not-join* clause works exactly like a *not* clause, but also allows you to specify which variables should unify with the surrounding clause; only this list of variables needs binding before the clause can run.
+
+*var* specifies which variables should unify.
+
+
+
+### Not-join Example
+
+In this next query, which returns the number of artists who didn't release an album in 1970, `?artist` is in the *var* clause and must unify with the surrounding query. `?release` is used only inside the *not-join* clause and will not unify.
+
+```
+<pre class="src src-clojure"><span style="color: #b22222;">;; </span><span style="color: #b22222;">query</span>
+[<span style="color: #008b8b;">:find</span> (<span style="color: #a0522d;">count</span> ?artist)
+ <span style="color: #008b8b;">:where</span> [?artist <span style="color: #008b8b;">:artist/name</span>]
+        (not-join [?artist]
+                  [?release <span style="color: #008b8b;">:release/artists</span> ?artist]
+                  [?release <span style="color: #008b8b;">:release/year</span> 1970])]
+<span style="color: #b22222;">;; </span><span style="color: #b22222;">args</span>
+db
+
+<span style="color: #b22222;">;; </span><span style="color: #b22222;">multi-arity version</span>
+(d/q '[<span style="color: #008b8b;">:find</span> (<span style="color: #a0522d;">count</span> ?artist)
+       <span style="color: #008b8b;">:where</span> [?artist <span style="color: #008b8b;">:artist/name</span>]
+              (not-join [?artist]
+                        [?release <span style="color: #008b8b;">:release/artists</span> ?artist]
+                        [?release <span style="color: #008b8b;">:release/year</span> 1970])]
+     db)
+
+```
+
+
+
+```
+<pre class="src src-clojure">=> [[3263]]
+```
+
+
+
+
+
+
+
+### Multiple Clauses In not Or not-join
+
+When more than one clause is supplied to *not* or *not-join*, you should read the clauses as if they are connected by "and", just as they are in *:where*.
+
+The following query counts the number of releases named "Live at Carnegie Hall" that were not by Bill Withers.
+
+```
+<pre class="src src-clojure"><span style="color: #b22222;">;; </span><span style="color: #b22222;">query</span>
+[<span style="color: #008b8b;">:find</span> (<span style="color: #a0522d;">count</span> ?r)
+ <span style="color: #008b8b;">:where</span> [?r <span style="color: #008b8b;">:release/name</span> <span style="color: #8b2252;">"Live at Carnegie Hall"</span>]
+        (not-join [?r]
+                  [?r <span style="color: #008b8b;">:release/artists</span> ?a]
+                  [?a <span style="color: #008b8b;">:artist/name</span> <span style="color: #8b2252;">"Bill Withers"</span>])]
+
+<span style="color: #b22222;">;; </span><span style="color: #b22222;">args</span>
+db
+
+<span style="color: #b22222;">;; </span><span style="color: #b22222;">multi-arity version</span>
+(d/q '[<span style="color: #008b8b;">:find</span> (<span style="color: #a0522d;">count</span> ?r)
+             <span style="color: #008b8b;">:where</span> [?r <span style="color: #008b8b;">:release/name</span> <span style="color: #8b2252;">"Live at Carnegie Hall"</span>]
+                    (not-join [?r]
+                                [?r <span style="color: #008b8b;">:release/artists</span> ?a]
+                                [?a <span style="color: #008b8b;">:artist/name</span> <span style="color: #8b2252;">"Bill Withers"</span>])]
+     db)
+
+```
+
+
+
+```
+<pre class="src src-clojure">=> [[2]]
+```
+
+
+
+
+
+
+
+
+
+Or Clauses
+----------
+
+```
+<pre class="src src-clojure">or-clause                  = [ src-var? 'or' (clause | and-clause)+]
+```
+
+
+
+With *or* clauses, you can express that one or more logic variables inside a query satisfy at least one of a set of predicates. An *or*clause constrains the result to tuples that satisfy at least one of its /clause/s or /and-clauses/s
+
+The following query uses an *or* clause to find the count of all vinyl media by listing the complete set of media that make up vinyl in the *or* clause:
+
+
+
+### Or Clause Example
+
+```
+<pre class="src src-clojure"><span style="color: #b22222;">;; </span><span style="color: #b22222;">query</span>
+[<span style="color: #008b8b;">:find</span> (<span style="color: #a0522d;">count</span> ?medium)
+ <span style="color: #008b8b;">:where</span> (<span style="color: #483d8b;">or</span> [?medium <span style="color: #008b8b;">:medium/format</span> <span style="color: #008b8b;">:medium.format/vinyl7</span>]
+            [?medium <span style="color: #008b8b;">:medium/format</span> <span style="color: #008b8b;">:medium.format/vinyl10</span>]
+            [?medium <span style="color: #008b8b;">:medium/format</span> <span style="color: #008b8b;">:medium.format/vinyl12</span>]
+            [?medium <span style="color: #008b8b;">:medium/format</span> <span style="color: #008b8b;">:medium.format/vinyl</span>])]
+
+<span style="color: #b22222;">;; </span><span style="color: #b22222;">args</span>
+db
+
+<span style="color: #b22222;">;; </span><span style="color: #b22222;">multi-arity version</span>
+(d/q '[<span style="color: #008b8b;">:find</span> (<span style="color: #a0522d;">count</span> ?medium)
+       <span style="color: #008b8b;">:where</span> (<span style="color: #483d8b;">or</span> [?medium <span style="color: #008b8b;">:medium/format</span> <span style="color: #008b8b;">:medium.format/vinyl7</span>]
+                  [?medium <span style="color: #008b8b;">:medium/format</span> <span style="color: #008b8b;">:medium.format/vinyl10</span>]
+                  [?medium <span style="color: #008b8b;">:medium/format</span> <span style="color: #008b8b;">:medium.format/vinyl12</span>]
+                  [?medium <span style="color: #008b8b;">:medium/format</span> <span style="color: #008b8b;">:medium.format/vinyl</span>])]
+     db)
+
+```
+
+
+
+```
+<pre class="src src-clojure">=> [[74751]]
+```
+
+
+
+
+
+
+
+### Or Clause Variables
+
+All clauses used in an *or* clause must use the same set of variables, which will unify with the surrounding query. This includes both the arguments to nested expression clauses as well as any bindings made by nested function expressions. Datomic will attempt to push the *or*clause down until all necessary variables are bound, and will throw an exception if that is not possible.
+
+
+
+
+
+### How Or Clauses Work
+
+One can imagine *or* clauses turn into an invocation of an anonymous rule whose predicates comprise the *or* clauses. As with rules, *src-vars* are not currently supported within the clauses of *or*, but are supported on the *or* clause as a whole at top level.
+
+
+
+
+
+
+
+And Clause
+----------
+
+```
+<pre class="example" id="org470f7f3">
+and-clause                 = [ 'and' clause+ ]
+```
+
+Inside an *or* clause, you may use an *and* clause to specify conjunction. The *and* clauses is not available (or needed) outside of an *or* clause, since conjunction is the default in other clauses.
+
+
+
+### And Clause Example
+
+The following query uses an *and* clause inside the *or* clause to find the number of artists who are either groups or females:
+
+```
+<pre class="src src-clojure"><span style="color: #b22222;">;; </span><span style="color: #b22222;">query</span>
+[<span style="color: #008b8b;">:find</span> (<span style="color: #a0522d;">count</span> ?artist)
+ <span style="color: #008b8b;">:where</span> (<span style="color: #483d8b;">or</span> [?artist <span style="color: #008b8b;">:artist/type</span> <span style="color: #008b8b;">:artist.type/group</span>]
+            (<span style="color: #483d8b;">and</span> [?artist <span style="color: #008b8b;">:artist/type</span> <span style="color: #008b8b;">:artist.type/person</span>]
+                 [?artist <span style="color: #008b8b;">:artist/gender</span> <span style="color: #008b8b;">:artist.gender/female</span>]))]
+
+<span style="color: #b22222;">;; </span><span style="color: #b22222;">args</span>
+db
+
+<span style="color: #b22222;">;; </span><span style="color: #b22222;">multi-arity version</span>
+(d/q '[<span style="color: #008b8b;">:find</span> (<span style="color: #a0522d;">count</span> ?artist)
+       <span style="color: #008b8b;">:where</span> (<span style="color: #483d8b;">or</span> [?artist <span style="color: #008b8b;">:artist/type</span> <span style="color: #008b8b;">:artist.type/group</span>]
+                  (<span style="color: #483d8b;">and</span> [?artist <span style="color: #008b8b;">:artist/type</span> <span style="color: #008b8b;">:artist.type/person</span>]
+                       [?artist <span style="color: #008b8b;">:artist/gender</span> <span style="color: #008b8b;">:artist.gender/female</span>]))]
+     db)
+```
+
+
+
+```
+<pre class="src src-clojure">=> [[2323]]
+```
+
+
+
+
+
+
+
+
+
+Or-join Clause
+--------------
+
+```
+<pre class="src src-clojure">or-join-clause             = [ src-var? 'or-join' [variable+] (clause | and-clause)+ ]
+```
+
+
+
+An *or-join* clause is similar to an *or* clause, but it allows you to specify which variables should unify with the surrounding clause; only this list of variables needs binding before the clause can run. The /variable/s specifies which variables should unify.
+
+
+
+### Or-join Example
+
+In this query, which returns the number of releases that are either by Canadian artists or released in 1970, `?artist` is only used inside the *or* clause and doesn't need to unify with the outer clause. *or-join* is used to specify that only `?release` needs unifying.
+
+```
+<pre class="src src-clojure"><span style="color: #b22222;">;; </span><span style="color: #b22222;">query</span>
+[<span style="color: #008b8b;">:find</span> (<span style="color: #a0522d;">count</span> ?release)
+ <span style="color: #008b8b;">:where</span> [?release <span style="color: #008b8b;">:release/name</span>]
+        (or-join [?release]
+                 (<span style="color: #483d8b;">and</span> [?release <span style="color: #008b8b;">:release/artists</span> ?artist]
+                      [?artist <span style="color: #008b8b;">:artist/country</span> <span style="color: #008b8b;">:country/CA</span>])
+                 [?release <span style="color: #008b8b;">:release/year</span> 1970])]
+
+<span style="color: #b22222;">;; </span><span style="color: #b22222;">args</span>
+db
+
+<span style="color: #b22222;">;; </span><span style="color: #b22222;">multi-arity version</span>
+(d/q '[<span style="color: #008b8b;">:find</span> (<span style="color: #a0522d;">count</span> ?release)
+        <span style="color: #008b8b;">:where</span> [?release <span style="color: #008b8b;">:release/name</span>]
+                (or-join [?release]
+                        (<span style="color: #483d8b;">and</span> [?release <span style="color: #008b8b;">:release/artists</span> ?artist]
+                                [?artist <span style="color: #008b8b;">:artist/country</span> <span style="color: #008b8b;">:country/CA</span>])
+                        [?release <span style="color: #008b8b;">:release/year</span> 1970])]
+     db)
+
+```
+
+
+
+```
+<pre class="src src-clojure">=> [[2124]]
+```
+
+
+
+
+
+
+
+
+
+With Clauses
+------------
+
+A *with-clause* considers additional variables not named in the *find-spec* when forming the basis set for a query result. The with variables are then removed, leaving a bag (not a set!) of values to be consumed by the *find-spec*. This is particularly useful when finding aggregates.
+
+
+
+### Example with-clause
+
+Consider the following example, where our intention is to find out the years of every Bob Dylan release.
+
+```
+<pre class="src src-clojure"><span style="color: #b22222;">;; </span><span style="color: #b22222;">incorrect query</span>
+[<span style="color: #008b8b;">:find</span> ?year
+ <span style="color: #008b8b;">:where</span> [?artist <span style="color: #008b8b;">:artist/name</span> <span style="color: #8b2252;">"Bob Dylan"</span>]
+         [?release <span style="color: #008b8b;">:release/artists</span> ?artist]
+         [?release <span style="color: #008b8b;">:release/year</span> ?year]]
+
+<span style="color: #b22222;">;; </span><span style="color: #b22222;">inputs</span>
+db  
+
+<span style="color: #b22222;">;; </span><span style="color: #b22222;">Multi-arity version</span>
+(d/q '[<span style="color: #008b8b;">:find</span> ?year
+       <span style="color: #008b8b;">:where</span> [?artist <span style="color: #008b8b;">:artist/name</span> <span style="color: #8b2252;">"Bob Dylan"</span>]
+              [?release <span style="color: #008b8b;">:release/artists</span> ?artist]
+              [?release <span style="color: #008b8b;">:release/year</span> ?year]]
+   db)
+
+```
+
+
+
+```
+<pre class="src src-clojure">=> [[1969] [1970] [1971] [1973] [1968]]
+```
+
+
+
+Bob Dylan was clearly a more prolific artist than this. The query returned *the years Bob Dylan released* records, rather than the release years of each of the records.
+
+Set logic combines all of the releases that came out in the same year, and this is not what is wanted for the particular query.
+
+A *with-clause* correct this query:
+
+```
+<pre class="src src-clojure"><span style="color: #b22222;">;; </span><span style="color: #b22222;">fixed query</span>
+[<span style="color: #008b8b;">:find</span> ?year
+ <span style="color: #008b8b;">:with</span> ?release
+ <span style="color: #008b8b;">:where</span> [?artist <span style="color: #008b8b;">:artist/name</span> <span style="color: #8b2252;">"Bob Dylan"</span>]
+        [?release <span style="color: #008b8b;">:release/artists</span> ?artist]
+        [?release <span style="color: #008b8b;">:release/year</span> ?year]]
+
+<span style="color: #b22222;">;; </span><span style="color: #b22222;">inputs</span>
+db
+
+<span style="color: #b22222;">;; </span><span style="color: #b22222;">Multi-arity version</span>
+(d/q '[<span style="color: #008b8b;">:find</span> ?year
+       <span style="color: #008b8b;">:with</span> ?release
+       <span style="color: #008b8b;">:where</span> [?artist <span style="color: #008b8b;">:artist/name</span> <span style="color: #8b2252;">"Bob Dylan"</span>]
+              [?release <span style="color: #008b8b;">:release/artists</span> ?artist]
+              [?release <span style="color: #008b8b;">:release/year</span> ?year]]
+     db)
+
+```
+
+
+
+```
+<pre class="src src-clojure">=> [[1973] [1971] [1973] [1973] [1970] [1968] [1971] [1969] [1968] [1970] [1973] [1970] [1971] [1970] [1973] [1968] [1971] [1973] [1970] [1969] [1971] [1970]]
+```
+
+
+
+This result is more like what we wanted. This is a list of the year of *each release*between 1968 and 1973.
+
+
+
+
+
+
+
+Rules
+-----
+
+Datomic datalog allows you to package up sets of `:where` clauses into named *rules*. These rules make query logic reusable, and also composable, meaning that you can bind portions of a query's logic at query time.
+
+
+
+### Defining a Rule
+
+```
+<pre class="example" id="org6b164a7">
+rule                       = [ [rule-head clause+]+ ]
+rule-head                  = [rule-name rule-vars]
+rule-name                  = plain-symbol
+rule-vars                  = [variable+ | ([variable+] variable*)]
+```
+
+As with transactions and queries, rules are described using data structures. A rule is a list of lists. The first list in the rule is the *rule-head*. It names the rule and specifies its *rule-vars*. The rest of the lists are clauses that make up the body of the rule.
+
+In the example below, the rule-head is `track-info`, and the three clauses of the rule body join artists to name and duration information about tracks:
+
+```
+<pre class="src src-clojure">[(track-info ?artist ?name ?duration)
+ [?track <span style="color: #008b8b;">:track/artists</span> ?artist]
+ [?track <span style="color: #008b8b;">:track/name</span> ?name]
+ [?track <span style="color: #008b8b;">:track/duration</span> ?duration]]
+```
+
+
+
+
+
+
+
+### Using a Rule
+
+```
+<pre class="example" id="orgbe6b5dd">
+inputs                     = ':in' (src-var | binding | pattern-name | rules-var)+
+rules-var                  = the symbol "%"
+rule-expr                  = [ src-var? rule-name (variable | constant | '_')+]
+```
+
+You have to do two things to use a rule in a query. First, you have to pass a *rule set* (collection of rules) as an input source and reference it in the *:in* section of your query using the '%' symbol. Second, you have to invoke one or more rules with a *rule-expr* in the *:where* section of your query.
+
+The example below puts the `track-info` rule into a collection and names the rules with `%`. It then invokes the rule `track-info` by name in the where clause:
+
+```
+<pre class="src src-clojure">(<span style="color: #a020f0;">def</span> <span style="color: #0000ff;">rules</span>
+  '[[(track-info ?artist ?name ?duration)
+     [?track <span style="color: #008b8b;">:track/artists</span> ?artist]
+     [?track <span style="color: #008b8b;">:track/name</span> ?name]
+     [?track <span style="color: #008b8b;">:track/duration</span> ?duration]]])
+
+(d/q '[<span style="color: #008b8b;">:find</span> ?name ?duration
+       <span style="color: #008b8b;">:in</span> $ % ?aname
+       <span style="color: #008b8b;">:where</span> [?artist <span style="color: #008b8b;">:artist/name</span> ?aname]
+              (track-info ?artist ?name ?duration)]
+     db rules <span style="color: #8b2252;">"The Beatles"</span>)
+
+```
+
+
+
+```
+<pre class="src src-clojure">=> [[<span style="color: #8b2252;">"Here Comes the Sun"</span> 186000] 
+      [<span style="color: #8b2252;">"Hey Jude"</span> 428000] 
+      [<span style="color: #8b2252;">"Come Together"</span> 257000]
+      ...]
+```
+
+
+
+
+
+
+
+### Multiple Rule Heads
+
+Rules with multiple definitions will evaluate them as different logical paths to the same conclusion (i.e. logical OR). In the rule below, the rule name `benelux` is defined three times. As a result, the rule matches artists from any of the three Benelux countries:
+
+```
+<pre class="src src-clojure">(<span style="color: #a020f0;">def</span> <span style="color: #0000ff;">rules</span>
+  '[[(benelux ?artist)
+     [?artist <span style="color: #008b8b;">:artist/country</span> <span style="color: #008b8b;">:country/BE</span>]]
+    [(benelux ?artist)
+     [?artist <span style="color: #008b8b;">:artist/country</span> <span style="color: #008b8b;">:country/NL</span>]]
+    [(benelux ?artist)
+     [?artist <span style="color: #008b8b;">:artist/country</span> <span style="color: #008b8b;">:country/LU</span>]]])
+
+(d/q '[<span style="color: #008b8b;">:find</span> ?name
+       <span style="color: #008b8b;">:in</span> $ %
+       <span style="color: #008b8b;">:where</span> (benelux ?artist)
+              [?artist <span style="color: #008b8b;">:artist/name</span> ?name]]
+     db rules)
+
+```
+
+
+
+```
+<pre class="src src-clojure">=>
+[[<span style="color: #8b2252;">"Earth and Fire"</span>]
+ [<span style="color: #8b2252;">"André Brasseur"</span>]
+ [<span style="color: #8b2252;">"Nico Gomez & His Afro Percussion Inc."</span>]
+  ...]
+```
+
+
+
+
+
+
+
+### Required Bindings
+
+Rules normally operate exactly like other items in a where clause. They must unify with the variables already bound, and must bind any variables not already bound.
+
+But sometimes you know that a rule will only be correct, or only be efficient, if some variables are already bound. You can require that some variables be bound before a rule can fire by enclosing the required variables in a vector or list as the first argument to the rule. If the required variables are not bound, Datomic will report an incorrect [anomaly](../client/client-api.html#anomalies).
+
+In the example below, the `track-info` rule has `?artist` as a required binding, and a query that does not bind `?artist` fails:
+
+```
+<pre class="src src-clojure">(<span style="color: #a020f0;">def</span> <span style="color: #0000ff;">rules</span>
+  '[[(track-info [?artist] ?name ?duration)
+     [?track <span style="color: #008b8b;">:track/artists</span> ?artist]
+     [?track <span style="color: #008b8b;">:track/name</span> ?name]
+     [?track <span style="color: #008b8b;">:track/duration</span> ?duration]]])
+
+(d/q '[<span style="color: #008b8b;">:find</span> ?artist ?name ?duration
+       <span style="color: #008b8b;">:in</span> $ %
+       <span style="color: #008b8b;">:where</span> (track-info ?artist ?name ?duration)]
+     db rules)
+
+```
+
+
+
+```
+<pre class="src src-clojure">=> <span style="color: #483d8b;">ExceptionInfo</span> [?artist] not bound in clause: ...
+```
+
+
+
+This can be fixed easily:
+
+```
+<pre class="src src-clojure">(<span style="color: #a020f0;">def</span> <span style="color: #0000ff;">rules</span>
+  '[[(track-info [?artist] ?name ?duration)
+     [?track <span style="color: #008b8b;">:track/artists</span> ?artist]
+     [?track <span style="color: #008b8b;">:track/name</span> ?name]
+     [?track <span style="color: #008b8b;">:track/duration</span> ?duration]]])
+
+(d/q '[<span style="color: #008b8b;">:find</span> ?artist ?name ?duration
+       <span style="color: #008b8b;">:in</span> $ %
+       <span style="color: #008b8b;">:where</span> [?artist <span style="color: #008b8b;">:artist/name</span> <span style="color: #8b2252;">"The Rolling Stones"</span>]
+              (track-info ?artist ?name ?duration)]
+     db rules)
+
+```
+
+
+
+```
+<pre class="src src-clojure">=>
+[[62821696364619130 <span style="color: #8b2252;">"Sittin’ on a Fence"</span> 184040]
+ [62821696364619130 <span style="color: #8b2252;">"2000 Light Years From Home"</span> 287000]
+ [62821696364619130 <span style="color: #8b2252;">"Jumpin' Jack Flash"</span> 242066]
+ [62821696364619130 <span style="color: #8b2252;">"What to Do"</span> 158000] ...]
+```
+
+
+
+
+
+
+
+### Rule Database Scoping
+
+```
+<pre class="src src-clojure">rule-expr                  = [ src-var? rule-name (variable | constant | '_')+]
+```
+
+
+
+By default, rules operate against the default database named by `$`. As with other *where* clauses, you may specify a database as a `src-var` before the rule-name to scope the rule to that database. Databases cannot be used as arguments in a rule.
+
+The example below passes in two sources: the `$mbrainz` database, and an `$artists` relation. Every *where* clause must therefore begin with a `src-var` name:
+
+```
+<pre class="src src-clojure">(<span style="color: #a020f0;">def</span> <span style="color: #0000ff;">rules</span>
+  '[[(track-info [?artist] ?name ?duration)
+     [?track <span style="color: #008b8b;">:track/artists</span> ?artist]
+     [?track <span style="color: #008b8b;">:track/name</span> ?name]
+     [?track <span style="color: #008b8b;">:track/duration</span> ?duration]]])
+
+(d/q '[<span style="color: #008b8b;">:find</span> ?name ?duration
+       <span style="color: #008b8b;">:in</span> $mbrainz $artists %
+       <span style="color: #008b8b;">:where</span> [$artists ?aname]
+              [$mbrainz ?artist <span style="color: #008b8b;">:artist/name</span> ?aname]
+              ($mbrainz track-info ?artist ?name ?duration)]
+     db [[<span style="color: #8b2252;">"The Beatles"</span>]] rules)
+
+```
+
+
+
+```
+<pre class="src src-clojure">=>
+[[<span style="color: #8b2252;">"Here Comes the Sun"</span> 186000]
+[<span style="color: #8b2252;">"Come Together"</span> 257000]
+[<span style="color: #8b2252;">"Hey Jude"</span> 428000]
+...]
+```
+
+
+
+
+
+
+
+### Rule Generality
+
+In all the examples above, the body of each rule is made up solely of data clauses. However, rules can contain any type of clause that a where clause might contain: data, expressions, or even other rule invocations.
+
+**Next:** [Pull](query-pull.html)

@@ -1,0 +1,275 @@
+Index-Pull
+==========
+
+`index-pull` walks an [index](#indexes), [pulling](../query/pull.html) each entity using the [pattern](../query/pull.html#pattern), returning a lazy seq on the results.
+
+`index-pull` takes a `db` and a map with the following required keys:
+
+- [`:index`](#indexes) - an index of `:avet` or `:aevt`. Entities are pulled from third component.
+- [`:selector`](#selector) - a [pull selector](../query/pull.html)
+- [`:start`](#start) - A vector in the same order as the index indicating the initial position. At least `:a` must be specified.
+
+Optionally:
+
+- `:timeout` - Timeout in msec.
+- `:offset` - Number of results to omit from the beginning of the returned data.
+- `:limit` - Maximum total number of results to return. Specify -1 for no limit. Defaults to 1000.
+- [`:reverse`](#reverse) - walks the index in reverse. OPTIONAL.
+
+Indexes
+-------
+
+
+
+### AVET
+
+An `:index` of [`:avet`](../query/indexes.html#avet) walks the specified attribute, starting at an optional value, pulling against `:e`.
+
+First let's find pull the names, starting years and ending years of artists, starting at the `:artist/startYear`
+
+```
+<pre class="src src-clojure">(<span style="color: #a0522d;">take</span> 5
+      (d/index-pull db {<span style="color: #008b8b;">:index</span>    <span style="color: #008b8b;">:avet</span>
+                        <span style="color: #008b8b;">:selector</span> '[<span style="color: #008b8b;">:artist/name</span> <span style="color: #008b8b;">:artist/startYear</span> <span style="color: #008b8b;">:artist/endYear</span>]
+                        <span style="color: #008b8b;">:start</span>    [<span style="color: #008b8b;">:artist/startYear</span>]}))
+```
+
+
+
+```
+<pre class="src src-clojure">=>
+(#<span style="color: #008b8b;">:artist</span>{<span style="color: #008b8b;">:name</span> <span style="color: #8b2252;">"Choir of King's College, Cambridge"</span>, <span style="color: #008b8b;">:startYear</span> 1441}
+ #<span style="color: #008b8b;">:artist</span>{<span style="color: #008b8b;">:name</span> <span style="color: #8b2252;">"Heinrich Schütz"</span>, <span style="color: #008b8b;">:startYear</span> 1585, <span style="color: #008b8b;">:endYear</span> 1672}
+ #<span style="color: #008b8b;">:artist</span>{<span style="color: #008b8b;">:name</span> <span style="color: #8b2252;">"Antonio Vivaldi"</span>, <span style="color: #008b8b;">:startYear</span> 1678, <span style="color: #008b8b;">:endYear</span> 1741}
+ #<span style="color: #008b8b;">:artist</span>{<span style="color: #008b8b;">:name</span> <span style="color: #8b2252;">"Johann Sebastian Bach"</span>, <span style="color: #008b8b;">:startYear</span> 1685, <span style="color: #008b8b;">:endYear</span> 1750}
+ #<span style="color: #008b8b;">:artist</span>{<span style="color: #008b8b;">:name</span> <span style="color: #8b2252;">"Georg Friedrich Händel"</span>, <span style="color: #008b8b;">:startYear</span> 1685, <span style="color: #008b8b;">:endYear</span> 1759})
+```
+
+
+
+Interesting result for a database covering releases from 1968-1973.
+
+Starting at the year 1800, the artist's releases and release years can be pulled to investigate why these older artists are in the database.
+
+```
+<pre class="src src-clojure">(<span style="color: #a0522d;">take</span> 5
+      (d/index-pull db {<span style="color: #008b8b;">:index</span> <span style="color: #008b8b;">:avet</span>
+                        <span style="color: #008b8b;">:selector</span> '[<span style="color: #008b8b;">:artist/name</span> <span style="color: #008b8b;">:artist/startYear</span> {<span style="color: #008b8b;">:release/_artists</span> [<span style="color: #008b8b;">:release/year</span>]}]
+                        <span style="color: #008b8b;">:start</span> [<span style="color: #008b8b;">:artist/startYear</span> 1800]}))
+```
+
+
+
+```
+<pre class="src src-clojure">=>
+({<span style="color: #008b8b;">:artist/name</span> <span style="color: #8b2252;">"Hector Berlioz"</span>,
+  <span style="color: #008b8b;">:artist/startYear</span> 1803,
+  <span style="color: #008b8b;">:release/_artists</span> [#<span style="color: #008b8b;">:release</span>{<span style="color: #008b8b;">:year</span> 1970} #<span style="color: #008b8b;">:release</span>{<span style="color: #008b8b;">:year</span> 1973} #<span style="color: #008b8b;">:release</span>{<span style="color: #008b8b;">:year</span> 1969}]}
+ {<span style="color: #008b8b;">:artist/name</span> <span style="color: #8b2252;">"Felix Mendelssohn"</span>, <span style="color: #008b8b;">:artist/startYear</span> 1809, <span style="color: #008b8b;">:release/_artists</span> [#<span style="color: #008b8b;">:release</span>{<span style="color: #008b8b;">:year</span> 1973}]}
+ {<span style="color: #008b8b;">:artist/name</span> <span style="color: #8b2252;">"Frédéric Chopin"</span>,
+  <span style="color: #008b8b;">:artist/startYear</span> 1810,
+  <span style="color: #008b8b;">:release/_artists</span> [#<span style="color: #008b8b;">:release</span>{<span style="color: #008b8b;">:year</span> 1968} #<span style="color: #008b8b;">:release</span>{<span style="color: #008b8b;">:year</span> 1970}]}
+ {<span style="color: #008b8b;">:artist/name</span> <span style="color: #8b2252;">"Franz Liszt"</span>, <span style="color: #008b8b;">:artist/startYear</span> 1811, <span style="color: #008b8b;">:release/_artists</span> [#<span style="color: #008b8b;">:release</span>{<span style="color: #008b8b;">:year</span> 1968}]}
+ {<span style="color: #008b8b;">:artist/name</span> <span style="color: #8b2252;">"Richard Wagner"</span>,
+  <span style="color: #008b8b;">:artist/startYear</span> 1813,
+  <span style="color: #008b8b;">:release/_artists</span> [#<span style="color: #008b8b;">:release</span>{<span style="color: #008b8b;">:year</span> 1968} #<span style="color: #008b8b;">:release</span>{<span style="color: #008b8b;">:year</span> 1972} #<span style="color: #008b8b;">:release</span>{<span style="color: #008b8b;">:year</span> 1971} #<span style="color: #008b8b;">:release</span>{<span style="color: #008b8b;">:year</span> 1970}]})
+```
+
+
+
+Since the database contains artists with `startYear`'s prior to 1800, this example starts the `index-pull` near the middle of the index by specifying a `v` of 1800.
+
+Despite these artists being from 1800+, they had posthumous releases in the 1968-1973 era.
+
+This `index-pull` does not pull only artists with a `:artist/startYear` of `1800`, but returns a lazy seq starting at that point in the index. The example starts at a `:artist/startYear` of 1800, but returns ascending results from 1803, 1809, etc…
+
+If `a` is `db.cardinality/many` then `v` must be specified to avoid duplicates.
+
+
+
+
+
+### AEVT
+
+An `:index` of [`:aevt`](../query/indexes.html#aevt) pulls the the values of an entity for `:a`.
+
+`:v` must be `db.type/ref` and [`:db.cardinality/many`](../schema/schema.html#cardinality)
+
+The following example walks the `:aevt` index, starting at the entity of the artist "Bob Dylan", pulling the track names for "Bob Dylan", then "George Harrison" and subsequent artists in the index.
+
+The example walks the index starting at `:release/artists`, which is `db.type/ref`, and pulls the artists' names.
+
+```
+<pre class="src src-clojure">(<span style="color: #a0522d;">take</span> 5 (d/index-pull db {<span style="color: #008b8b;">:index</span> <span style="color: #008b8b;">:aevt</span>
+                          <span style="color: #008b8b;">:selector</span> [<span style="color: #008b8b;">:artist/name</span>]
+                          <span style="color: #008b8b;">:start</span> [<span style="color: #008b8b;">:release/artists</span>]}))
+#+begin_src clojure
+=> (#<span style="color: #008b8b;">:artist</span>{<span style="color: #008b8b;">:name</span> <span style="color: #8b2252;">"A1"</span>}
+    #<span style="color: #008b8b;">:artist</span>{<span style="color: #008b8b;">:name</span> <span style="color: #8b2252;">"Antonín Dvořák"</span>}
+    #<span style="color: #008b8b;">:artist</span>{<span style="color: #008b8b;">:name</span> <span style="color: #8b2252;">"Rob Lamothe"</span>}
+    #<span style="color: #008b8b;">:artist</span>{<span style="color: #008b8b;">:name</span> <span style="color: #8b2252;">"Craig Erickson"</span>}
+    #<span style="color: #008b8b;">:artist</span>{<span style="color: #008b8b;">:name</span> <span style="color: #8b2252;">"Frédéric Chopin"</span>})
+```
+
+
+
+With an entity in hand for a specific release, `index-pull` starts at that release and the example pulls the artist names (plural) and [2 tracks](../query/pull.html#limit-option) by each artist.
+
+```
+<pre class="src src-clojure">(<span style="color: #a020f0;">def</span> <span style="color: #0000ff;">dylan-harrison-index-pull</span>
+  (d/index-pull db {<span style="color: #008b8b;">:index</span> <span style="color: #008b8b;">:aevt</span>
+                    <span style="color: #008b8b;">:selector</span> [<span style="color: #008b8b;">:artist/name</span> {[<span style="color: #008b8b;">:track/_artists</span> <span style="color: #008b8b;">:limit</span> 2] [<span style="color: #008b8b;">:track/name</span>]}]
+                    <span style="color: #008b8b;">:start</span> [<span style="color: #008b8b;">:release/artists</span> dylan-harrison-sessions]}))
+```
+
+
+
+```
+<pre class="src src-clojure">(<span style="color: #a0522d;">take</span> 5 dylan-harrison-index-pull)
+```
+
+
+
+```
+<pre class="src src-clojure">=>
+({<span style="color: #008b8b;">:artist/name</span> <span style="color: #8b2252;">"Bob Dylan"</span>, 
+  <span style="color: #008b8b;">:track/_artists</span> [#<span style="color: #008b8b;">:track</span>{<span style="color: #008b8b;">:name</span> <span style="color: #8b2252;">"California"</span>} 
+                   #<span style="color: #008b8b;">:track</span>{<span style="color: #008b8b;">:name</span> <span style="color: #8b2252;">"Grasshoppers in My Pillow"</span>}]}
+ {<span style="color: #008b8b;">:artist/name</span> <span style="color: #8b2252;">"George Harrison"</span>,
+  <span style="color: #008b8b;">:track/_artists</span> [#<span style="color: #008b8b;">:track</span>{<span style="color: #008b8b;">:name</span> <span style="color: #8b2252;">"Give Me Love (Give Me Peace on Earth)"</span>} 
+                   #<span style="color: #008b8b;">:track</span>{<span style="color: #008b8b;">:name</span> <span style="color: #8b2252;">"Miss O'Dell"</span>}]}
+ {<span style="color: #008b8b;">:artist/name</span> <span style="color: #8b2252;">"Bonnie St. Claire"</span>, 
+  <span style="color: #008b8b;">:track/_artists</span> [#<span style="color: #008b8b;">:track</span>{<span style="color: #008b8b;">:name</span> <span style="color: #8b2252;">"Planet of Love"</span>} 
+                   #<span style="color: #008b8b;">:track</span>{<span style="color: #008b8b;">:name</span> <span style="color: #8b2252;">"Mañana mañana"</span>}]}
+ {<span style="color: #008b8b;">:artist/name</span> <span style="color: #8b2252;">"The Byrds"</span>, 
+  <span style="color: #008b8b;">:track/_artists</span> [#<span style="color: #008b8b;">:track</span>{<span style="color: #008b8b;">:name</span> <span style="color: #8b2252;">"This Wheel's on Fire"</span>} 
+                   #<span style="color: #008b8b;">:track</span>{<span style="color: #008b8b;">:name</span> <span style="color: #8b2252;">"Old Blue"</span>}]}
+ {<span style="color: #008b8b;">:artist/name</span> <span style="color: #8b2252;">"Gilberto Gil"</span>, 
+  <span style="color: #008b8b;">:track/_artists</span> [#<span style="color: #008b8b;">:track</span>{<span style="color: #008b8b;">:name</span> <span style="color: #8b2252;">"Cinema Olympia"</span>} 
+                   #<span style="color: #008b8b;">:track</span>{<span style="color: #008b8b;">:name</span> <span style="color: #8b2252;">"Frevo Rasgado"</span>}]})
+```
+
+
+
+However in this instance care must be taken since Bob Dylan was an artist on many releases. The artist entity for Bob Dylan will be pulled on multiple times:
+
+```
+<pre class="src src-clojure">(<span style="color: #a0522d;">filter</span> #(<span style="color: #a0522d;">=</span> (<span style="color: #008b8b;">:artist/name</span> %) <span style="color: #8b2252;">"Bob Dylan"</span>) dylan-harrison-index-pull)
+```
+
+
+
+```
+<pre class="src src-clojure">=>
+({<span style="color: #008b8b;">:artist/name</span> <span style="color: #8b2252;">"Bob Dylan"</span>, <span style="color: #008b8b;">:track/_artists</span> [#<span style="color: #008b8b;">:track</span>{<span style="color: #008b8b;">:name</span> <span style="color: #8b2252;">"California"</span>} #<span style="color: #008b8b;">:track</span>{<span style="color: #008b8b;">:name</span> <span style="color: #8b2252;">"Grasshoppers in My Pillow"</span>}]}
+ {<span style="color: #008b8b;">:artist/name</span> <span style="color: #8b2252;">"Bob Dylan"</span>, <span style="color: #008b8b;">:track/_artists</span> [#<span style="color: #008b8b;">:track</span>{<span style="color: #008b8b;">:name</span> <span style="color: #8b2252;">"California"</span>} #<span style="color: #008b8b;">:track</span>{<span style="color: #008b8b;">:name</span> <span style="color: #8b2252;">"Grasshoppers in My Pillow"</span>}]}
+ {<span style="color: #008b8b;">:artist/name</span> <span style="color: #8b2252;">"Bob Dylan"</span>, <span style="color: #008b8b;">:track/_artists</span> [#<span style="color: #008b8b;">:track</span>{<span style="color: #008b8b;">:name</span> <span style="color: #8b2252;">"California"</span>} #<span style="color: #008b8b;">:track</span>{<span style="color: #008b8b;">:name</span> <span style="color: #8b2252;">"Grasshoppers in My Pillow"</span>}]}
+ {<span style="color: #008b8b;">:artist/name</span> <span style="color: #8b2252;">"Bob Dylan"</span>, <span style="color: #008b8b;">:track/_artists</span> [#<span style="color: #008b8b;">:track</span>{<span style="color: #008b8b;">:name</span> <span style="color: #8b2252;">"California"</span>} #<span style="color: #008b8b;">:track</span>{<span style="color: #008b8b;">:name</span> <span style="color: #8b2252;">"Grasshoppers in My Pillow"</span>}]}
+ {<span style="color: #008b8b;">:artist/name</span> <span style="color: #8b2252;">"Bob Dylan"</span>, <span style="color: #008b8b;">:track/_artists</span> [#<span style="color: #008b8b;">:track</span>{<span style="color: #008b8b;">:name</span> <span style="color: #8b2252;">"California"</span>} #<span style="color: #008b8b;">:track</span>{<span style="color: #008b8b;">:name</span> <span style="color: #8b2252;">"Grasshoppers in My Pillow"</span>}]}
+ {<span style="color: #008b8b;">:artist/name</span> <span style="color: #8b2252;">"Bob Dylan"</span>, <span style="color: #008b8b;">:track/_artists</span> [#<span style="color: #008b8b;">:track</span>{<span style="color: #008b8b;">:name</span> <span style="color: #8b2252;">"California"</span>} #<span style="color: #008b8b;">:track</span>{<span style="color: #008b8b;">:name</span> <span style="color: #8b2252;">"Grasshoppers in My Pillow"</span>}]})
+```
+
+
+
+
+
+
+
+
+
+Start
+-----
+
+`:start` provides an attribute and optionally a value (for `:avet`) or entity (for `:aevt`) as an initial point for walking the index.
+
+If the relationship between E and V is many-to-many, you must specify the second component under :start to prevent returning duplicates. Datomic will enforce this requirement when possible.
+
+
+
+
+
+Selector
+--------
+
+The selector is a [pull pattern](../query/pull.html). The selector is pulled against each e for `:avet` or v for `:aevt`
+
+
+
+
+
+Reverse
+-------
+
+Supplying `:reverse true` to the arg-map causes the index to be walked in reverse.
+
+When `:reverse` is `true`, any `:offset` is applied in the direction of the iteration. If `:offset` is non-nil, the offset occurs relative to the direction of iteration.
+
+```
+<pre class="src src-clojure"><span style="color: #b22222;">;; </span><span style="color: #b22222;">Sample of how :reverse and :offset affect iteration</span>
+<span style="color: #b22222;">;; </span><span style="color: #b22222;">Sample Data - :example/number entries of all positive integers from 1 to n</span>
+(<span style="color: #a0522d;">seq</span> (d/index-pull db {<span style="color: #008b8b;">:index</span>    <span style="color: #008b8b;">:avet</span>
+                    <span style="color: #008b8b;">:selector</span> '[<span style="color: #008b8b;">:example/number</span>]
+                    <span style="color: #008b8b;">:start</span>    [<span style="color: #008b8b;">:example/number</span>]
+                    <span style="color: #008b8b;">:limit</span> 10 }))
+```
+
+
+
+```
+<pre class="src src-clojure">=>
+(#<span style="color: #008b8b;">:example</span>{<span style="color: #008b8b;">:number</span> 1}
+ #<span style="color: #008b8b;">:example</span>{<span style="color: #008b8b;">:number</span> 2}
+ #<span style="color: #008b8b;">:example</span>{<span style="color: #008b8b;">:number</span> 3}
+ #<span style="color: #008b8b;">:example</span>{<span style="color: #008b8b;">:number</span> 4}
+ #<span style="color: #008b8b;">:example</span>{<span style="color: #008b8b;">:number</span> 5}
+ #<span style="color: #008b8b;">:example</span>{<span style="color: #008b8b;">:number</span> 6}
+ #<span style="color: #008b8b;">:example</span>{<span style="color: #008b8b;">:number</span> 7}
+ #<span style="color: #008b8b;">:example</span>{<span style="color: #008b8b;">:number</span> 8}
+ #<span style="color: #008b8b;">:example</span>{<span style="color: #008b8b;">:number</span> 9}
+ #<span style="color: #008b8b;">:example</span>{<span style="color: #008b8b;">:number</span> 10})
+```
+
+
+
+```
+<pre class="src src-clojure"><span style="color: #b22222;">;; </span><span style="color: #b22222;">limit not required - iterator terminates at beginning</span>
+(<span style="color: #a0522d;">seq</span> (d/index-pull db {<span style="color: #008b8b;">:index</span>    <span style="color: #008b8b;">:avet</span>
+                       <span style="color: #008b8b;">:selector</span> '[<span style="color: #008b8b;">:example/number</span>]
+                       <span style="color: #008b8b;">:start</span>    [<span style="color: #008b8b;">:example/number</span> 5]
+                       <span style="color: #008b8b;">:reverse</span>  true}))
+```
+
+
+
+```
+<pre class="src src-clojure">=>
+(#<span style="color: #008b8b;">:example</span>{<span style="color: #008b8b;">:number</span> 5}
+ #<span style="color: #008b8b;">:example</span>{<span style="color: #008b8b;">:number</span> 4}
+ #<span style="color: #008b8b;">:example</span>{<span style="color: #008b8b;">:number</span> 3}
+ #<span style="color: #008b8b;">:example</span>{<span style="color: #008b8b;">:number</span> 2}
+ #<span style="color: #008b8b;">:example</span>{<span style="color: #008b8b;">:number</span> 1})
+```
+
+
+
+```
+<pre class="src src-clojure">(<span style="color: #a0522d;">seq</span> (d/index-pull db {<span style="color: #008b8b;">:index</span>    <span style="color: #008b8b;">:avet</span>
+                       <span style="color: #008b8b;">:selector</span> '[<span style="color: #008b8b;">:example/number</span>]
+                       <span style="color: #008b8b;">:start</span>    [<span style="color: #008b8b;">:example/number</span> 10]
+                       <span style="color: #008b8b;">:offset</span>   3
+                       <span style="color: #008b8b;">:reverse</span>  true
+                       <span style="color: #008b8b;">:limit</span>    5}))
+```
+
+
+
+```
+<pre class="src src-clojure">=>
+<span style="color: #b22222;">;; </span><span style="color: #b22222;">The offset is applied after the reverse.</span>
+<span style="color: #b22222;">;; </span><span style="color: #b22222;">Offset to 3, then walk the index in reverse.</span>
+(#<span style="color: #008b8b;">:example</span>{<span style="color: #008b8b;">:number</span> 7} 
+ #<span style="color: #008b8b;">:example</span>{<span style="color: #008b8b;">:number</span> 6}
+ #<span style="color: #008b8b;">:example</span>{<span style="color: #008b8b;">:number</span> 5}
+ #<span style="color: #008b8b;">:example</span>{<span style="color: #008b8b;">:number</span> 4}
+ #<span style="color: #008b8b;">:example</span>{<span style="color: #008b8b;">:number</span> 3})
+```

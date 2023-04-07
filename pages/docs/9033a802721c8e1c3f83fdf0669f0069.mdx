@@ -1,0 +1,155 @@
+Using the SQL CLI
+=================
+
+Use the SQL CLI to validate your [analytics configuration](analytics-configuring.html) before moving on to other analytics tools. The CLI is a fully-featured interactive SQL environment in its own right.
+
+Installing the CLI
+------------------
+
+[Download the Presto CLI](https://repo1.maven.org/maven2/io/prestosql/presto-cli/348/presto-cli-348-executable.jar)and follow the [instructions](https://prestosql.io/docs/current/installation/cli.html) to make the jar executable.
+
+
+
+
+
+Using the CLI
+-------------
+
+You will typically launch the SQL CLI with three arguments:
+
+- The required `--server` argument specifies the analytics server address. Because you are connecting through the local `datomic-access` proxy this will be `localhost:8989`.
+- The optional `--catalog` argument must match a [catalog](analytics-configuring.html#configuring-catalog) configured for your system.
+- The optional `--schema` argument must be the name of a Datomic database.
+
+The `catalog` and `schema` arguments are defaults for queries that do not explicitly name a catalog and schema, so that in your queries you can use table names directly, e.g. `country` instead of `tomhanks.mbrainz.country`.
+
+```
+<pre class="src src-sh">./presto --server localhost:8989 --catalog <my-catalog> --schema <db-name>
+```
+
+
+
+You should be presented with a SQL prompt:
+
+```
+<pre class="src src-sh">presto>
+```
+
+
+
+
+
+
+
+Validating Configuration
+------------------------
+
+The srcs below presume a Datomic system named `tomhanks` with a database named `mbrainz`, and a SQL CLI launched with:
+
+```
+<pre class="src src-sh">./presto --server localhost:8989 --catalog tomhanks --schema mbrainz
+```
+
+
+
+
+
+### Catalogs
+
+The following query shows all [catalogs](analytics-concepts.html#sql-mapping).
+
+```
+<pre class="src src-sql"><span style="color: #a020f0;">select</span> * <span style="color: #a020f0;">from</span> <span style="color: #a020f0;">system</span>.metadata.catalogs;
+ <span style="color: #a020f0;">catalog_name</span> | connector_id 
+<span style="color: #b22222;">--------------</span><span style="color: #b22222;">+--------------</span>
+ <span style="color: #a020f0;">system</span>       | <span style="color: #a020f0;">system</span>       
+ tomhanks     | tomhanks  
+```
+
+
+
+You should see a `system`catalog, plus one entry per [catalog properties file](analytics-configuring.html#configuring-catalog). In this src above, the Datomic catalog name is `tomhanks`.
+
+
+
+
+
+### Show Schemas
+
+The following query shows all the [schemas](analytics-concepts.html#sql-mapping) in the default catalog:
+
+```
+<pre class="src src-sql">show schemas;
+       <span style="color: #a020f0;">Schema</span>       
+<span style="color: #b22222;">--------------------</span>
+ information_schema 
+ mbrainz   
+```
+
+
+
+You should see an `information_schema` catalog, plus one schema per [exposed Datomic database](analytics-configuring.html#configuring-catalog). In the src above, the `tomhanks` system has a single database named `mbrainz`.
+
+
+
+
+
+### Show Tables
+
+The following query shows all the [tables](analytics-concepts.html#sql-mapping) in the default schema.
+
+```
+<pre class="src src-sh">presto> show tables;
+```
+
+
+
+```
+<pre class="src src-sql">           <span style="color: #a020f0;">Table</span>           
+<span style="color: #b22222;">---------------------------</span>
+ abstractrelease           
+ abstractrelease_x_artists 
+ artist                    
+ artist_gender             
+ artist_type               
+ country                   
+ db__attrs                 
+ db__idents               
+ (continues...)
+```
+
+
+
+You should see `db__attrs` and `db__idents`, plus any tables you have configured via a [metaschema](analytics-concepts.html#metaschemas).
+
+
+
+
+
+### Describe a Table
+
+The following query describes a table named `country` in the default schema:
+
+```
+<pre class="src src-sql"><span style="color: #a020f0;">describe</span> country;
+ <span style="color: #a020f0;">Column</span> |  <span style="color: #a020f0;">Type</span>   | Extra | Comment 
+<span style="color: #b22222;">--------</span><span style="color: #b22222;">+---------+-------+---------</span>
+ code   | <span style="color: #228b22;">varchar</span> |       |         
+ <span style="color: #a020f0;">name</span>   | <span style="color: #228b22;">varchar</span> |       |         
+ db__id | bigint  |       |         
+```
+
+
+
+
+
+
+
+
+
+More Things To Try
+------------------
+
+Try some of the [system commands](https://prestosql.io/docs/current/connector/system.html)to see what is present in the system.
+
+You can access more than one database (or even more than one catalog) by using fully qualified table names in you SQL, e.g. `[catalog].[database].[table]`. You can also write queries that join across different databases or catalogs.

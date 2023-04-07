@@ -1,0 +1,69 @@
+A Brief Overview of Datomic
+===========================
+
+Welcome to Datomic! Datomic is a new kind of database, designed to be:
+
+- [Distributed](../overview/architecture.html)
+- [Transactional](../transactions/acid.html)
+- Immutable (it stores an accumulation of facts over time)
+- [Queryable](../query/query-executing.html) with datalog
+- [Flexible Schema](../schema/schema-change.html)
+
+Datomic is an [operational database management system](https://en.wikipedia.org/wiki/Operational_database) - designed for transactional, domain-specific data. It is not designed to be a data warehouse, nor a high-churn high-throughput system (such as a time-series database or log store).
+
+It is a good fit for systems that store valuable information of record, require developer and operational flexibility, need history and audit capabilities, and require read scalability. Some examples of successful Datomic use cases include transactional data, business records, medical records, financial records, scientific records, inventory, configuration, web applications, departmental databases, and cloud applications.
+
+What is different about Datomic?
+--------------------------------
+
+The foremost thing that sets Datomic apart is that it accumulates immutable facts over time. Most databases assign values into named locations such as a field in a particular row, a node in a particular document. In those systems, as those values change, the new values overwrite the older ones. Datomic tracks the entire history of a fact and allows you to access its previous states quickly and easily.
+
+Datomic is a decomposed database. Datomic separates reading, writing, and storing your data into multiple interdependent components, each of which runs in a separate process. The components of a running Datomic installation will be some combination of:
+
+- [Storage services](../overview/storage.html): the destination for persistent data. Examples are: DynamoDB, Oracle, file system, etc.
+- [Transactor](../overview/architecture.html): the process that controls inbound transactions, and coordinates persistence to the storage services
+- [Peers](../peer/integrating-peer-lib.html): processes containing your application code and the Datomic peer library, which can query the persisted data
+- [Peer Servers](../client/peer-server.html): special kinds of peers that can act as a centralized query server for clients 
+    - [Clients](../client/client-setup.html): processes containing your application code and the Datomic client library, a lighter-weight engine that relies on one or more peer servers to perform the heavy lifting
+- [Console](../other-tools/console.html): a web server that provides a graphic interface for browsing and querying one or more Datomic databases
+
+A running Datomic system consists of some or all of these processes running simultaneously. This decomposition means you can distribute reading and writing across multiple processes that do not conflict with each other. The lack of conflict between reading and writing processes provides horizontal read scalability.
+
+The transactor process acts as a single authority for inbound transactions. A single transactor process allows the system to be ACID compliant and fully consistent.
+
+Datomic leverages existing [storage systems](../overview/storage.html). This means that your data can be safely persisted in a known and trusted storage service, and you can migrate to alternative services in the future as your needs change.
+
+
+
+
+
+So how does it work?
+--------------------
+
+There are two main models of developing with Datomic which you can choose between or integrate together: The [Peer](../peer/integrating-peer-lib.html) model and the [Client](../client/peer-server.html) model.
+
+Both the Peer and Client model require that you run a Transactor, which is the central hub for inbound writes. The transactor is configured to know about your storage service, which is where indexes and values are persisted.
+
+When you embed the Peer library in your application code, you are essentially adding your application code as part of the database system. Transactions are sent to the Transactor, and then to storage. All other Peer nodes are then notified of and sent the changes to the database. Queries or raw index access happen locally in-memory, dramatically reducing latency of reads.
+
+The client library requires that one or more [Peer Servers](../client/peer-server.html) is running. Peer servers are special intermediate nodes that handle queries and caching. Peer servers can be scaled horizontally just like Peers. Clients have a network hop for read operations as the queries are sent to Peer Servers. The Client library is much lighter weight than the Peer library at the cost of increasing latency on reads.
+
+
+
+
+
+Try it out
+----------
+
+Next, you can walk through a guide that explores the most common operations of a database:
+
+- Get Datomic
+- Connect to a database
+- Define a schema
+- Transact data
+- Query data
+- See the history of that data
+
+To get started, [Get Datomic](../getting-started/get-datomic.html)
+
+> The Peer-based Getting Started tutorial can be found at [Peer Getting Started](../peer/peer-getting-started.html).

@@ -1,0 +1,53 @@
+Using Metabase
+==============
+
+[Metabase](https://metabase.com/) is an open-source interactive data analytics, visualization, and business intelligence tool. You can configure Metabase to use Datomic as a data source via the included "presto" connector.
+
+Installing
+----------
+
+- Download Metabase from the [Metabase Download Page](https://www.metabase.com/start/oss/jar), via the `Custom Install - metabase.jar` method
+- Start Metabase with:
+
+```
+<pre class="example" id="orgfef6034">
+java -jar metabase.jar
+```
+
+- Point your browser to `localhost:3000`.
+- Select "Let's get started".
+- Fill out "What should we call you".
+- Select "I'll add my data later"
+- Select your preferred Usage data preferences.
+
+
+
+
+
+Configuring Metabase for Datomic Analytics
+------------------------------------------
+
+In the Metabase window, browse to:
+
+Settings → Admin → Databases → Add Database
+
+Configure the connection to Datomic Analytics:
+
+```
+<pre class="example" id="org26be8f1">
+Database Type: Presto
+Name: <give-it-a-name>
+Host: <host>
+Port: <port>
+Database Name: <catalog>
+Database Username: <user>
+Database Password: <password>
+```
+
+Substituting appropriate values for `name`, `host`, `port`, `user`, `password` and `catalog`
+
+`port` is 8989 by default.
+
+The `user` and `password` are your trino server password, which default to `admin` and no password by default.
+
+`catalog` is the [catalog](analytics-configuring.html#connections) that you configured when setting up Datomic Analytics.

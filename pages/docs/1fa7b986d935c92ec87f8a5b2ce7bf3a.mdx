@@ -1,0 +1,75 @@
+Clients and Peers
+=================
+
+Overview
+--------
+
+There are two ways to consume Datomic On-Prem: with an in-process peer library, or with a remote client to a peer server. If you are trying Datomic for the first time, we recommend that you begin with [Datomic dev-local](https://docs.datomic.com/cloud/dev-local.html), which uses the client library in-process. When you are ready to plan an On-Prem system, you can return to this page for guidance on whether to use peers, clients, or both.
+
+
+
+
+
+Comparison
+----------
+
+Area PeerPeer Server Client[Ops](#operations)compatible with [Datomic Cloud](https://docs.datomic.com/cloud/index.html)noyesOpsapp processes per instancefewmanyOpslibrary requirementsmanyfew[Read](#reads)hot object cache on app startnoyesReadhot memcached on app startyesyesReadquery latencybestgoodReadreadsscale horizontallyscale horizontallyReaddatalog querieslocal, sync, eagerremote, async, chunkedReadraw index accesslocal, sync, lazyremote, async, chunkedReadflow controlup to youautomaticReadcross database joinsyesno[Write](#writes)ACID transactionstransactor, async, eagerremote, async, eagerWritewritessingle writer, CASsingle writer, CASWriteflow controlautomaticautomaticWritetransaction orderingin order issuedin order acknowledgedWritetempidscustom type or string, partitionsoptional, stringsNote that you can use both peers and clients within the same system. However, the peer and client APIs are different for reasons discussed below.
+
+
+
+### Operations
+
+The peer library includes the query engine and object cache in the same process as your application, with the following operational implications:
+
+- Peer processes should typically be large relative to the size of the (possibly virtual) hardware they run on. This amortizes the cost of running the JVM, and allows for large object caches.
+- Peer processes must be JVM-based, and include several Java library dependencies.
+
+Remote clients have a much smaller footprint. Remote clients are a good fit for microservices, as the peer server and its cache can be large and long-lived, while serving application processes that may be small, numerous, and short lived.
+
+
+
+
+
+### Reads
+
+Both peers and peer servers provide horizontal read scaling, which is fundamental to Datomic's architecture. You can increase the number of peers or peer servers as needed to handle additional read load.
+
+Datomic read operations include Datalog query and raw index access. With the peer library, these operations all happen locally in process memory, and the APIs are synchronous. Because of this locality, long-lived peer applications deliver the best possible latency for read operations.
+
+Peer server clients make remote calls for read operations. This differs from using the Peer API in two ways.
+
+- Client read operations are asynchronous, and do not consume a thread while waiting on another process. (By contrast, peer read operations are synchronous.)
+- Large client API results are delivered a chunk-at-a-time.
+
+Compared to the Peer API, peer server clients introduce a network hop for read operations, increasing latency. On the other hand, the object cache used for client queries lives in a separate process, so it survives a client application restart. This can **reduce** latency for read operations in applications that are small and short-lived. With both peer servers and peers, Datomic supports integrated memcached so read latencies should be acceptable for the vast majority of applications.
+
+Peer server clients will receive flow control "server busy" errors if they temporarily exceed the capacity of the system. With peer applications, flow control is up to you. You can (and should) implement application-level flow control for peer applications.
+
+Peers can connect to multiple databases, and then issue process-local queries that join across those databases. Clients are designed for a distributed environment where they know nothing about process locality. As a result, client queries can refer only to the database associated with their connection.
+
+
+
+
+
+### Writes
+
+Datomic ensures that transactions are consistent by utilizing a single writer process at any given time, and by using compare-and-swap (CAS) operations against the underlying storage service.
+
+The write model for peers and peer servers is therefore quite similar. The only semantic difference between peer and peer server transactions is in their knowledge of transaction order. Peers know that they have a dedicated connection to a single transacting process, and that transactions will always be processed in the order they were submitted. This permits a pipelining optimization where peers can submit transactions from a single thread as fast as possible, knowing the transactions will be processed in order. Clients do not presume such a dedicated relationship, and so client pipelining code must wait for each transaction to be acknowledged if order is important.
+
+
+
+- <a id="tempids"></a>Tempids  
+    Datomic peers support a dedicated [tempid structure](../transactions/transactions.html#making-temporary-ids) for new entity ids. This allows for fine-grained control of partitions, which can be used to improve data locality for some kinds of read operations.
+    
+    Our experience has been that very few users take advantage of partitions, and that the custom tempid data structure and reader syntax are rarely worth the added complexity. Client tempids are always strings, and partitioning is automatic.
+
+
+
+### Peer-Only APIs
+
+The following peer functions are not well-suited for a wire protocol, and are not included in the client API:
+
+Peer APIClient Alternativeattributepullentity, entity-dbpullentid &amp; identpullThese peer functions are not portable across On-Prem and Cloud, and are not included in the client API:
+
+Peer APICloud Alternativegc-storagenot neededsquuidnot neededtx reportpollThe client API supports only the `find-rel` form of a [query](../query/query.html#query) `find-spec`.

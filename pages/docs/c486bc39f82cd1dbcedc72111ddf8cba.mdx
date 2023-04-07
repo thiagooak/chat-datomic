@@ -1,0 +1,290 @@
+Io-stats
+========
+
+This reference describes io-stats, and includes:
+
+- [Background](#background)
+- [Problem statement](#problem)
+- [io-stats approach](#approach)
+- [Transaction logging of io-stats](#transaction-logging)
+- [io-stats in transactions](#transactions)
+- [io-stats query](#query)
+- [the io-stats map](#map)
+- [interpreting io-stats](#interpreting)
+- [relating io-stats to transaction time](#relating)
+
+Everything about io-stats is alpha and subject to change in future releases.
+
+Background
+----------
+
+Any application or task has a [working set](https://en.wikipedia.org/wiki/Working_set) of data. Where that data is located/cached is an important part of architecting a system; a well-architected system has to plan for moving through tiers of cache. Otherwise, applications will encounter unexpected and dramatically different performance when data accesses spill over to the next tier. In Datomic, this can happen when there is too much reliance on increasing the first tier [object cache](../whatis/architecture.html#object-cache) (an in-memory cache of Java objects) to handle the entire working set.
+
+
+
+
+
+Problem
+-------
+
+In order to plan for moving through tiers of cache, developers need to understand the capacity and latency of each tier. Then for a given API call, they need to know where (in which tier) data is coming from, what part of the application called the API, and why the API needs that particular data. In Datomic on-prem, transactor uses [indexes](../query/raw-index-access.html) to enforce invariants, e.g. AVET for uniqueness checks, and AEVT for cardinality and redundancy elimination. The query engine chooses a suitable index sort for each relational clause. And these operations nest – both transactions and queries can call other queries and so on.
+
+Prior to io-stats, Datomic APIs did not provide direct access to I/O information, forcing developers to reason backwards from downstream effects, e.g. inferring that a query is spilling into the next cache tier when it performs very differently from other superficially similar queries.
+
+
+
+
+
+Approach: io-stats
+------------------
+
+io-stats summarizes the input and output (I/O) associated with a Datomic API call. io-stats allows you to analyze where data is coming from, providing counts and latencies for index segments accessed from each tier. io-stats shows you what API call was made, and supports a user-provided io-context to distinguish different operations. And finally, io-stats provides some help with why, telling you the count of each different index sort order (:aevt/:avet/:eavt/:vaet).
+
+io-stats are reported as a Clojure map, [described in detail below](#map). io-stats are logged automatically for transactions, and you can explicitly request io-stats be returned from various transaction and query APIs.
+
+
+
+
+
+Transaction Logging
+-------------------
+
+Datomic logs an io-stats map for every transaction. In Datomic on-prem, io-stats are logged under the :tx/process :event, as shown below:
+
+```
+<pre class="src src-clojure">2022-03-29 23:16:26.567 INFO  default    datomic.transaction - {<span style="color: #008b8b;">:tid</span> 115,
+<span style="color: #008b8b;">:txid</span> #uuid <span style="color: #8b2252;">"6243cb8a-2b3c-4031-a4cd-8c7df49e3981"</span>,
+<span style="color: #008b8b;">:datom-count</span> 1, <span style="color: #008b8b;">:apply-msec</span> 4.71, <span style="color: #008b8b;">:pid</span> 76957,
+<span style="color: #008b8b;">:io-stats</span> {<span style="color: #008b8b;">:api</span> <span style="color: #008b8b;">:tx</span>, <span style="color: #008b8b;">:api-ms</span> 5 <span style="color: #008b8b;">:reads</span> {<span style="color: #008b8b;">:ocache</span> 2}},
+<span style="color: #008b8b;">:event</span> <span style="color: #008b8b;">:tx/process</span>, <span style="color: #008b8b;">:msec</span> 16.0, <span style="color: #008b8b;">:t</span> 1008}
+```
+
+
+
+In Cloud, io-stats are logged under the “TxSucceeded” message, with all keys converted to CloudWatch JSON Pascal case conventions, e.g.:
+
+```
+<pre class="src src-json">{
+    "Msg": "TxSucceeded",
+    "DbId": "5644c1a8-aedc-44c6-9e70-1b9a3b035326",
+    "T": 6,
+    "IoStats": {
+	"IoContext": "DbTx",
+	"Api": "TxWith",
+	"ApiMs": 4.86,
+	"Reads": {
+	    "Avet": 2,
+	    "Aevt": 3,
+	    "ValcacheDirectMs": 0.14,
+	    "Ocache": 5,
+	    "ValcacheDirect": 2
+	}
+    },
+    "Type": "Event",
+    "Tid": 249,
+    "Timestamp": 1665667355838
+}
+```
+
+
+
+You can search for io-stats in the Cloudwatch console with e.g. {$.Msg=”TxSucceeded”}.
+
+Note that transaction logging correlates io-stats with transaction t. Given t, you can use the [log API](../time/log.html) to query the datoms produced by the transaction.
+
+
+
+
+
+Transaction API io-stats
+------------------------
+
+You can request that io-stats be included in the map returned from transact by adding `:io-context` as a trailing arg to transact:
+
+```
+<pre class="src src-clojure">(d/transact conn {<span style="color: #008b8b;">:tx-data</span> [...] <span style="color: #008b8b;">:io-context</span> <span style="color: #008b8b;">:tx/example</span>)
+```
+
+
+
+```
+<pre class="src src-clojure">=> <span style="color: #b22222;">;; </span><span style="color: #b22222;">tx result will include :io-stats key</span>
+```
+
+
+
+
+
+
+
+Query API io-stats
+------------------
+
+The query, qseq, pull, and pull-many APIs all include arities that allow you to pass `:io-context`, a qualified keyword that you can use to distinguish different ddomain operations. When you pass `:io-context`, Datomic will return a map with `:ret` (the query result) and `:io-stats` (an io-stats map).
+
+For example, the following query includes `:io-context`:
+
+```
+<pre class="src src-clojure">(d/q {<span style="color: #008b8b;">:query</span> '[<span style="color: #008b8b;">:find</span> (<span style="color: #a0522d;">count</span> ?a)
+                   <span style="color: #008b8b;">:in</span> $ ?aname
+                   <span style="color: #008b8b;">:where</span> [?a <span style="color: #008b8b;">:artist/name</span> ?aname]]
+          <span style="color: #008b8b;">:args</span> [db <span style="color: #8b2252;">"The Beatles"</span>]
+          <span style="color: #008b8b;">:io-context</span> <span style="color: #008b8b;">:artist/by-name</span>})
+```
+
+
+
+```
+<pre class="src src-clojure">{<span style="color: #008b8b;">:io-stats</span> {<span style="color: #008b8b;">:io-context</span> <span style="color: #008b8b;">:artist/by-name</span>,
+            <span style="color: #008b8b;">:api</span> <span style="color: #008b8b;">:query</span>,
+            <span style="color: #008b8b;">:api-ms</span> 105.08,
+            <span style="color: #008b8b;">:reads</span> {<span style="color: #008b8b;">:dir</span> 1,
+                    <span style="color: #008b8b;">:avet</span> 2,
+                    <span style="color: #008b8b;">:valcache-direct</span> 2,
+                    <span style="color: #008b8b;">:efs</span> 2,
+                    <span style="color: #008b8b;">:efs-ms</span> 26.27,
+                    <span style="color: #008b8b;">:valcache</span> 2,
+                    <span style="color: #008b8b;">:dir-load</span> 1,
+                    <span style="color: #008b8b;">:valcache-ms</span> 50.57,
+                    <span style="color: #008b8b;">:avet-load</span> 2,
+                    <span style="color: #008b8b;">:ocache</span> 2}},
+ <span style="color: #008b8b;">:ret</span> [[1]]}
+```
+
+
+
+
+
+
+
+Nested io-stats
+---------------
+
+The io-stats for a top-level API include the total I/O for all nested calls. Often, you will also want to know the io-stats breakdown for nested calls, if any. For example, when tuning the performance of a transaction function that issues two queries, you could focus your efforts if you knew from nested io-stats that one of the queries dominates overall performance.
+
+When nested API calls have an `:io-context`, the io-stats for nested calls are aggregated by `:io-context` under the :nested key. For example, imagine that a transaction with `:io-context` of `:transfer/funds` calls a query with `:io-context` of `:transfer/check-balance` twice and a query with `:transfer/check-auth` once. The transaction will return (and log) an io-stats map with the following shape:
+
+```
+<pre class="src src-clojure">{<span style="color: #008b8b;">:io-context</span> <span style="color: #008b8b;">:transfer/funds</span>
+ <span style="color: #008b8b;">:reads</span> <span style="color: #b22222;">;; </span><span style="color: #b22222;">totals for entire tx</span>
+ <span style="color: #008b8b;">:nested</span>
+ {<span style="color: #008b8b;">:transfer/check-balance</span>
+  <span style="color: #b22222;">;; </span><span style="color: #b22222;">io-stats map that sums across 2 calls to check-balance</span>
+  <span style="color: #008b8b;">:transfer/check-auth</span>
+  <span style="color: #b22222;">;; </span><span style="color: #b22222;">io-stats map of the one call to check-auth</span>
+  }}
+```
+
+
+
+
+
+
+
+The io-stats map
+----------------
+
+The io-stats map can have at least the following keys at the top level
+
+KeyValueExample:apiDatomic API name, as keyword:query/:qseq/:tx-with/:pull/:pull-many:api-msDatomic API time in milliseconds (wall clock time from start of API call until completion)11.42:readsmap breakdown of segment reads, see next section{:ocache 211, :valcache 2}:nesteda map from :io-context keyword to a nested io-stats map covering the sum of all nested calls with that :io-context{:transfer/check-balance, io-stats-map, :transfer/check-auth, io-stats-map}:io-context(optional) qualified keyword passed to Datomic APIs by the caller, used to identify different domain operations:transfer/fundsThe io-stats map and its submaps are open to extension at any time, and you may see additional keys not documented here.
+
+
+
+### io-stats :reads map
+
+The `:reads` map reports the following information:
+
+- counts of segments accessed through each cache/storage tier, and the total time spent waiting on I/O in each storage tier
+- counts of segments broken down by index sort, and by whether the segment had to be loaded
+
+Datomic accesses cache and storage tiers in the following order, from `:ocache` down to storage of record:
+
+:reads map tier keysvalue::ocacheCount of segment accesses via the in-process object cache, a cache of Java objects:valcacheCount of segments accessed through valcache (an SSD cache):memcachedCount of segments accessed through memcached(storage of record) :ddb/:sql/:cass etc.Count of segments accessed through Datomic storage (keys match the [storage protocol](https://docs.datomic.com/on-prem/overview/storage.html#storage-services) in use)There are several important things to know when interpreting the tier keys in the `:reads` map.
+
+- The first (object cache) tier is special. Segments in the object cache are *already in memory* and do not require I/O.
+- The counts for higher tiers include the misses that read through to the next tier. So the :ocache count will always be greater than the count of the next tier, and so on.
+- The cache tiers between the object cache and storage are optional. If your Datomic system does not have one of these tiers deployed, then the keys will be absent.
+- For the tiers that require I/O, there is a corresponding {tier}-ms key that is the sum of milliseconds threads spent waiting on reads from that tier. Note that due to parallelism, a {tier}-ms value may be greater than the overall :api-ms!
+
+The `:reads` map also reports which index sorts were used, and how many times each sort had to be loaded into memory:
+
+:aevt/:vaet/:eavt/:avetCount of accesses to different [index sorts](../query/raw-index-access.html):{index-sort}-loadCount per index sort of segments that had to be loaded into memory, i.e. were not already present in the ocache.
+
+
+
+
+
+Interpreting io-stats
+---------------------
+
+To get the most benefit from io-stats, you should look at them under realistic load, either from production logs or from simulated load in a test environment. Realistic load is important because io-stats depend not just on the API and database but also on the current state of the caches and indexes, as described below.
+
+
+
+### io-stats depend on the current state of the caches
+
+Datomic dynamically updates caches as data is used, bringing frequently needed segments into closer, lower latency cache tiers. The most trivial example of this is that running the same query twice on an unloaded system can produce very different io-stats. Observe the difference in two back-to-back calls finding the average artist name length in [mbrainz](https://github.com/Datomic/mbrainz-sample):
+
+```
+<pre class="src src-clojure">(<span style="color: #a020f0;">def</span> <span style="color: #0000ff;">avg-name-q</span> '[<span style="color: #008b8b;">:find</span> (avg ?aname-len)
+                  <span style="color: #008b8b;">:with</span> ?a
+                  <span style="color: #008b8b;">:where</span> [?a <span style="color: #008b8b;">:artist/name</span> ?aname]
+                  [(<span style="color: #a0522d;">count</span> ?aname) ?aname-len]])
+(d/query {<span style="color: #008b8b;">:query</span> avg-name-q
+          <span style="color: #008b8b;">:args</span> [db]
+          <span style="color: #008b8b;">:io-context</span> <span style="color: #008b8b;">:artist/avg-name-length</span>})
+```
+
+
+
+```
+<pre class="src src-clojure"><span style="color: #b22222;">;; </span><span style="color: #b22222;">first call</span>
+=> {<span style="color: #008b8b;">:ret</span> [[13.08504033265786]],
+    <span style="color: #008b8b;">:io-stats</span> {<span style="color: #008b8b;">:api</span> <span style="color: #008b8b;">:query</span>, <span style="color: #008b8b;">:api-ms</span> 1096.2,
+               <span style="color: #008b8b;">:io-context</span> <span style="color: #008b8b;">:artist/avg-name-length</span>
+               <span style="color: #008b8b;">:reads</span> {<span style="color: #008b8b;">:aevt</span> 607, <span style="color: #008b8b;">:aevt-load</span> 414, <span style="color: #008b8b;">:ocache</span> 607,
+                       <span style="color: #008b8b;">:dev</span> 212, <span style="color: #008b8b;">:dev-ms</span> 304.1}}}
+<span style="color: #b22222;">;; </span><span style="color: #b22222;">second call</span>
+=> {<span style="color: #008b8b;">:ret</span> [[13.08504033265786]],
+    <span style="color: #008b8b;">:io-stats</span> {<span style="color: #008b8b;">:api</span> <span style="color: #008b8b;">:query</span>, <span style="color: #008b8b;">:api-ms</span> 938.9,
+               <span style="color: #008b8b;">:io-context</span> <span style="color: #008b8b;">:artist/avg-name-length</span>
+               <span style="color: #008b8b;">:reads</span> {<span style="color: #008b8b;">:aevt</span> 405, <span style="color: #008b8b;">:ocache</span> 405}}}
+```
+
+
+
+The first call begins with no data in the object cache, so you would expect to see reads down into other tiers, in this case down to dev storage. On the other hand, the second call shows no reads through to dev, and is satisfied entirely from the object cache! From this we can infer that the segments needed by the query fit entirely in the object cache. Real world queries are likely to land in between these two extremes, finding some but not all the data they need in each cache tier.
+
+
+
+
+
+### io-stats depend on the current state of the indexes
+
+Datomic keeps a window of the most recent transactions in memory at all times. Queries against this recent data will see artificially low io-stats. This makes little difference in real-world databases but can dominate results in tiny databases created for experiments. Data used for performance testing should ideally be similar in size to production data.
+
+
+
+
+
+
+
+Relating io-stats to transaction time
+-------------------------------------
+
+The tx-with time reported by io-stats is only one component of the total transaction time experienced by a caller, which is the sum of
+
+- interprocess communication time if requesting and transacting process are not the same (e.g. on-prem peers and transactors)
+- time queued on the transacting process
+- the io-stats tx-with time (applying the transaction, enforcing invariants)
+- storage write time
+
+To measure total transaction time, time calls to transact from Datomic [peers or clients](https://docs.datomic.com/on-prem/overview/clients-and-peers.html).
+
+The transactor time includes everything that can be measured from the transacting process, i.e. everything except interprocess communication. The on-prem transactor logs this time under the `:msec` key of the `:tx/process` event.
+
+The tx-with time reported by transaction io-stats isolates the time actually spent processing the transaction. Note that if you improve the tx-with time for a transaction you also improve the transactor time for any other concurrent transactions enqueued behind it.
+
+The different measures of transaction time are summarized in the table below.
+
+ how to measureincludes network timeincludes time queued on transactorincludes tx-with timeincludes time waiting on storage write**total transaction time**time peer call to transactyyyy**transactor time**transactor log :tx/process :msec keynyyy**tx-with time**transactor log io-stats :api-msnnyn

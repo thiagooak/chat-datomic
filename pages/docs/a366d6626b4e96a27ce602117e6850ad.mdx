@@ -1,0 +1,50 @@
+Using R
+=======
+
+[R](https://www.r-project.org/) is a statistical computing environment that is commonly used for data analysis, visualization, and model development. You can access Datomic from R using the [RPresto](https://github.com/prestodb/RPresto) library.
+
+Installing
+----------
+
+Install R from [the R CRAN site](https://cran.r-project.org/).
+
+Install RStudio following the instructions from the [RStudio Download Page](https://www.rstudio.com/products/rstudio/download/).
+
+Launch RStudio and install the RPresto package <https://github.com/prestodb/RPresto> by running:
+
+```
+<pre class="src src-R">install.packages('RPresto')
+```
+
+
+
+in the R console
+
+
+
+
+
+Using RStudio:
+--------------
+
+You can connect to Datomic Analytics following the configuration shown below:
+
+```
+<pre class="src src-R">library('DBI')
+
+con <- dbConnect(
+  RPresto::Presto(),
+  host='http://<host>',
+  port=<port>,
+  user='<user>',
+  schema='<schema>',
+  catalog='<catalog>'
+)
+
+res <- dbSendQuery(con, 'SELECT * FROM system.runtime.nodes;')
+df <- dbFetch(res, -1)
+```
+
+
+
+Substituting appropriate values for `user`, `host`, `port`, `schema`, and `catalog`

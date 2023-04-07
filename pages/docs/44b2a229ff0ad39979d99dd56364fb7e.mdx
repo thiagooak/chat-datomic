@@ -1,0 +1,122 @@
+Raw Index Access
+================
+
+Most Datomic programs will not access the indexes directly, instead taking advantage of Datomic's declarative [Datalog](../whatis/data-model.html#datalog) query engine.
+
+However, raw index access is available for integrations. For example, you might use the indexes to make Datomic data available to a map/reduce framework spanning multiple data sources of different types.
+
+Datomic indexes are covering indexes. This means the index actually contains the datoms, rather than just a pointer to them. When you (or a Datomic query) iterates an index, it gets the datoms themselves, without any additional lookup.
+
+Datomic Indexes
+---------------
+
+Datomic automatically maintains four indexes. Each index sorts datoms in a specific order. These indexes are named based on the sort order used:
+
+IndexSort OrderContainsEAVTentity / attribute / value / txall datomsAEVTattribute / entity / value / txall datomsAVETattribute / value / entity / txall datomsVAETvalue / attribute / entity / txall reference datoms
+
+### EAVT Index
+
+The EAVT index provides efficient access to everything about a given entity. Conceptually this is very similar to row access style in a SQL database, except that entities can possess arbitrary attributes rather than being limited to a predefined set of columns.
+
+The example below shows all of the facts about entity 42 grouped together:
+
+![eavt.png](../images/eavt.png)
+
+
+
+EAVT is also useful in master/detail lookups, since the references to detail entities are just ordinary Vs alongside the scalar attributes of the master entity. Better still, Datomic assigns entity ids so that when master and detail records are created in the same transaction, they will be colocated in EAVT.
+
+Datomic's EAVT and VAET indexes can automatically navigate entity relationships in both directions, so you do not need to (and should not) create two attributes that model the same relationship but from different directions.
+
+
+
+
+
+### AEVT Index
+
+The AEVT index provides efficient access to all values for a given attribute, comparable to traditional column access style. In the table below, notice how all `:release/name` attributes are grouped together. This allows Datomic to efficiently query for all values of the `:release/name` attribute, because the values reside next to one another in the index.
+
+![aevt.png](../images/aevt.png)
+
+
+
+
+
+
+
+### AVET Index
+
+The AVET index provides efficient access to particular combinations of attribute and value, much like a key-value store. The example below shows a portion of the AVET index allowing lookup by `:release/name`.
+
+![avet.png](../images/avet.png)
+
+
+
+The AVET index also supports the `index-range` operation, which returns all attribute values in a particular range. For more information about `index-range`, refer to the Datomic API documentation for your programming language.
+
+
+
+
+
+### VAET Index
+
+The VAET index contains all and only datoms with `:db/valueType`attributes whose value is `:db.type/ref`. This is also known as the *reverse index*, since it allows efficient navigation of relationships in reverse. This is similar to graph-style access.
+
+If The Beatles are entity 100, you can see in the following table how their releases would be grouped together in this index.
+
+Datomic's EAVT and VAET indexes can automatically navigate entity relationships in both directions, so you do not need to (and should not) create two attributes that model the same relationship but from different directions.
+
+![vaet.png](../images/vaet.png)
+
+
+
+
+
+
+
+
+
+Datoms API
+----------
+
+The [datoms API](https://docs.datomic.com/client-api/datomic.client.api.html#var-datoms) lets you specify a Datomic index, plus a vector of values in the same order as the index. The [example](https://github.com/cognitect-labs/day-of-datomic-cloud/blob/master/doc-examples/raw_index_access.repl) excerpted below searches the `:avet` index for datoms whose `a` component is `:inv/sku`
+
+```
+<pre class="src src-clojure">(<span style="color: #483d8b;">->></span> (d/datoms db
+               {<span style="color: #008b8b;">:index</span> <span style="color: #008b8b;">:avet</span>
+                <span style="color: #008b8b;">:components</span> [<span style="color: #008b8b;">:inv/sku</span>]})
+     (<span style="color: #a0522d;">take</span> 3)
+     (<span style="color: #a0522d;">map</span> <span style="color: #008b8b;">:v</span>))
+```
+
+
+
+```
+<pre class="src src-clojure">=> (<span style="color: #8b2252;">"SKU-0"</span> <span style="color: #8b2252;">"SKU-1"</span> <span style="color: #8b2252;">"SKU-10"</span>)
+```
+
+
+
+
+
+
+
+Index-range API
+---------------
+
+The [index-range API](https://docs.datomic.com/client-api/datomic.client.api.html#var-index-range) lets you specify an attribute, and returns all datoms sorted by that attribute, optionally limited by start and end values. The [example](https://github.com/cognitect-labs/day-of-datomic-cloud/blob/master/doc-examples/raw_index_access.repl) excerpted below returns all the SKUs between "SKU-42" inclusive and "SKU-44" exclusive.
+
+```
+<pre class="src src-clojure">(<span style="color: #483d8b;">->></span> (d/index-range
+      db
+      {<span style="color: #008b8b;">:attrid</span> <span style="color: #008b8b;">:inv/sku</span>
+       <span style="color: #008b8b;">:start</span> <span style="color: #8b2252;">"SKU-42"</span>
+       <span style="color: #008b8b;">:end</span> <span style="color: #8b2252;">"SKU-44"</span>})
+     (<span style="color: #a0522d;">map</span> <span style="color: #008b8b;">:v</span>))
+```
+
+
+
+```
+<pre class="src src-clojure">=> (<span style="color: #8b2252;">"SKU-42"</span> <span style="color: #8b2252;">"SKU-43"</span>)
+```

@@ -1,0 +1,163 @@
+Authentication with Cognito
+===========================
+
+Authentication can be managed with [AWS Cognito](https://console.aws.amazon.com/cognito/home) and invoked [utilizing the AWS SDK](https://aws.amazon.com/tools/).
+
+These steps will setup an ****unauthenticated**** identity pool. Implementing [an authentication flow](https://docs.aws.amazon.com/cognito/latest/developerguide/authentication-flow.html) can be done with a setup similar to these instructions.
+
+- Go to [Cognito](https://console.aws.amazon.com/cognito/home)
+    - If this is your first time, click *Manage Identity Pools*
+- *Create new identity pool*
+- Give your identity pool a name
+- Click the *Enable access to unauthenticated identities* checkbox.
+- *Create pool*
+- Select *View Details*
+- Edit the **unauthenticated** Policy for a new IAM Role with the policy below
+- Replace the `arn:` values in the `Resource` array with [the ARNs of your Lambdas](https://console.aws.amazon.com/lambda/home). 
+    - These will be in the form of `app-name-compute-function-name` i.e. "cognito-tutorial-compute-get-items-by-type".
+    - Click the Lambda name and copy the `Function ARN` on the next page.
+- *Allow*
+- Save the Identity Pool ID
+
+```
+<pre class="src src-javascript">{
+    <span style="color: #8b2252;">"Version"</span>: <span style="color: #8b2252;">"2012-10-17"</span>,
+    <span style="color: #8b2252;">"Statement"</span>: [
+        {
+            <span style="color: #8b2252;">"Effect"</span>: <span style="color: #8b2252;">"Allow"</span>,
+            <span style="color: #8b2252;">"Action"</span>: [
+                <span style="color: #8b2252;">"mobileanalytics:PutEvents"</span>,
+                <span style="color: #8b2252;">"cognito-sync:*"</span>
+            ],@
+            <span style="color: #8b2252;">"Resource"</span>: <span style="color: #8b2252;">"*"</span>
+        },
+        {
+            <span style="color: #8b2252;">"Effect"</span>: <span style="color: #8b2252;">"Allow"</span>,
+            <span style="color: #8b2252;">"Action"</span>: [
+                <span style="color: #8b2252;">"lambda:InvokeFunction"</span>,
+                <span style="color: #8b2252;">"lambda:InvokeAsync"</span>
+            ],
+            <span style="color: #8b2252;">"Resource"</span>: [
+                <span style="color: #8b2252;">"arn:my-arns-here"</span>
+            ]
+        }
+    ]
+}
+```
+
+
+
+> The above policy is more permissive than most applications will require. [Limit the policy](https://docs.aws.amazon.com/cognito/latest/developerguide/iam-roles.html) to only what is necessary.
+
+Test Your Lambda
+----------------
+
+Test your Cognito setup here:
+
+Supply your Cognito Identity Pool ID, region and press submit. The returned payload will be displayed below.
+
+ Region:  
+   
+ Identity Pool:  
+   
+ Function Name:  
+   
+ Payload:  
+   
+ ```
+<pre style="border: 1px solid grey !important; width: 100%;height: auto;margin-top: 30px;margin-bottom: 40px; padding: 15px;">```
+Lambda Results displayed here
+```
+```
+
+<![CDATA[
+function invoke_lambda () {
+    document.getElementById("lambda-results").innerText = "Lambda Invoked...";
+
+    AWS.config.region = 'us-east-1'
+    AWS.config.credentials = new AWS.CognitoIdentityCredentials({
+        //IdentityPoolId: 'us-east-1:c62bfc0a-a57f-4a06-95ca-6828638175a0',
+        IdentityPoolId: document.getElementById("identity-pool").value,
+    });
+    lambda = new AWS.Lambda({
+        //region: 'us-east-1',
+        region: document.getElementById("lambda-region").value,
+        apiVersion: '2015-03-31'
+    });
+    var pullParams = {
+        FunctionName: document.getElementById("function-name").value,
+        InvocationType: 'RequestResponse',
+        LogType: 'None',
+        Payload:  document.getElementById("lambda-payload").value
+    };
+    lambda.invoke(pullParams, function(err, data) {
+        {
+            if (err) {
+               document.getElementById("lambda-results").innerText = err;
+            } else {
+               document.getElementById("lambda-results").innerText = data.Payload;
+            }
+        }
+    })
+}
+
+document.getElementById("lambda-submit-form").addEventListener("submit", invoke_lambda);
+
+]]>
+
+
+
+AWS Javascript SDK Example
+--------------------------
+
+This example utilizes the [AWS SDK for Javascript](https://aws.amazon.com/sdk-for-javascript/) to invoke the supplied function.
+
+The [AWS SDK](https://aws.amazon.com/getting-started/tools-sdks/) is officially supported for a variety of programming languages.
+
+A simple non-parameterized example:
+
+```
+<pre class="src src-html"><<span style="color: #0000ff;">script</span> <span style="color: #a0522d;">src</span>=<span style="color: #8b2252;">"https://sdk.amazonaws.com/js/aws-sdk-2.854.0.min.js"</span>></<span style="color: #0000ff;">script</span>>
+```
+
+
+
+```
+<pre class="src src-javascript"><span style="color: #a020f0;">function</span> <span style="color: #0000ff;">invoke_lambda</span> () {
+    AWS.config.region = <span style="color: #8b2252;">'region'</span>
+    AWS.config.credentials = <span style="color: #a020f0;">new</span> <span style="color: #228b22;">AWS.CognitoIdentityCredentials</span>({
+        IdentityPoolId: <span style="color: #8b2252;">"identity-pool-value"</span>,
+    });
+    lambda = <span style="color: #a020f0;">new</span> <span style="color: #228b22;">AWS.Lambda</span>({
+        region: <span style="color: #8b2252;">"region"</span>,
+        apiVersion: <span style="color: #8b2252;">'2015-03-31'</span>
+    });
+    <span style="color: #a020f0;">var</span> <span style="color: #a0522d;">pullParams</span> = {
+        FunctionName: <span style="color: #8b2252;">"function-name"</span>,
+        InvocationType: <span style="color: #8b2252;">'RequestResponse'</span>,
+        LogType: <span style="color: #8b2252;">'None'</span>,
+        Payload: <span style="color: #8b2252;">"payload"</span>
+    };
+    lambda.invoke(pullParams, <span style="color: #a020f0;">function</span>(<span style="color: #a0522d;">err</span>, <span style="color: #a0522d;">data</span>) {
+        {
+            <span style="color: #a020f0;">if</span> (err) {
+              <span style="color: #b22222;">// </span><span style="color: #b22222;">handle error</span>
+            } <span style="color: #a020f0;">else</span> {
+              <span style="color: #b22222;">// </span><span style="color: #b22222;">handle data.Payload </span>
+            }
+        }
+    })
+}
+```
+
+
+
+Change the placeholders above to the appropriate values for:
+
+- `AWS.config.region`
+- `IdentityPoolID`
+- `region`
+- `FunctionName`
+- `Payload`
+
+Then call `invoke_lambda()`.

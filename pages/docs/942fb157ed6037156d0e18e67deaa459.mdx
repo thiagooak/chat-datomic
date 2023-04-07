@@ -1,0 +1,132 @@
+Connect to a Database
+=====================
+
+This guide uses the Datomic [Peer library](../peer/peer-introduction.html). Instructions for using this guide with the [Client Library](../client/integrating-client-lib.html) are located in the [Client library getting started guide](../client/client-getting-started.html). Review [differences between](../overview/clients-and-peers.html) the Peer and Client libraries.
+
+Creating a database
+-------------------
+
+[Setup your project](../peer/integrating-peer-lib.html) or run the [included REPL](dev-setup.html#repl). If you wish to persist your changes to disk then [run a transactor](transactor.html) and use the transactor's database URI below.
+
+Include the Peer API:
+
+```
+<pre class="src src-clojure">(<span style="color: #a0522d;">require</span> '[datomic.api <span style="color: #008b8b;">:as</span> d])
+```
+
+
+
+```
+<pre class="src src-clojure">=>
+nil
+```
+
+
+
+Create the URI that allows you to create and connect to a database.
+
+An in-memory database URI will have three parts:
+
+- `datomic:`, identifying it as a Datomic URI
+- `mem://`, the mem storage protocol that uses local memory instead of a persistent store
+- `hello`, the name of the database
+
+If you [ran a transactor to use local storage](dev-setup.html#run-dev-transactor) then supply the database uri that was supplied when you passed the `-Ddatomic.printConnectionInfo=true` flag. Replace `<DB_NAME>`with the name of the database that you want to create:
+
+Bind a var, `db-uri`, to the value of the URI:
+
+```
+<pre class="src src-clojure">(<span style="color: #a020f0;">def</span> <span style="color: #0000ff;">db-uri</span> <span style="color: #8b2252;">"datomic:mem://hello"</span>)
+
+<span style="color: #b22222;">;; </span><span style="color: #b22222;">If you're using local dev storage, use the db uri you created earlier.</span>
+<span style="color: #b22222;">;; </span><span style="color: #b22222;">replace <DB-NAME> with your database name. It will look similar to:</span>
+<span style="color: #b22222;">;; </span><span style="color: #b22222;">(def db-uri "datomic:dev://localhost:4334/hello")</span>
+```
+
+
+
+```
+<pre class="src src-clojure">=>
+#'user/db-uri
+```
+
+
+
+Create the "hello" database using the `create-database` function:
+
+```
+<pre class="src src-clojure">(d/create-database db-uri)
+```
+
+
+
+```
+<pre class="src src-clojure">=>
+true
+```
+
+
+
+
+
+
+
+Create a connection
+-------------------
+
+Once you have [created a database](#create-db), you can use the Datomic Peer Library to interact with it.
+
+Connect to the transactor in the same REPL that you used to create your database:
+
+```
+<pre class="src src-clojure">(<span style="color: #a020f0;">def</span> <span style="color: #0000ff;">conn</span> (d/connect db-uri))
+```
+
+
+
+```
+<pre class="src src-clojure">=>
+#'user/conn
+```
+
+
+
+You should see that a var was created called `conn` which is holding your database connection. You can inspect it:
+
+```
+<pre class="src src-clojure">conn
+```
+
+
+
+```
+<pre class="src src-clojure">=> #object[<span style="color: #483d8b;">datomic.peer.LocalConnection</span> 0x6ca372ef <span style="color: #8b2252;">"datomic.peer.LocalConnection@6ca372ef"</span>]
+```
+
+
+
+Any transactions submitted to the connection will be persisted to the storage that you chose when creating your database.
+
+Try adding a new entity with the `:db/doc` value "Hello world".
+
+```
+<pre class="src src-clojure">@(d/transact conn [{<span style="color: #008b8b;">:db/doc</span> <span style="color: #8b2252;">"Hello world"</span>}])
+```
+
+
+
+```
+<pre class="src src-clojure">=>
+{<span style="color: #008b8b;">:db-before</span> datomic.db.Db@33e08f8b, <span style="color: #008b8b;">:db-after</span> datomic.db.Db@7957bcc8, <span style="color: #008b8b;">:tx-data</span> [#datom[13194139534312 50 #inst <span style="color: #8b2252;">"2022-03-18T09:33:18.156-00:00"</span> 13194139534312 true] #datom[17592186045417 62 <span style="color: #8b2252;">"Hello world"</span> 13194139534312 true]], <span style="color: #008b8b;">:tempids</span> {-9223301668109598134 17592186045417}}
+```
+
+
+
+
+
+
+
+Interact with Datomic
+---------------------
+
+The next step will be to define some [schema for your new database](transact-schema.html).

@@ -1,0 +1,140 @@
+Entities
+========
+
+A Datomic entity provides a lazy, associative view of all the information that can be reached from a Datomic entity id.
+
+The [Entity](../javadoc/datomic/Entity.html) interface provides associative access to
+
+- all the attribute/value pairs associated with an entity id E
+- all other entities reachable as values V from E
+- all other entities that can reach E through their values V
+
+Navigation to other entities is recursive, so with thoroughly connected data such a social network graph it may be possible to navigate an entire dataset starting with a single entity.
+
+The Entity interface is completely generic, and can navigate any and all Datomic data.
+
+Basics
+------
+
+The examples below refer to the following example datoms concerning entity 42, a.k.a. Jane Doe.
+
+![entities-basics.png](../images/entities-basics.png)
+
+
+
+The *Database.entity* method will return an *Entity*, given an entity id or lookup ref:
+
+```
+<pre class="src src-java">jane = db.entity(42)
+```
+
+
+
+Given an entity, you can then navigate to any of that entity's attributes:
+
+```
+<pre class="src src-java"><span style="color: #b22222;">// </span><span style="color: #b22222;">returns "Jane"</span>
+firstName = jane.get(<span style="color: #8b2252;">":person/firstName"</span>)
+```
+
+
+
+The special attribute *:db/id* provides access to the entity's own id:
+
+```
+<pre class="src src-java"><span style="color: #b22222;">// </span><span style="color: #b22222;">returns 42</span>
+id = jane.get(<span style="color: #8b2252;">":db/id"</span>)
+```
+
+
+
+If an attribute points to another entity through a cardinality-one attribute, *get* will return another *Entity* instance:
+
+```
+<pre class="src src-java">address = jane.get(<span style="color: #8b2252;">":person/address"</span>)
+```
+
+
+
+If an attributes points to another entity through a cardinality-many attribute, *get* will return a *Set* of entity instances. The following example returns all the entities that Jane likes:
+
+```
+<pre class="src src-java"><span style="color: #b22222;">// </span><span style="color: #b22222;">empty, given the example data</span>
+peopleJaneLikes = jane.get(<span style="color: #8b2252;">":person/likes"</span>)
+```
+
+
+
+If you precede an attribute's local name with an underscore (\_), *get*will navigate backwards, returning the *Set* of entities that point to the current entity. The following example returns all the entities who like Jane:
+
+```
+<pre class="src src-java"><span style="color: #b22222;">// </span><span style="color: #b22222;">returns set containing John</span>
+peopleWhoLikeJane = jane.get(<span style="color: #8b2252;">":person/_likes"</span>)
+```
+
+
+
+Entities do not "exist" in any particular place; they are merely an associative view of all the datoms about some E at a point in time. If there are no facts currently available about an entity, Database.entity will return an empty entity, having only a *:db/id*.
+
+
+
+
+
+Laziness and Caching
+--------------------
+
+Entity attributes are accessed lazily as you request them. Once you access a particular attribute, the attribute will be cached for the lifetime of that entity instance.
+
+The *Entity.keySet* method will return the keys available for an entity, without caching their values.
+
+The *Entity.touch* method is a convenience that will access and cache all the attributes of an entity. In addition, touch will also access and cache the attributes of any other entities reachable through an attribute whose schema definition includes *:isComponent true*.
+
+As an example, consider a database of orders, line items, and products. A line item is a component of an order. A product is related to an order, but is not a component of the order. In such a database, touching an order will access the order's attributes, and recursively access all the order's line items. Touching an order will not access the line items' products.
+
+The *touch* method is a convenience, suitable for interactive exploration, or for when you know that you will need all of an entity's information. When this is not the case, it can be more efficient to be explicit, and ask for precisely what you need.
+
+Note that none of the entity APIs mandate any communication with a server. Entities are lazy values, backed by a lazy database value in an application process. In particular, entities are not subject to the N+1 select problem, which is an artifact of client/server query architectures.
+
+
+
+
+
+Entities and Time
+-----------------
+
+Entities know the point in time on which they are based. Given an entity, you can access the database on which the entity is based
+
+```
+<pre class="src src-java">db = entity.db()
+```
+
+
+
+From the database you can then find the database's basisT, the transactions that contributed to the entity, etc.
+
+Entities represent only a point in time, not the database across time. Notice that the "across time" aspect of the database vanishes when making entities.
+
+![entities-time.png](../images/entities-time.png)
+
+
+
+The point-in-time nature of entities means that entities can be derived from any point-in-time view of a database, i.e. the return values of [Connection.db](../javadoc/datomic/Connection.html#db--), [Database.asOf](../javadoc/datomic/Database.html#asOf-java.lang.Object-), [Database.since](../javadoc/datomic/Database.html#since-java.lang.Object-), and [Database.with](../javadoc/datomic/Database.html#with-java.util.List-).
+
+Entities cannot be derived from with any time-spanning view of a database, i.e. the return value of [Database.history](../javadoc/datomic/Database.html#history--).
+
+
+
+
+
+Usage Considerations
+--------------------
+
+Entities are always consistent.
+
+Entities are lazy, immutable values. They are thread safe and do not require coordination with any other concurrent uses of the same information.
+
+Entities are based on a point in time of the database. Navigation from an entity will always and only reach other entities with that same time basis, allowing extended calculations to be performed without coordination.
+
+Entities are not a mapping layer between databases and application code. Entities are a direct, mechanical translation from database information to associative application access.
+
+Entities are not suitable for existence tests, which should typically be performed via lookup of a [unique identity](../schema/identity.html).

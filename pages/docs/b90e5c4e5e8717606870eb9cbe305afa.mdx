@@ -1,0 +1,21 @@
+Configure Access
+================
+
+> This section only applies to [Datomic 781-9041](../changes.html#781-9041) and lower.
+
+Authorize Datomic Users
+-----------------------
+
+If you are the account owner and only user of the Datomic system, this section does not apply to your usage.
+
+To authorize Datomic users, an AWS administrator should add the Datomic Administrator policy to an IAM group. Users in that group will then have full access to Datomic.
+
+The Datomic Administrator Policy is named `datomic-admin-$(SystemName)-$(Region)`, which you can view by searching for "datomic-admin" under [IAM Policies.](https://console.aws.amazon.com/iam/home?#/policies)
+
+To add the Datomic Administrator Policy to a [group](https://docs.aws.amazon.com/IAM/latest/UserGuide/id_groups_create.html):
+
+1. Select (or create) a Group in the [AWS Console.](https://console.aws.amazon.com/iam/home?#)
+2. Click the "Add Permissions" button, then choose "Attach existing policies directly" and select the Datomic Administrator Policy.
+3. Click the "Next: Review" button, then click the "Add permissions" button.
+
+After this step, any IAM user or role in the Group [get connected](get-connected.html) and use Datomic.

@@ -1,0 +1,431 @@
+Cognitect REBL
+==============
+
+[![REBLplain.png](../images/REBLplain.png)](#interface)
+
+
+
+Overview
+--------
+
+
+
+REBL is a graphical, interactive tool for browsing Clojure data. REBL is developed by the [Datomic Team](https://www.datomic.com) at [Cognitect](https://www.cognitect.com), and is available for non-commercial use (per the [EULA](https://cognitect.com/dev-tools/license.txt)) free of charge. We hope that many Clojure developers will find it useful.
+
+REBL is included with [Cognitect dev-tools](https://cognitect.com/dev-tools/).
+
+- A two-pane browser/viewer system for viewing collections and their contents
+- [Navigation into and back out of nested collections](#navforward)
+- [A structured editor pane for entering expressions to be evaluated](#code-editor)
+- [A root browse of a history of expression evaluations](#root)
+- The ability to 'wrap' a stdio based REPL (e.g. Clojure's native REPL) so that it can monitor and display the interactions therein, while still allowing them to flow back to the host (e.g. the editor)
+- When used with [non-stdio repls](#nREPL) (e.g. nREPL), can be launched a la carte and accepts values to inspect via an API call
+- [The ability to capture nested values as defs in the user namespace](def-as)
+- The ability to run multiple independent UI windows with `cognitect.rebl/ui`
+- [Metadata viewing](#metadata)
+- Datafy support
+- Extensibility to new browsers and viewers
+- Full keyboard control via [hotkeys](#keybindings)
+
+
+
+### Release Status
+
+REBL is early access. Your feedback can help make it better. Please report any [issues](https://github.com/cognitect-labs/REBL-distro/issues) that you encounter.
+
+
+
+
+
+
+
+Installation
+------------
+
+Get the [latest version of Cognitect dev-tools](https://cognitect.com/dev-tools/) and unzip it. From the unzip directory, install the dev-tools with the install script:
+
+```
+<pre class="src src-sh">bash ./install
+```
+
+
+
+Add the following to `/.clojure/deps.edn` to define an alias to use in all projects, or to a project's local `deps.edn`
+
+```
+<pre class="src src-clojure">{<span style="color: #008b8b;">:aliases</span>
+ {<span style="color: #008b8b;">:rebl</span>        <span style="color: #b22222;">;; </span><span style="color: #b22222;">for JDK 11+</span>
+  {<span style="color: #008b8b;">:extra-deps</span> {com.cognitect/rebl          {<span style="color: #008b8b;">:mvn/version</span> <span style="color: #8b2252;">"0.9.245"</span>}
+                org.openjfx/javafx-fxml     {<span style="color: #008b8b;">:mvn/version</span> <span style="color: #8b2252;">"15-ea+6"</span>}
+                org.openjfx/javafx-controls {<span style="color: #008b8b;">:mvn/version</span> <span style="color: #8b2252;">"15-ea+6"</span>}
+                org.openjfx/javafx-swing    {<span style="color: #008b8b;">:mvn/version</span> <span style="color: #8b2252;">"15-ea+6"</span>}
+                org.openjfx/javafx-base     {<span style="color: #008b8b;">:mvn/version</span> <span style="color: #8b2252;">"15-ea+6"</span>}
+                org.openjfx/javafx-web      {<span style="color: #008b8b;">:mvn/version</span> <span style="color: #8b2252;">"15-ea+6"</span>}}
+   <span style="color: #008b8b;">:main-opts</span> [<span style="color: #8b2252;">"-m"</span> <span style="color: #8b2252;">"cognitect.rebl"</span>]}
+  <span style="color: #008b8b;">:rebl-jdk8</span>   <span style="color: #b22222;">;; </span><span style="color: #b22222;">for JDK 8</span>
+  {<span style="color: #008b8b;">:extra-deps</span> {com.cognitect/rebl {<span style="color: #008b8b;">:mvn/version</span> <span style="color: #8b2252;">"0.9.245"</span>}}
+   <span style="color: #008b8b;">:main-opts</span> [<span style="color: #8b2252;">"-m"</span> <span style="color: #8b2252;">"cognitect.rebl"</span>]}}}
+```
+
+
+
+
+
+
+
+Usage
+-----
+
+Replace your repl invocation (`clj` or `clojure`) with the appropriate alias for your JDK version:
+
+- JDK 8 
+    - `clj -A:rebl-jdk8`
+- JDK 11+ 
+    - `clj -A:rebl`
+
+Your repl should start, along with the REBL UI. Everything evaluated in your REPL will also appear in REBL. You can also type expressions right into REBL's editor (in the upper left). REBL will maintain a history of exprs+results in the root browse table.
+
+Additional UI's can be started by evaluating `cognitect.rebl/ui` in your editor.
+
+
+
+### nREPL
+
+To use REBL with [nREPL](https://nrepl.org/nrepl/0.8/index.html) or nREPL based editors:
+
+- [Install](#installation) REBL
+- [Add nREPL as dependency](https://nrepl.org/nrepl/usage/server.html#using-clojure-cli-tools) to your project.
+- Start REBL using the appropriate alias `clj -A:rebl-jdk8:nREPL` or `clj -A:rebl:nREPL` for JDK 11+
+- [Start an nREPL server](https://nrepl.org/nrepl/usage/server.html#embedding-nrepl) from inside REBL
+- Connect to the nREPL server from your editor of choice.
+
+Forms can be sent to REBL using `cognitect.rebl/inspect`. They will be evaluated and added to the eval-history.
+
+
+
+
+
+### cider
+
+[Emacs](https://www.gnu.org/software/emacs/) [cider](https://github.com/clojure-emacs/cider) users can launch REBL automatically and send forms on request via defun-&gt;keybinding by using the instructions in the [cider-rebl](https://github.com/admiralbumblebee/cider-rebl) repository.
+
+
+
+
+
+### Cursive
+
+- [Install](#installation) REBL and the deps.
+- Create a new, or use an existing, Clojure Deps project 
+    - Edit your REPL Configuration to use: 
+        - REPL type: `clojure.main`
+        - Check `Run with Deps:`
+        - Enter the appropriate alias: `rebl-jdk8` for JDK 8, or `rebl` for JDK 11+
+
+If you are using nREPL, then please follow the [nREPL Instructions](#nREPL).
+
+
+
+
+
+### Limitations
+
+REBL currently requires Java 1.8 or Java 11+
+
+
+
+
+
+
+
+Interface
+---------
+
+<![CDATA[
+$(document).ready(function(e) {
+    $('img[usemap]').rwdImageMaps();
+});
+]]>                              ![](/cloud/images/REBL.png)
+
+### Code Editor
+
+The Code Editor is a full-featured editor for writing clojure code. Code is evaluated and the results are immediately available inside the [browser](#browser), [out](#out) and [tap](#tap) tabs.
+
+[Numerous hotkeys](#keybindings) are available for text editing.
+
+
+
+
+
+### Browser
+
+Results of evaluation appear in the Browser pane. When navigating using the [forward](#nav-forward) and [back](#navback) buttons, the current values will appear in the appropriate browser in this pane.
+
+[nav-&gt;](#navinto) will navigate deeper into data while keeping the current browser view on the data that you're acting upon.
+
+Evaluating new code or [navigating back to the root](#navtoeval) will cause the Browser Pane to return to the evaluation-history.
+
+
+
+
+
+### Browser Viewer
+
+Data in the browser can be displayed in a variety of ways. The Browser View drop-down lists the current available views for the data displayed in the Browser.
+
+
+
+
+
+### Data Viewer
+
+The data currently selected in the [Browser](#browser) will be displayed in the Data Viewer using the currently selected [viewer](#view-type).
+
+
+
+
+
+### Data Viewer Type
+
+A number of viewers are available for different shapes and types of data.
+
+
+
+
+
+### def as:
+
+Typing a [valid clojure symbol name](https://clojure.org/reference/reader#_symbols) into the `def as:` text box and pressing enter will [def](https://clojure.org/reference/vars) bind the data shown in the [Data Viewer](#data-viewer) to that var in the user namespace.
+
+Vars are def'd in the `user` name space.
+
+This is often useful when navigating deep into data and you want to extract the data in the [Data Viewer](#data-viewer).
+
+
+
+
+
+### Metadata Viewer
+
+The Metadata Viewer displays the [Metadata](https://clojure.org/reference/metadata) for the data currently displayed in the [Data Viewer](#data-viewer)
+
+
+
+
+
+### Nav Forward
+
+The forward button (`Command-Right`) [navs](https://clojure.github.io/clojure/branch-master/clojure.core-api.html#clojure.core.protocols/nav) into the data selected in the [Data Viewer](#data-viewer) and the current value is moved to the [Browser](#browser).
+
+If [`nav->`](#navinto) is currently being used, then it will be added to the [path](#currentpath) when navigating forward.
+
+
+
+
+
+### Nav Back
+
+The back button (`Command-Left`) [navs](https://clojure.github.io/clojure/branch-master/clojure.core-api.html#clojure.core.protocols/nav) to the previous value in the navigation history.
+
+If [`nav->`](#navinto) was used while navigating forward, then the full `nav->` path that was used will be treated as a single nav step while navigating back.
+
+
+
+
+
+### Back to eval-history
+
+This button (`Shift-Command-Left`) will navigate back to the evaluation history.
+
+
+
+
+
+### Follow REPL
+
+If launching REBL [normally](#installation), REBL will follow all REPL interactions. The Follow REPL checkbox controls whether this is active or not.
+
+
+
+
+
+### out
+
+The out tab shows `*out*` for the REBL repl.
+
+
+
+
+
+### tap
+
+REBL [adds a tap](https://clojure.github.io/clojure/branch-master/clojure.core-api.html#clojure.core/add-tap) and calls to [tap](https://clojure.github.io/clojure/branch-master/clojure.core-api.html#clojure.core/tap%3E) will be displayed here.
+
+The resulting values from REBL's tap can be cleared, or loaded into the [Data View](#data-viewer) with the `browse` button.
+
+
+
+
+
+### path:
+
+`path:` displays the currently navigated path starting with the index in the eval-history.
+
+
+
+
+
+### nav-&gt;
+
+nav-&gt; allows you to supply a set of keys or a set of parenthesized forms to navigate forward in the currently selected collection without changing the relationship between the [Current Browser](#browser) and [Data Viewer](#data-viewer) panes.
+
+The [Data Viewer](#data-viewer) will `nav->` to the data, but the [Browser](#browser) will remain unchanged.
+
+`nav->` remains in effect while browsing the eval-history, so if you have a number of results which require the same navigational steps, this can be entered into `nav->` and all browsing will utilize those steps.
+
+
+
+
+
+
+
+REBL and Datomic
+----------------
+
+Datomic entities are automatically navigated via [pull](../query/query-pull.html).
+
+
+
+
+
+Datafied Filetypes
+------------------
+
+REBL will datafy java.io.Files that contain data to return the contents of those files, as described below:
+
+ExtensionFormatLibrary Required (Tested With).csvcsv[data.csv 0.1.4](https://github.com/clojure/data.csv).ednedn(none).propertiesJava properties .jsonjson[data.json 0.2.3](https://github.com/clojure/data.json).yml, .yamlYAML[snakeyaml 1.23](https://bitbucket.org/asomov/snakeyaml/src/master/)
+
+### Browsable Files
+
+REBL will open a [WebView](https://docs.oracle.com/javase/8/javafx/api/javafx/scene/web/WebView.html) on java.io.Files whose name returns a text/ or image/ mimetype from the configured Java [FileNameMap](https://docs.oracle.com/javase/7/docs/api/java/net/URLConnection.html#getFileNameMap()).
+
+
+
+
+
+
+
+Current Keybindings
+-------------------
+
+
+
+### Editor Keys
+
+CommandKeyCommandKeyAdd Cursor AboveOption-Command-UpExpand SelectControl-Shift-Command-RightAdd Cursor BelowOption-Command-DownFindCommand-FAdd Cursors to Line EndsShift-Option-LFind NextCommand-GAdd Line CommentCommand-K Command-cFind Next SelectionCommand-F3Add To Next Find MatchCommand-DFind PreviousShift-Command-GBackspaceBackspaceFind Previous SelectionShift-Command-F3Backward sexpOption-LeftFind With SelectionCommand-EBackward sexp markShift-Option-LeftFoldOption-Command-\[Backward Up sexpOption-UpFold AllCommand-K Command-0Barf sexp BackwardControl-Option-RightFold All Block CommentsCommand-K Command-/Barf sexp ForwardControl-LeftFold All RegionsCommand-K Command-8Change All OccurrencesCommand-F2Fold Level 1Command-K Command-1CopyCommand-CFold Level 2Command-K Command-2Copy Line DownShift-Option-DownFold Level 3Command-K Command-3Copy Line UpShift-Option-UpFold Level 4Command-K Command-4CutCommand-XFold Level 5Command-K Command-5DeleteDeleteFold Level 6Command-K Command-6Delete All LeftCommand-BackspaceFold Level 7Command-K Command-7Delete All RightControl-KFold RecursivelyCommand-K Command-\[Delete LineShift-Command-KFormat DocumentShift-Option-FEvaluate CodeControl-EnterFormat SelectionCommand-K Command-FCommandKeyCommandKeyparedit-open-round(paredit-forward-slurp-sexpControl-Rightparedit-open-square\[paredit-backward-slurp-sexpControl-Option-Leftparedit-open-curly{backward-sexp-markOption-Shift-Leftparedit-forwardOption-Rightforward-sexp-markOption-Shift-Rightparedit-backwardOption-Leftparedit-split-sexpOption-Shift-Sparedit-backward-upOption-Upparedit-splice-sexpOption-Sparedit-forward-downOption-Downparedit-killControl-Kparedit-reindent-defunOption-Qparedit-kill-backwardControl-Shift-Kparedit-forward-barf-sexpControl-Leftparedit-deleteDeleteparedit-backward-barf-sexpControl-Option-Rightparedit-backspaceBackspace
+
+
+
+### App Keys
+
+CommandKeyNav ForwardCommand-RightNav BackwardsCommand-LeftNav to Root (Eval History)Shift-Command-LeftFocus BrowseControl-BFocus ViewControl-VFocus Browse ChoiceShift-Control-BFocus View ChoiceShift-Control-VFocus Code EntryControl-R
+
+
+
+
+
+Release History
+---------------
+
+
+
+### 0.9.245
+
+- Upgrade Clojure to 1.11.1
+
+
+
+
+
+### 0.9.244
+
+- Update core.async to 1.5.648
+- Update cljfmt to 0.8.0
+
+
+
+
+
+### 0.9.242
+
+- Provide dev-tools via Cognitect maven repo
+
+
+
+
+
+### 0.9.220
+
+- Improvement: Added copy functionality to the viewer.
+- Improvement: Keep the cursor in view while navigating with selected text.
+
+
+
+
+
+### 0.9.218
+
+- This version of REBL replaces the embedded code editor (formerly CodeMirror) with Monaco, the editor engine used in VS Code. While this was a good bit of work under the hood, superficially it might not seem like a lot. This will give us a framework for more features. The first of these is proper paredit support (replacing the parinfer we had before). Please see the Hotkeys page for more details.
+- Monaco has a lot of features already, e.g. code folding (press F1 in the editor to see and search for commands and their keystrokes), and provides hooks for many language editing tasks which we hope to wire up over time.
+- At present the keybindings are still hardwired, but we plan to offer user-customized bindings.
+- Speaking of bindings there is a significant change to the default nav bindings - they now conform to the browser standards (Command-L/R, which was always intended but problematic before).
+
+
+
+
+
+### 0.9.170
+
+- [fixed incompatibility with Java 11](https://github.com/cognitect-labs/REBL-distro/issues/30)
+- nav-&gt; to nil returns nil
+
+
+
+
+
+### 0.9.168
+
+- add a path of keys or parenthesized expressions to browser "nav-&gt;" to transform the elements in the viewer
+- browser "path" shows the path your browsing took
+- tap view has a "browse" button so that you can browse tap results as data
+- column sorts now use Clojure's compare where possible
+
+
+
+
+
+### 0.9.157
+
+- new var nav now shows runtime deps (:rebl.var/uses and :rebl.var/used-by) and :rebl/source if available
+- string expressions with code can now use the code viewer
+- fixed nav for sets
+- fixes <https://github.com/cognitect-labs/REBL-distro/issues/24>
+- fixes <https://github.com/cognitect-labs/REBL-distro/issues/23>
+
+
+
+
+
+### 0.9.149
+
+- Datafy support for csv, edn, json, and yaml files.
+- Tap pane now shows a list of recent tap&gt; values.
+- "def as…" now works correctly with unprintable/unreadable Objects.
+
+
+
+
+
+### 0.9.109
+
+- Initial release.

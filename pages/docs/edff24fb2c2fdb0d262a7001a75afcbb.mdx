@@ -1,0 +1,172 @@
+Query the Data
+==============
+
+Previously: you learned [how to transact domain data into the database](transact-data.html). This tutorial expects that you have a running REPL where you have already connected to the database "hello", transacted the movie schema, and added three movies.
+
+You have transacted three sets of attributes into the database, creating three movies. What you actually created were three **entities**, each of which has a unique id and a collection of associated attributes. The unique ids were assigned for you when you transacted the data (for more on entity ids, see [Identity and Uniqueness](../schema/identity.html)). When you query a Datomic database, you may be looking to retrieve attribute values, collections of attribute values, entities, or any combination thereof. The Client library offers two mechanisms for retrieving data from your database:
+
+- **query** - uses Datalog, a declarative query language
+- **pull** - a declarative way to make hierarchical (and possibly nested) selections of information about entities
+- **entity** - pulls a lazy, associative view of all the information that can be reached from an entity id
+
+We'll focus on [query](../clojure/index.html#datomic.api/q) in this tutorial. For more on Pull, read [Datomic Pull](../query/pull.html), and for more on Entity, read [Entities](../overview/entities.html).
+
+Database value
+--------------
+
+A database value is the state of the database at a given point in time.
+
+You must retrieve the current database value to issue a query against a Datomic database. You can issue as many queries against that database value as you want, and they will always return the same results.
+
+Retrieve the current database value and store it in a var:
+
+```
+<pre class="src src-clojure">(<span style="color: #a020f0;">def</span> <span style="color: #0000ff;">db</span> (d/db conn))  
+```
+
+
+
+```
+<pre class="src src-clojure">=> #'user/db
+```
+
+
+
+
+
+
+
+Query
+-----
+
+Once you have the database value, then you can issue queries against it. You issues queries via the `q` function. `q` takes two required parameters:
+
+- query data (represented as a map or list) containing **at least** a `:find` clause and a `:where` clause
+- a list of input sources for the query
+
+The query data can also contain a variety of other optional components, which you can learn more about in the [q Reference](../clojure/index.html#datomic.api/q).
+
+You must provide enough of a `:where` clause to limit the results, and your query performance is relative to the ordering and selectivity of the clauses. Put your most selective clauses first and it may limit the work which needs to be done by other related clauses which come after.
+
+Right now we want to find every movie in the database. A movie is anything that has an associated `:movie/title` attribute (or `:movie/release-year` or `:movie/genre`, but we'll just use `:movie/title` for now).
+
+You will use the [list form of the query data](../clojure/index.html#datomic.api/q). You must create a vector with the three mandatory components listed above. Let's look at a minimal query:
+
+```
+<pre class="src src-clojure">(<span style="color: #a020f0;">def</span> <span style="color: #0000ff;">all-movies-q</span> '[<span style="color: #008b8b;">:find</span> ?e 
+                    <span style="color: #008b8b;">:where</span> [?e <span style="color: #008b8b;">:movie/title</span>]])
+```
+
+
+
+Here we define a var, `all-movies-q`, that holds our query definition, which we will later pass to query. Look at the two clauses:
+
+- `:find` – specifies what you want returned from the query. In this case, `?e` is a logic variable that will be bound within the `:where` clause
+- `:where` – the `:where` clause consists of a list of vectors. In our case, we are only passing one clause, `[?e :movie/title]`, which translates to "bind the id of each entity that has an attribute called `:movie/title` to the logic variable named `?e`"
+
+The whole query reads as "find me the ids of all entities which have an attribute called `:movie/title`".
+
+To actually issue the query, call `q` and pass the query and the database value you captured in the first part of this tutorial:
+
+```
+<pre class="src src-clojure">(d/q all-movies-q db)
+```
+
+
+
+```
+<pre class="src src-clojure">=> [[17592186045418] [17592186045419] [17592186045420]]
+```
+
+
+
+You can see that there were three entities in the database with a `:movie/title`, which maps to the three movies you added in the last tutorial. What you received back is a collection of return values, each of which in this case is just the entity id.
+
+Instead of finding the entity ids, perhaps you just want to find all the titles of all the movies in the database. In that case, your query would specify a `:find` clause with a named value (`?movie-title`) that you bind to an attribute (`:movie/title`). That would look like this:
+
+```
+<pre class="src src-clojure">(<span style="color: #a020f0;">def</span> <span style="color: #0000ff;">all-titles-q</span> '[<span style="color: #008b8b;">:find</span> ?movie-title 
+                    <span style="color: #008b8b;">:where</span> [_ <span style="color: #008b8b;">:movie/title</span> ?movie-title]])
+```
+
+
+
+Notice the underscore at the beginning of the clause where `?e` used to be. That indicates that we are not interested in the entity id itself. We are only interested in the existence (and value of) the `:movie/title` attribute. The query reads as "find all movie titles from any entity that has an attribute `:movie/title` and assign the title to a logic variable called `?movie-title`".
+
+To execute the query, pass it and the db value in as before:
+
+```
+<pre class="src src-clojure">(d/q all-titles-q db)
+```
+
+
+
+```
+<pre class="src src-clojure">=> [[<span style="color: #8b2252;">"Commando"</span>] [<span style="color: #8b2252;">"The Goonies"</span>] [<span style="color: #8b2252;">"Repo Man"</span>]] 
+```
+
+
+
+Great! You were able to query the attributes from a collection of all the movies in the database. You received a collection of return values, and each is the string title of the movie.
+
+What if you only want the titles of movies released in 1985? In order to issue that command, your `:where` statement is going to have to have two clauses: one to bind the `:movie/title` attribute (as before), and one to filter by `:movie/release-year`.
+
+Those two clauses have to be **joined**.
+
+The `:where` clause in our last example contained an `_` where we first saw `?e`, because we were not interested in the entity itself. We were only interested the value of the `:movie/title/ attribute.  We will re-insert ~?e` into both clauses, and that will serve as the join point for the two clauses. Datalog joins are created by the presence of the same logic variable in multiple clauses.
+
+The new query looks like this:
+
+```
+<pre class="src src-clojure">(<span style="color: #a020f0;">def</span> <span style="color: #0000ff;">titles-from-1985</span> '[<span style="color: #008b8b;">:find</span> ?title 
+                        <span style="color: #008b8b;">:where</span> [?e <span style="color: #008b8b;">:movie/title</span> ?title] 
+                               [?e <span style="color: #008b8b;">:movie/release-year</span> 1985]])
+```
+
+
+
+This query reads: "find the title of any entity that has a `:movie/title` attribute and whose `:movie/release-year` is 1985". When you issue the new query:
+
+```
+<pre class="src src-clojure">(d/q titles-from-1985 db)
+```
+
+
+
+```
+<pre class="src src-clojure">=> [[<span style="color: #8b2252;">"Commando"</span>] [<span style="color: #8b2252;">"The Goonies"</span>]]
+```
+
+
+
+What if you want to return all the attributes for each movie released in 1985? You need a clause for each attribute you want to return and for the filter on release year, all of which should be joined through `?e`. That query looks like:
+
+```
+<pre class="src src-clojure">(<span style="color: #a020f0;">def</span> <span style="color: #0000ff;">all-data-from-1985</span> '[<span style="color: #008b8b;">:find</span> ?title ?year ?genre 
+                          <span style="color: #008b8b;">:where</span> [?e <span style="color: #008b8b;">:movie/title</span> ?title] 
+                                 [?e <span style="color: #008b8b;">:movie/release-year</span> ?year] 
+                                 [?e <span style="color: #008b8b;">:movie/genre</span> ?genre] 
+                                 [?e <span style="color: #008b8b;">:movie/release-year</span> 1985]])
+```
+
+
+
+And when you run it:
+
+```
+<pre class="src src-clojure">(d/q all-data-from-1985 db)
+```
+
+
+
+```
+<pre class="src src-clojure">=> [[<span style="color: #8b2252;">"The Goonies"</span> 1985 <span style="color: #8b2252;">"action/adventure"</span>] [<span style="color: #8b2252;">"Commando"</span> 1985 <span style="color: #8b2252;">"action/adventure"</span>]]
+```
+
+
+
+Your return value contains multiple tuples - one per movie found. The shape of the relation returned is defined by your `:find` specification. More information can found in the [query reference documention](../query/query.html#find-specifications).
+
+There is much more to learn about Datalog, from nested queries to secondary inputs and more.
+
+In the final step of this tutorial, you will learn about the [history of values in the database](see-historic-data.html).

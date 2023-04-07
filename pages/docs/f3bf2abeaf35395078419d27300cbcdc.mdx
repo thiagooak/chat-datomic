@@ -1,0 +1,222 @@
+Indexes
+=======
+
+Indexes are one of the powerful tools Datomic provides for leverage over your data. Datomic indexes are used behind the scenes to implement Datalog [query](/on-prem/query/query.html) and entities, and they can be accessed directly through methods of [Database](../javadoc/datomic/Database.html) and [Connection](../javadoc/datomic/Connection.html).
+
+The examples in this document use a simplified subset of the datoms in the [MusicBrainz sample database](https://blog.datomic.com/2013/07/datomic-musicbrainz-sample-database.html).
+
+Basics
+------
+
+Datomic indexes are covering indexes. This means the index actually contains the datoms, rather than just a pointer to them. So, when you find datoms in the index, you get the datoms themselves, not just a reference to where they live. This allows Datomic to very efficiently access datoms through its indexes.
+
+Datomic maintains four indexes that contain ordered sets of datoms. Each of these indexes is named based on the sort order used. E, A, and V are always sorted in ascending order, while T is always in descending order:
+
+![](/on-prem/images/indexes.png)
+
+
+
+
+
+### EAVT
+
+The EAVT index provides efficient access to everything about a given entity. Conceptually this is very similar to row access style in a SQL database, except that entities can possess arbitrary attributes rather then being limited to a predefined set of columns.
+
+The example below shows all of the facts about entity 42 grouped together:
+
+![](/on-prem/images/eavt.png)
+
+
+
+EAVT is also useful in master/detail lookups, since the references to detail entities are just ordinary Vs alongside the scalar attributes of the master entity. Better still, Datomic assigns entity ids so that when master and detail records are created in the same transaction, they will be colocated in EAVT.
+
+
+
+
+
+### AEVT
+
+The AEVT index provides efficient access to all values for a given attribute, comparable to traditional column access style. In the table below, notice how all *:release/name* attributes are grouped together. This allows Datomic to efficiently query for all values of the :release/name attribute, because they reside next to one another in this index.
+
+![](/on-prem/images/aevt.png)
+
+
+
+
+
+
+
+### AVET
+
+The AVET index provides efficient access to particular combinations of attribute and value. The example below shows a portion of the AVET index allowing lookup by :release/names.
+
+The AVET index is more expensive to maintain than other indexes, and as such it is the only index that is not enabled by default. To maintain AVET for an attribute, specify *:db/index* true (or some value for *:db/unique*) when installing or altering the attribute.
+
+The AVET index also supports the [indexRange API](../javadoc/datomic/Database.html#indexRange-java.lang.Object-java.lang.Object-java.lang.Object-), which returns all attribute values in a particular range.
+
+![](/on-prem/images/avet.png)
+
+
+
+
+
+
+
+### VAET
+
+The VAET index contains all and only datoms whose attribute has a *:db/valueType* of *:db.type/ref*. This is also known as the reverse index, since it allows efficient navigation of relationships in reverse. If The Beatles are entity 100, you can see in the following table how their releases would be grouped together in this index.
+
+![](/on-prem/images/vaet.png)
+
+
+
+
+
+
+
+### Datoms API
+
+The [datoms API](../javadoc/datomic/Database.html#datoms-java.lang.Object-java.lang.Object...-) provides direct access to one of the datoms indexes. Given an index name, and a partial specification of a datom, datoms will return an Iterable over all the datoms matching that specification in the index.
+
+Datom components are specified in the same order as the index. The example below refers to *AVET*, so the first component *:account/balance* specifies the *A* component, and will return an iterator over all balances in the system.
+
+```
+<pre class="src src-java">db.datoms(<span style="color: #228b22;">AVET</span>, <span style="color: #8b2252;">":account/balance"</span>);
+```
+
+
+
+A call to datoms with no components will return the entire index. Because EAVT and AEVT include every datom in the database, either of these indexes could be used to walk the entire database:
+
+```
+<pre class="src src-java"><span style="color: #b22222;">// </span><span style="color: #b22222;">lazily iterate the entire database!</span>
+db.datoms(<span style="color: #228b22;">EAVT</span>);
+```
+
+
+
+
+
+
+
+### Log
+
+The log indexes datoms by time. The log is unlike the other indexes in several ways.
+
+- The log is an ordered set of transactions, where each transaction itself contains an unordered set of datoms.
+- The log is available as a method on Connection, not on Database.
+- The log is not used automatically by query. Instead, it is accessed from within query via the query functions tx-ids and tx-data.
+
+See the [Log API](/on-prem/api/log.html) document for details on using the log.
+
+
+
+
+
+
+
+Implementation
+--------------
+
+
+
+### Accumulate Only
+
+Datomic is accumulate-only. Information accumulates over time, and change is represented by accumulating the new, not by modifying or removing the old. For example, "removing" occurs not by taking something away, but by adding a new [retraction](../transactions/transactions.html#retracting-data).
+
+At the implementation level, this means that index and log segments are immutable, and can be consumed directly without coordination by any processes in a Datomic system. This is the reason that Datomic processes are called peers – all processes have equivalent access to the information in the system. Moreover, because the indexes are immutable, they can be efficiently cached in application processes.
+
+Note that accumulate-only is a semantic property, and is **not** the same as append-only, which is a structural property describing how data is written. Datomic is not an append-only system, and does not have the performance characteristics associated with append-only systems.
+
+
+
+
+
+### Efficient Accumulation
+
+The Datomic API presents indexes to consumers as sorted sets of datoms or of transactions. However, Datomic is designed for efficient writing at transaction time, and for use with data sets much larger than can fit in memory. To meet these objectives, Datomic:
+
+- Stores indexes as shallow trees of segments, where each segment typically contains thousands of datoms.
+- Stores segments, not raw datoms, in storage.
+- Updates the datom trees only occasionally, via background indexing jobs.
+- Uses an adaptive indexing algorithm that has a sublinear relationship with total database size.
+- Merges index trees with an in-memory representation of recent change so that peers see up-to-date indexes.
+- Updates the log for every transaction (the D in [ACID](/on-prem/transactions/acid.html))
+- Optimizes log writes using additional data structures tuned to allow O(1) storage writes per transaction.
+
+
+
+
+
+### Efficient Query
+
+For queries whose supporting datoms are already in cache, Datomic can access datoms at memory speeds, a latency that is impossible to achieve with client/server databases. When not all supporting datoms are in cache, the wide branching factor of index trees ensures that at most 1-2 reads from storage are necessary to find the necessary segments.
+
+
+
+
+
+### Real-Time Query
+
+The diagram below shows a cloud-based Datomic instance using DynamoDB for its storage layer. Index usage is visible in the Peer Library and Peer Server sections, where index segments are cached (the yellow "Cache") and merged with recent changes (the green "Live Index") to provide a real-time view to Query.
+
+![clientarch_orig.svg](../images/clientarch_orig.svg)
+
+
+
+
+
+
+
+
+
+Partitions
+----------
+
+Every Datomic entity is associated with a particular partition specified initially via [tempid](../javadoc/datomic/Peer.html#tempid-java.lang.Object-). These partitions act as a coarse-grained grouping mechanism for entities, much as file cabinets act as a coarse-grained grouping mechanism for paper files.
+
+Because the partition is encoded via high bits in the entity ID, entities in the same partition are sorted together. If the partitions align with usage patterns, this can improve performance. For example, consider a system with inventory, customers, and orders partitions. A query for a particular item in inventory will cause an "inventory" segment to be cached, and that segment will contain a few thousand other inventory-related facts. If inventory queries tend to be followed by other inventory queries, this locality will reduce the number of segments that a peer needs to cache.
+
+Partitions also enable two techniques that are handy in larger systems: new entity scans and partition sharding.
+
+
+
+### New Entity Scans
+
+Because Datomic stores information about time, it is easy to ask questions that apply only to recently created entities. For example, it is trivial in Datomic to run a batch job over everything that changed today, by grabbing the *txRange* of the [log](/on-prem/api/log.html) starting at midnight.
+
+Such a scan does, however, have to consider all of today's datoms, filtering out any that are irrelevant to the task at hand.
+
+If you are designing a system that needs to know about specific new entities (e.g. something that wants to respond to new events of a certain type) then you can use partitions as a filtering mechanism:
+
+- Assign all the datoms for an event category to the same partition.
+- Instead of using the log, use [entidAt](../javadoc/datomic/Database.html#entidAt-java.lang.Object-java.lang.Object-) to fabricate an event id closest to the start time t you care about.
+- Pass the fabricated entity id to [seekDatoms](../javadoc/datomic/Database.html#seekDatoms-java.lang.Object-java.lang.Object...-) to walk EAVT, walking entities ordered by time of creation and implicitly "filtered" by partition's impact on order.
+
+
+
+
+
+### Partition Sharding
+
+Partition-based sharding is a technique for distributing entity-scoped read load to application servers. If you can divide entities mechanically into N different groups at creation time, you can give each group a different partition in Datomic. Then, at query time, direct entity-related queries to different application servers based on their partition. This will cause the application servers to cache disjoint subsets of the total index, substantially increasing the fraction of the index that can fit into application server memory.
+
+Partition-based sharding is an optimization only. Entities in any partition can still be reached by any peer.
+
+
+
+
+
+
+
+Usage Notes
+-----------
+
+- Attributes that will be queried by value should be marked *:db/index**true* or *:db/unique*.
+- Datomic's combination of indexes automatically support queries associated with a number of different storage styles, including row-oriented, column-oriented, document-oriented, K/V, and graph.
+- Datomic's EAVT and VAET indexes can automatically navigate entity relationships in both directions, so you do not need to (and should not) create two attributes that model the same relationship but from different directions.
+- Datomic programs do not need to do any API level caching. Caching is generic, omnipresent, and requires little or no configuration.
+- For small enough databases, the entire database will be in peer caches, making data access faster than in client/server databases.
+- The overhead of a peer cache miss is 1-2 segment fetches. From memcached, such fetches are on the order of 1 millisecond. Storages vary from 1 up to 10 or more milliseconds.
+- The peer cache insulates Datomic from the performance of the underlying storage system. As a result, you should weigh storage performance somewhat less heavily than you might with other systems.
+- Background indexing needs to be fast enough to keep up with transaction load, and is discussed in more detail in the [Capacity](/on-prem/operation/capacity.html) docs.

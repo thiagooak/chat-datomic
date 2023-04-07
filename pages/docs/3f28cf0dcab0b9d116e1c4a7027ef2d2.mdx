@@ -1,0 +1,280 @@
+Database Filters
+================
+
+Filters take a database value and return a new database value that exposes only datoms that satisfy a predicate. This makes it possible to have a single set of queries and index traversals that can be used without change against different filtered views of your data.
+
+Datomic databases can be filtered with the time-based predicates *asOf*and *since*. Or, you can bring your own predicate with *filter*. In addition, you can get an unfiltered view of all history via *history*.
+
+Each of these APIs is described below.
+
+Example Database
+----------------
+
+All of the examples below form an [example inventory database](https://github.com/Datomic/day-of-datomic/blob/master/tutorial/filters.clj), looking specifically at an entity that tracks the quantity of dilithium crystals on hand at a given point in time. The subset of the data relevant to the examples is
+
+eavtxadded0x00000c00000003e9:db/txInstantMon Dec 31 19:00:000xc00000003e9true0x00001000000003ea:item/idDLC-0420xc00000003e9true0x00001000000003ea:item/descriptionDilitihium Crystals0xc00000003e9true0x00001000000003ea:item/count1000xc00000003e9true0x00000c00000003eb:db/txInstantThu Jan 31 19:00:000xc00000003ebtrue0x00001000000003ea:item/count1000xc00000003ebfalse0x00001000000003ea:item/count2500xc00000003ebtrue0x00000c00000003ec:db/txInstantThu Feb 27 19:00:000xc00000003ectrue0x00001000000003ea:item/count2500xc00000003ecfalse0x00001000000003ea:item/count500xc00000003ectrue0x00000c00000003ed:db/txInstantMon Mar 31 20:00:000xc00000003edtrue0x00000c00000003ed:tx/errortrue0xc00000003edtrue0x00001000000003ea:item/count500xc00000003edfalse0x00001000000003ea:item/count99990xc00000003edtrue0x00000c00000003ee:db/txInstantWed May 14 20:00:000xc00000003eetrue0x00001000000003ea:item/count99990xc00000003eefalse0x00001000000003ea:item/count1000xc00000003eetrue
+
+
+
+asOf
+----
+
+An *asOf* filter returns a database "as of" a particular point in time, ignoring any transactions after that point. The time specification can be any time-point, i.e.
+
+- a Datomic transaction id. Use a transaction id when you want a database as of a specific transaction.
+- a Datomic point in time. Use with, e.g., the basis-t value of the *:db-after* returned by derefing the future returned by *transact*.
+- an instant in time (a *java.util.Date*). An instant should be used when you have a wall clock time for the database you want but do not have a transaction id or basis-t value, as an instant is not as precise as Datomic's t or tx values.
+
+Because the *item/count* of dilithium crystals is changing over time, different *asOf* views will show different counts:
+
+```
+<pre class="src src-clojure">(<span style="color: #a020f0;">def</span> <span style="color: #0000ff;">db</span> (d/db conn))
+(d/entity db [<span style="color: #008b8b;">:item/id</span> <span style="color: #8b2252;">"DLC-042"</span>])
+```
+
+
+
+```
+<pre class="src src-clojure">=>
+{<span style="color: #008b8b;">:item/id</span> <span style="color: #8b2252;">"DLC-042"</span>, 
+ <span style="color: #008b8b;">:item/description</span> <span style="color: #8b2252;">"Dilitihium Crystals"</span>, 
+ <span style="color: #008b8b;">:item/count</span> 100, 
+ <span style="color: #008b8b;">:db/id</span> 17592186045418}
+```
+
+
+
+```
+<pre class="src src-clojure">(<span style="color: #a020f0;">def</span> <span style="color: #0000ff;">as-of-eoy-2013</span> (d/as-of db #inst <span style="color: #8b2252;">"2014-01-01"</span>))
+(d/entity as-of-eoy-2013 [<span style="color: #008b8b;">:item/id</span> <span style="color: #8b2252;">"DLC-042"</span>])
+```
+
+
+
+```
+<pre class="src src-clojure">=>
+{<span style="color: #008b8b;">:item/id</span> <span style="color: #8b2252;">"DLC-042"</span>, 
+ <span style="color: #008b8b;">:item/description</span> <span style="color: #8b2252;">"Dilitihium Crystals"</span>, 
+ <span style="color: #008b8b;">:item/count</span> 250, 
+ <span style="color: #008b8b;">:db/id</span> 17592186045418}
+```
+
+
+
+
+
+
+
+since
+-----
+
+A *since* filter is the opposite of *asOf*. Taking the same point-in-time arguments as *asOf*, *since* returns a value of the database that includes only datoms added by transactions after that point in time.
+
+There is an important subtlety to consider when using *since*. Typically, the identifying information used to lookup an entity is established in the first transaction about that entity, so a *since* view may not be able to see the information needed for lookup. Our example has exactly this problem trying to find the entity in question by its *:item/id*
+
+```
+<pre class="src src-clojure">(<span style="color: #a020f0;">def</span> <span style="color: #0000ff;">since-2014</span> (d/since db #inst <span style="color: #8b2252;">"2014-01-01"</span>))
+
+(d/entity since-2014 [<span style="color: #008b8b;">:item/id</span> <span style="color: #8b2252;">"DLC-042"</span>])
+```
+
+
+
+```
+<pre class="src src-clojure">=> nil  <span style="color: #b22222;">;; </span><span style="color: #b22222;">!!!</span>
+```
+
+
+
+Most callers of *since* will refer to the database twice: one reference to the default "now" db to find entities, and a second reference to the *since* db to shave off the past. With entities, this looks like
+
+```
+<pre class="src src-clojure">(d/entity since-2014 (d/entid db [<span style="color: #008b8b;">:item/id</span> <span style="color: #8b2252;">"DLC-042"</span>]))
+```
+
+
+
+```
+<pre class="src src-clojure">=> {<span style="color: #008b8b;">:item/count</span> 100, 
+    <span style="color: #008b8b;">:db/id</span> 17592186045418}
+```
+
+
+
+Notice that the "now" *db* is used to resolve the lookup ref, and the *since-2014* db is then used to build the entity.
+
+In query, this can take the form of passing two different filters of the same db as separate inputs:
+
+```
+<pre class="src src-clojure">(d/q ('[<span style="color: #008b8b;">:find</span> ?count 
+        <span style="color: #008b8b;">:in</span> $ $since ?id 
+        <span style="color: #008b8b;">:where</span> [$ ?e <span style="color: #008b8b;">:item/id</span> ?id] 
+               [$since ?e <span style="color: #008b8b;">:item/count</span> ?count]]) 
+  db since-2014 <span style="color: #8b2252;">"DLC-042"</span>)
+```
+
+
+
+Here, the *db* argument is named *$* inside the query, and used to resolve the *:item/id*. Then the *since-2014* is named *$since* inside the query, and used to find the *:item/count*.
+
+
+
+
+
+history
+-------
+
+The history view of the database includes the present and all of the past, unfiltered. This makes the history view ideal for querying the complete history of an entity, or group of entities.
+
+Here is a query for all assertions about dilithium crystals:
+
+```
+<pre class="src src-clojure">(<span style="color: #a020f0;">def</span> <span style="color: #0000ff;">history</span> (d/history db))
+
+(<span style="color: #483d8b;">->></span> (d/q '[<span style="color: #008b8b;">:find</span> ?aname ?v ?inst
+            <span style="color: #008b8b;">:in</span> $ ?e
+            <span style="color: #008b8b;">:where</span> [?e ?a ?v ?tx true]
+                   [?tx <span style="color: #008b8b;">:db/txInstant</span> ?inst]
+                   [?a <span style="color: #008b8b;">:db/ident</span> ?aname]]
+          history [<span style="color: #008b8b;">:item/id</span> <span style="color: #8b2252;">"DLC-042"</span>])
+     (<span style="color: #a0522d;">sort-by</span> #(<span style="color: #a0522d;">nth</span> % 2)))
+```
+
+
+
+Note that the query joins through *:db/txInstant* to return wall clock time, and joins through *:db/ident* to return human-readable attribute names.
+
+Simplified views of data that do not account for time are incompatible with *history*, since a history database can see multiple different values for the "same" fact at different times. In particular, an entity is a point-in-time view and cannot be created from a *history*database.
+
+
+
+
+
+filter
+------
+
+
+
+### Filtering Errors
+
+A filter view allows you to produce values of the database filtered by your own domain-specific predicates. A filter can be used to e.g. remove datoms that are incorrect, not applicable at a point in time, or not available for security reasons.
+
+For example, suppose that the 9999 value for *:item/count* in the example database above turns out to be a mistake. The transaction that made this assertion could be identified, and used to filter out the incorrect value:
+
+```
+<pre class="src src-clojure">(<span style="color: #a020f0;">def</span> <span style="color: #0000ff;">error-txes</span>
+  <span style="color: #8b2252;">"Known bad transactions"</span>
+  #{13194139534317})
+(<span style="color: #a020f0;">defn</span> <span style="color: #0000ff;">correct?</span>
+  [_ datom]
+  (<span style="color: #a0522d;">not</span> (<span style="color: #a0522d;">contains?</span> error-txes (<span style="color: #008b8b;">:tx</span> datom))))
+(<span style="color: #a020f0;">def</span> <span style="color: #0000ff;">corrected</span> (d/filter history correct?))
+```
+
+
+
+Now, the *corrected* database value can be passed to all our existing queries, which will never see or consider the incorrect datoms.
+
+
+
+
+
+### Filtering For Security
+
+Imagine that you want to exclude all values of an attribute entirely from consideration. The following code creates a filter that rejects all datoms about the attribute :user/passwordHash.
+
+```
+<pre class="src src-clojure">(<span style="color: #a020f0;">def</span> <span style="color: #0000ff;">password-hash-id</span> (d/entid plain-db <span style="color: #008b8b;">:user/passwordHash</span>))
+(<span style="color: #a020f0;">def</span> <span style="color: #0000ff;">password-hash-filter</span> (<span style="color: #a0522d;">fn</span> [_ <span style="color: #228b22;">^Datom</span> datom] (<span style="color: #a0522d;">not=</span> password-hash-id (<span style="color: #483d8b;">.a</span> datom))))
+(<span style="color: #a020f0;">def</span> <span style="color: #0000ff;">filtered-db</span> (d/filter (d/db conn) password-hash-filter))
+```
+
+
+
+
+
+
+
+### Joining Different Filters of the Same Database
+
+It is idiomatic to join different filters of the same database. One motivating case is performance: Since filtering is not free, it makes sense to filter only the parts of the query that need filtering. For example, the query below uses an unfiltered database to find entities, and then a filtered version of the same database to limit the attributes visible through the entity() call:
+
+```
+<pre class="src src-clojure">[<span style="color: #008b8b;">:find</span> ?ent
+ <span style="color: #008b8b;">:in</span> $plain $filtered ?email
+ <span style="color: #008b8b;">:where</span>
+ [$plain ?e <span style="color: #008b8b;">:user/email</span> ?email]
+ [(datomic.api/entity $filtered ?e) ?ent]]
+```
+
+
+
+
+
+#### Filtering on Transaction Attributes
+
+Filters can do more than look at single datoms. They can also consider datoms in the context of the entire database. For example, imagine that you mark the transactions in your system with a *:source/confidence* field that indicates your confidence in the source, on a scale from 0 to 100. You could then filter the database as follows:
+
+```
+<pre class="src src-java"><span style="color: #a020f0;">public</span> <span style="color: #a020f0;">static</span> <span style="color: #228b22;">Database</span> <span style="color: #0000ff;">filterByConfidence</span>(<span style="color: #228b22;">Database</span> <span style="color: #a0522d;">db</span>, <span style="color: #a020f0;">final</span> <span style="color: #228b22;">long</span> <span style="color: #a0522d;">conf</span>) {
+    <span style="color: #a020f0;">return</span> db.filter(<span style="color: #a020f0;">new</span> <span style="color: #008b8b;">Database</span>.<span style="color: #228b22;">Predicate</span><<span style="color: #008b8b;">datomic</span>.<span style="color: #228b22;">Datom</span>>() {
+        <span style="color: #a020f0;">public</span> <span style="color: #228b22;">boolean</span> <span style="color: #0000ff;">apply</span>(<span style="color: #228b22;">Database</span> <span style="color: #a0522d;">db</span>, <span style="color: #228b22;">Datom</span> <span style="color: #a0522d;">datom</span>) {
+            <span style="color: #228b22;">Long</span> <span style="color: #a0522d;">confidence</span> = (<span style="color: #228b22;">Long</span>) db.entity(datom.tx()).get(<span style="color: #8b2252;">":source/confidence"</span>);
+            <span style="color: #a020f0;">return</span> (confidence != <span style="color: #008b8b;">null</span>) && (confidence > conf);
+        }
+    });
+}
+```
+
+
+
+Queries using this filter can focus on finding data of interest, without worrying about the cross-cutting concern of how trusted the data is. The query below finds only the stories whose titles were added by sources with a trust score higher than 90:
+
+```
+<pre class="src src-java">q(<span style="color: #8b2252;">"[:find ?title"</span> +
+  <span style="color: #8b2252;">" :where [_ :story/title ?title]]"</span>, filterByConfidence(db, 90L));
+```
+
+
+
+
+
+
+
+
+
+
+
+Usage Considerations
+--------------------
+
+
+
+### As-of Is Not a Branch
+
+Filters are applied to an unfiltered database value obtained from `db`or `with`. In particular, the combination of `with` and `as-of` means "`with` followed by `as-of`", regardless of which API call you make first. `with` plus `as-of` lets you see a speculative db with recent datoms filtered out, but it does **not** let you branch the past.
+
+
+
+
+
+### The Present Pays No Penalty
+
+The original database value returned from connection does no filtering. It sees only the present, without having to filter the past. So queries about "now" are as efficient as possible–they do not consider history and pay no penalty for history, no matter how much history is stored in the system.
+
+
+
+
+
+### Filter or Log?
+
+Filters are applied to database indexes, filtering out data that does not match a predicate. Filters cannot do anything that could not be done directly with indexes, but they do allow you to separate some aspect of a query, reusing query or entity logic across different filtered views.
+
+Consider the following two queries:
+
+- "What happened between 8:00 and 9:00 this morning?"
+- "What did entity 42 look like at 8:00 this morning?"
+
+The first query is limited **only** by time. Such a query can be answered directly from the log, which is a time index. Answering the same question via *asOf* and *since* would require a filtering scan of the entire database.
+
+The second query is limited by both entity and by time. Thus it makes sense to augment indexes with a filter, calling *entity* on an *asOf*view of the database. The *entity* call will use the EAVT index to jump straight to the requested datoms, which are then filtered to exclude the most recent datoms. Because all the time-related work is done by *asOf*, the call to *entity* can be time-agnostic and can work with any point-in-time. You can use the same approach in your own queries, writing queries that are agnostic about time (or about some domain value), and using filters to allow reuse of those queries across different domain values.

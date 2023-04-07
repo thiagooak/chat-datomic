@@ -1,0 +1,42 @@
+Introduction
+============
+
+Information, not CRUD
+---------------------
+
+Datomic models *information*. Information is stored in fine-grained datoms, as opposed to coarse-grained tables or documents. Information accumulates over time. Information is *not* forgotten as a side effect of acquiring new information.
+
+This is in stark contrast with the Create/Read/Update/Delete (CRUD) paradigm:
+
+CRUDDatomicCreateAssertReadReadUpdateAccumulateDeleteRetract- *Assertions* are granular statements of fact.
+- *Reads* are always peformed against an immutable database value at a particular point in time. Time is globally ordered in a database by ACID transactions.
+- New transactions only *Accumulate* new data. Existing datoms never change.
+- *Retractions* state than an assertion no longer holds at some later point in time. The original assertion remains unchanged.
+
+Assert/Read/Accumulate/Retract (ARAR) should be pronounced doubled and in a pirate voice "Ar Ar Ar Ar".
+
+
+
+
+
+Iterative Development
+---------------------
+
+Datomic is uniquely suited for iterative development. Change is easy, due to the granular data model and small but powerful schema. And change is always tracked within the database itself, so you do not need a parallel infrastructure of version-controlled migration files as your application evolves.
+
+The examples in this tutorial will use Clojure, a language that is also particularly strong at interactive development. You will see data modeling, transactions, query, and multiple evolutionary steps all performed within a single REPL (read-eval-print loop) session.
+
+
+
+
+
+Using the Tutorial
+------------------
+
+This tutorial will demonstrate iteratively building an inventory database. We will start from a blank slate and show how you can rapidly iterate as you model your domain.
+
+Example data is shown in this tutorial in the Extensible Data Notation.
+
+If you have followed the Getting Stared instructions in Clojure up through [Connect to a Database](../getting-started/connect-to-a-database.html), then you are already positioned at a REPL ready to go. If not, you will need to create a database and connect to it from the REPL per the [Get Datomic](../getting-started/get-datomic.html) and [Connect to a Database Instructions](../getting-started/connect-to-a-database.html).
+
+[Now let's get started](assertion.html).

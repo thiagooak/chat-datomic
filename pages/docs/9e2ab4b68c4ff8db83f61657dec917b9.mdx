@@ -1,0 +1,38 @@
+Defining Attributes
+===================
+
+Attributes are defined using the same data model used for application data. That is, attributes are themselves defined by entities with associated attributes.
+
+The following built-in attributes are required to define a new attribute:
+
+- `:db/ident`, a name that is unique within the database
+- `:db/cardinality`, specifying whether entities can have one or a set of values for the attribute
+- `:db/valueType`, the type allowed for an attribute's value
+
+In addition to these required attributes, there are many optional attributes that can be used to further define your attributes. For a full list of available built-in attributes, see the [Schema Data Reference](schema-reference.html).
+
+> Leading underscores are used for [reverse lookup in pull](../query/query-pull.html#reverse-lookup).
+> 
+> If your attribute has a leading underscore then you will not be able to use reverse lookup with that attribute.
+
+You define new attributes by submitting a data structure to Datomic as part of a transaction. All the required information for an attribute must be specified in a single transaction, after which the attribute will be immediately available for use.
+
+It is idiomatic to use the [transaction map](../transactions/transaction-data-reference.html#map-form) data structure to define attributes. The example below defines an attribute named `:person/name` of type `:db.type/string` with `:db.cardinality/one`that is intended to capture a person's name.
+
+```
+<pre class="src src-clojure">(<span style="color: #a020f0;">def</span> <span style="color: #0000ff;">name-schema</span>
+  [{<span style="color: #008b8b;">:db/ident</span> <span style="color: #008b8b;">:person/name</span>
+    <span style="color: #008b8b;">:db/valueType</span> <span style="color: #008b8b;">:db.type/string</span>
+    <span style="color: #008b8b;">:db/cardinality</span> <span style="color: #008b8b;">:db.cardinality/one</span>
+    <span style="color: #008b8b;">:db/doc</span> <span style="color: #8b2252;">"A person's name"</span>}])
+
+<span style="color: #b22222;">;; </span><span style="color: #b22222;">using a connection named conn:</span>
+(d/transact conn {<span style="color: #008b8b;">:tx-data</span> name-schema})
+
+<span style="color: #b22222;">;; </span><span style="color: #b22222;">now you can transact names</span>
+(d/transact conn {<span style="color: #008b8b;">:tx-data</span> [{<span style="color: #008b8b;">:person/name</span> <span style="color: #8b2252;">"Grace Hopper"</span>}]})
+```
+
+
+
+**Next:** [Schema Reference](schema-reference.html)

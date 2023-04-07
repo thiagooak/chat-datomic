@@ -1,0 +1,125 @@
+Supported Operations
+====================
+
+Datomic provides the following set of operations:
+
+- [catalog operations](#catalog-operations)
+- [ACID transactions](#acid-transactions)
+- [dynamic schema](#installing-schema)
+- [Datalog query and pull](#datalog)
+- [time operations](#time-operations)
+- [raw index access](#raw-indexes)
+- [deploy entire applications to Datomic with ions](../ions/ions.html)
+- [SQL analytics support](../analytics/analytics-concepts.html)
+
+Database Operations
+-------------------
+
+The Datomic Client API can [create, list, and delete databases](../client/client-api.html#catalog-operations).
+
+
+
+
+
+ACID Transactions
+-----------------
+
+Databases are [indelible](data-model.html#indelible), and all new information is added by fully serialized ACID transactions. The `transact` operation takes as its arguments
+
+- a connection to a database
+- a collection that can include raw assertions, raw retractions, and transaction functions for conditional operations.
+
+For example, to increase an item's price by 10%, you would pass a transaction function to `transact`, and two new datoms would be added to the database:
+
+- a retraction of the previous price
+- an assertion of the new price
+
+For more information, see [transactions](../transactions/transaction-data-reference.html).
+
+
+
+
+
+Installing Schema
+-----------------
+
+Schema attributes are ordinary entities in a database, and are added via ACID transactions just like any other data. Schema attributes must be defined in a transaction prior to any transaction that uses them.
+
+For more information, see [schema](../schema/defining-schema.html).
+
+
+
+
+
+Datalog
+-------
+
+Datomic's [query](../query/query-data-reference.html) and rules system is an extended form of Datalog. Datalog is a deductive query system, typically consisting of:
+
+- A database of facts
+- A set of rules for deriving new facts from existing facts
+- a query processor that, given some partial specification of a fact or rule: 
+    - finds all instances of that specification implied by the database and rules
+    - i.e. all the matching facts
+
+Typically a Datalog system would have a global fact database and set of rules. Datomic's query engine instead takes databases (or other data sources) as fact sources and rule sets as inputs.
+
+Datomic Datalog is simple, declarative, and logic-based.
+
+
+
+### Simple
+
+Datalog is simple. The basic component of Datalog is a clause, which is a list that either begins with the name of a rule, or is a data pattern. These clauses can contain variables (symbols beginning with a `?`). The query engine finds all combinations of values of the variables that satisfy all of the clauses. There is no complex syntax to learn.
+
+
+
+
+
+### Declarative
+
+Like SQL and other good query languages, Datalog is declarative. That is, you specify what you want to know and not how to find it. Declarative programs are:
+
+- More *evident* - it is easier to tell what their purpose is, both for programmers and stakeholders.
+- More readily optimized - the query engine is free to reorder and parallelize operations to a degree not normally taken on by application programs.
+- Simpler - and thus, more robust.
+
+
+
+
+
+### Logic-based
+
+Even SQL, while fundamentally declarative, still includes many operations that go beyond the query itself, like specifying joins explicitly. Because Datalog is based upon logical implication, joins are implicit, and the query engine figures out when they are needed.
+
+
+
+
+
+
+
+Time
+----
+
+Datomic is [indelible](data-model.html#indelible), remembering the history of all information. The `db` operation returns the current value of a database. This value can then be filtered:
+
+- the `as-of` operation filters a database back to a past point in time
+- the `since` operation filters a database to include only datoms after a point in time
+- the `history` operations returns an unfiltered view of all present and past information.
+
+Datomic transactions are reified, that is, transactions are themselves entities in a database. You can use `query` and `pull` to retrieve information about transactions associated with an entity. Or you can go in the opposite direction, retrieving datoms from transactions directly via the `tx-range` operation.
+
+For more information, see [time](../time/log.html).
+
+
+
+
+
+Raw Indexes
+-----------
+
+Datomic provides direct iteration on indexes. Most applications will not use this, and you should prefer instead the higher-level `query` and `pull` operations.
+
+The `datoms` operation can seek to a point in any index and iterate from there, and the `index-range` operation can provide a value range from the AVET index.
+
+For more information, see [indexes](../query/raw-index-access.html).

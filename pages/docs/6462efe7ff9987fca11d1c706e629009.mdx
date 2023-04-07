@@ -1,0 +1,84 @@
+Architecture Overview
+=====================
+
+A Datomic database stores a collection of facts. The facts in a database are immutable; once stored, they do not change. However, old facts can be superseded by new facts over time. The state of the database is a value defined by the set of facts in effect at a given moment in time.
+
+Datomic's data model - based on immutable facts stored over time - enables a physical design that is fundamentally different from other databases. Instead of processing all requests in a single server component, Datomic distributes read, write and query processing across different components.
+
+Datomic divides the traditional database model into independent roles:
+
+Peers
+-----
+
+The peer component is a library that gets embedded in the applications
+
+- Submits transactions to, and accepts changes from, the transactor
+- Includes all communication components for talking to transactors and storage services
+- Provides data access, caching, and query capability to the application, reading from the storage service as needed
+
+
+
+
+
+Clients
+-------
+
+The Client library can be used to connect lightweight processes to Datomic.
+
+- Submits transactions and queries to the Peer Server
+- Supports all query capabilities available to the Peer
+- Incurs none of the memory overhead of the full Peer library, does not perform local caching within the lightweight process
+- Can support non-JVM languages
+
+
+
+
+
+Peer Server
+-----------
+
+The Peer Server is a JVM process that provides an interface for the Datomic Client library.
+
+- Accepts queries and transactions from Datomic Clients
+- Submits transactions to, and accepts changes from, the transactor
+- Provides data access, caching, and query capability to connected Clients, reading from the storage service as needed
+
+
+
+
+
+Transactors
+-----------
+
+- Accept transactions
+- Process them serially
+- Commit the results to the storage service
+- all writes are synchronously made to redundant storage
+- Transmit changes to the peers
+- Index in the background, place indexes in storage service
+
+
+
+
+
+Storage services
+----------------
+
+- Provide an interface to highly reliable, redundant storage
+- Available from third-parties (e.g. Amazon DynamoDB is a supported storage service)
+
+![clientarch_orig.svg](../images/clientarch_orig.svg)
+
+
+
+In a Datomic-based system, your application (or a part of your application) is a Peer. A Peer is a process that manipulates a database using the Datomic Peer library. Any process can be a Peer - from Web server processes that host sites or services, to a daemon, GUI application or command-line tool. The Datomic-specific application code you write runs in your Peer(s).
+
+Peers read facts from the Storage Service. The facts the Storage Service returns never change, so Peers do extensive caching. Each Peer's cache represents a partial copy of all the facts in the database. The Peer cache implements a least-recently used policy for discarding data, making it possible to work with databases that won't fit entirely in memory. Once a Peer's working set is cached, there is little or no network traffic for reads.
+
+Peers write new facts by asking the Transactor to add them to the Storage Service. The Transactor processes these requests using ACID transactions, ensuring they succeed or fail atomically and do not interfere with one another. The Transactor notifies all Peers about new facts so that they can add them to their caches.
+
+Peers can query and access data locally using a database value. Database values are constructed when code in a Peer requests them. By default, a database value is constructed from the most recent set of facts a Peer has. However, it is also possible to construct a valuefor a database at a particular moment in the past by using the facts stored as of that time. This is possible because old facts are immutable, remaining unchanged over time. Database values share underlying data structures, differing only as much as is necessary to represent changes. This structural sharing makes building new database values very efficient in terms of both time and space.
+
+The ability to query and access data locally has a profound effect on the code in a Peer. Query results are directly accessible as simple data structures. There is no need to deal with the command and resultset abstractions common to most traditional database APIs, nor the object-relational mapping layers intended to hide them. A simple group of functions that encapsulates building and executing queries and transactions is sufficient.
+
+Peer code can use a given database value for an extended period of time without concern. Values are immutable and provide a stable, consistent view of data for as long as a Peer needs one. This is a marked difference from relational databases which require work to be done quickly using a short-lived transaction. The code in a Peer can also access multiple database values simultaneously, making it possible to use different values to process different requests, and to compare values from different points in time.

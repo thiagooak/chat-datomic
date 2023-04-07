@@ -1,0 +1,25 @@
+Datomic Properties Files
+========================
+
+Example property files are in the config/samples directory of the Datomic distribution.
+
+Reading Properties Files
+------------------------
+
+Each property has a comment describing its use, plus one or more of the tags below:
+
+property tagmeaningrequiredno reasonable default, you must set this propertydefaultedsetup will default this property for yougeneratedsetup will generate a unique value for youoptionalproperty is not required
+
+
+
+Understanding "Ensure" Commands
+-------------------------------
+
+Some datomic command names start with "ensure", e.g. "ensure-transactor" and "ensure-cf". Ensure commands work as follows:
+
+- Take at least two property file arguments: input and output
+- Attempt to save a valid, complete properties file in output
+- Can apply defaults and provision new objects
+- Report anything short of "ready to go" as errors on the console
+
+Ensure commands are idempotent. Calling an ensure command on a complete, valid properties file is a no-op, and will produce an output file identical to the input file.

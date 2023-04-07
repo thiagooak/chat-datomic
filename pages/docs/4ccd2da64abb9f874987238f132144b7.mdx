@@ -1,0 +1,262 @@
+Monitoring and Performance
+==========================
+
+This page covers
+
+- general tuning tips for Datomic
+- integrating [custom](#custom) monitoring
+- [configuring](#configuring) CloudWatch monitoring
+- a list of [available metrics](#available-cloudwatch-metrics)
+- responding to [alarms](#alarms)
+- [internal monitoring](#internal-monitoring)
+
+Metric names are identified in the text by surrounding square brackets, e.g. *\[TransactionMsec\]*. Each reported value of a metric can include up to five different statistics, which are capitalized where they appear in the text: Samples, Average, Minimum, Maximum, and Sum.
+
+![monitoring.svg](../images/monitoring.svg)
+
+
+
+Tuning Tips
+-----------
+
+
+
+### Give your peers and transactor enough memory
+
+You can set the maximum memory available to a JVM process with the *-Xmx* flag to java (or to bin/transactor). The more memory you give a process, the more database index it will be able to cache locally in memory, avoiding trips to memcached or storage.
+
+
+
+
+
+### Use memcached
+
+Memcached is a [great fit for Datomic](https://blog.datomic.com/2012/07/memcache.html). Read more about configuring memcached in the [Caching documentation](../overview/caching.html).
+
+
+
+
+
+### Give memcached enough memory
+
+Memcached can deliver data to peers with very low latency (on the order of 1 millisecond for a segment). If you can fit your entire database (or even the commonly-used working set) in memcached, your read and query performance will be quite good.
+
+Diagnostic: If your *\[Memcache\]* Average is substantially less than 1.0, then you can serve more reads from memcache by increasing the size of your memcached cluster.
+
+
+
+
+
+### Add more peers
+
+Datomic read and query is horizontally scalable. If you can't serve as many simultaneous queries as you like, add more peers.
+
+
+
+
+
+### Add more cores
+
+Datomic's entire public API is threadsafe, and is designed to automatically take advantage of multiple cores where available. Having more cores will help any Datomic process, transactor or peer.
+
+
+
+
+
+### Don't benchmark against the memory database
+
+The memory database is a convenience for development, testing, and temp data. Memory is not good for storage-sized datasets, as memory isn't storage-sized.
+
+
+
+
+
+### Provision enough DynamoDB capacity
+
+See the DynamoDB section of [Capacity Planning](../operation/capacity.html).
+
+
+
+
+
+### Run large imports on cheap storage, then backup/restore
+
+[Restoring](./backup.html) a database consumes significantly less write capacity than building the database via transactions. So if your target system has metered storage pricing (e.g. DynamoDB), it may make sense to do large import jobs on less expensive storage, backup, and then restore to the target storage.
+
+
+
+
+
+### Use metrics to analyze write activity
+
+The speed with which a Datomic transactor can write data is measured with the *\[TransactionMsec\]* metric. The minimum, average, and maximum values of this metric, combined with the size of your transactions, characterize the write latency of the system from the transactor's perspective. (To measure write latency from a peer or client's perspective, instrument your code to measure the time from when [transact](../javadoc/datomic/Connection.html#transact-java.util.List-) is called until the transaction future is realized.)
+
+The *\[TransactionBytes\]* Samples metric, again combined with the size of your transactions, characterizes the write throughput of the system. Note that to achieve maximum throughput you will need to pipeline transactions, i.e. arrange to have multiple transactions in flight at the same time.
+
+
+
+
+
+
+
+Custom Monitoring
+-----------------
+
+You can integrate custom monitoring in both transactors and peers by registering a callback. The callback must be on the JVM process's classpath, so you will need to modify your deployment to e.g. include any necessary JARs and resources in the transactor's *lib* directory of the standard transactor.
+
+Callbacks are registered via the *datomic.metricsCallback* Java system property in the peer or transactor, or via the *metrics-callback*setting in the transactor properties file.
+
+
+
+### Register callback on the transactor
+
+Register the callback for the transactor in the properties file:
+
+```
+<pre class="example" id="orgadef389">
+metrics-callback=my.ns/handler
+```
+
+
+
+
+
+### Register callback on the peer
+
+Register the callback for the peer with the command line argument:
+
+```
+<pre class="example" id="org087e467">
+-Ddatomic.metricsCallback=my.ns/handler
+```
+
+
+
+
+
+### Java callbacks
+
+Java callbacks must be static public methods, taking a single *Object*argument, named as my.pkg.CallbackClass.handler, e.g.
+
+```
+<pre class="src src-sh">metrics-callback=my.pkg.CallbackClass.handler
+```
+
+
+
+
+
+
+
+### Clojure callbacks
+
+Clojure callbacks must be functions that can take a single argument, named as my.ns/handler, e.g.
+
+```
+<pre class="src src-sh">metrics-callback=my.ns/handler
+```
+
+
+
+
+
+
+
+### Callback argument format
+
+The callback argument format is alpha, and is subject to change. Currently, the argument is a map with keyword keys, and either number or map values. If the value is itself a map, it will contain *:lo*, *:hi*, *:sum*, and *:count* components, all with numeric values.
+
+The example below shows `:HeatbeatMsec` with a map value, and `:AvailableMB` with a numeric value.
+
+```
+<pre class="src src-clojure">{<span style="color: #008b8b;">:HeartbeatMsec</span> {<span style="color: #008b8b;">:lo</span> 5000, <span style="color: #008b8b;">:hi</span> 5001, <span style="color: #008b8b;">:sum</span> 55009, <span style="color: #008b8b;">:count</span> 11}, <span style="color: #008b8b;">:AvailableMB</span> 921.0}
+```
+
+
+
+The metrics are the same as those reported to CloudWatch. Note that the set of metrics is dynamic, open, and subject to change over time. A correct callback implementation should be tolerant of
+
+- metric names it has never seen before
+- metric values in either of the shapes documented above, regardless of what shapes it has seen previously
+
+
+
+
+
+
+
+Configuring CloudWatch Monitoring
+---------------------------------
+
+The Datomic Pro transactor can be configured to write metrics to [CloudWatch](https://aws.amazon.com/cloudwatch/). You can find instructions for setting up CloudWatch [here](../overview/aws.html#s3-log-storage).
+
+
+
+
+
+Use CloudWatch from Anywhere!
+-----------------------------
+
+Note that you can use CloudWatch with any Datomic Pro transactor, regardless of which storage you are using, and regardless of where your transactor is located. Instructions for configuring CloudWatch for storages other than DynamoDB can be found [here](../overview/aws.html#other-storages).
+
+
+
+
+
+Available CloudWatch Metrics
+----------------------------
+
+
+
+### Transactor metrics
+
+The Datomic Pro transactor can create at least the following CloudWatch metrics, and may create others as well.
+
+MetricUnitsStatisticDescriptionAlarmcountsuma problem has occurred (see alarms table below)AvailableMBMBminimumunused RAM on transactorClusterCreateFSmsecmaximumtime to create a "file system" in the storageCreateEntireIndexMsecmsecmaximumtime to create index, reported at end of indexing jobCreateFulltextIndexMsecmsecmaximumtime to create fulltext portion of indexDatomscountmaximumnumber of unique datoms in the indexDBAddFulltextMsecmsecsumtime per transaction, to add fulltextFulltextSegmentscountsumtotal number of fulltext segments in the index, per index jobGarbageSegmentscountsumtotal number of garbage segments createdHeartbeatMsecmsecavgtime spacing of heartbeats written by active transactorHeartbeatMsecmsecsamplesnumber of heartbeats written by active transactorHeartbeatMsecmsecmaximumlongest spacing between heartbeats written by active transactorHeartMonitorMsecmsecmin, avg, maxtime spacing of heartbeats observed by standby transactorIndexDatomscountmaximumnumber of datoms stored by the index, all sortsIndexSegmentscountmaximumtotal number of segments in the indexIndexWritescountsumnumber of segments written by indexing job, reported at endIndexWriteMsecmsecsumtime per index segment writeLogIngestBytesbytesmaximumin-memory size of log when a database sizeLogIngestMsecmsecmaximumtime to play log back when a database startLogWriteMsecmsecsumthe time to write to log per transaction batchMemcachecountavgmemcache hit ratio, from 0 (no hits) to 1 (all hits)Memcachecountsumtotal number of cache hits for memcacheMemcachecountsamplestotal number of requests to memcacheMemoryIndexMBMBmaximumMB of RAM consumed by memory indexMetricReportcountsumCount of successful metrics report writes over a 1 min periodObjectCachecountavgobject cache hit ratio, from 0 (no hits) to 1 (all hits)ObjectCachecountsumtotal number of requests to object cacheMemcachedPutMsecmsecmin, avg, maxdistribution of successful memcache put latenciesMemcachedPutFailedMsecmsecmin, avg, maxdistribution of failed memcache put latenciesRemotePeerscountmaximumnumber of remote peers connectedStorageBackoffmsecmaximumworst case time spent in backoff/retry around calls to storageStorageBackoffmsecsamplesnumber of times a storage operation was retriedStorage{Get,Put}Bytesbytessumthroughput of storage operationsStorage{Get,Put}Bytesbytessamplescount of storage operationsStorage{Get,Put}Msecmsecmin, avg, maxdistribution of storage latenciesTransactionBatchcountsumtransactions per batch written to storageTransactionBytesbytessumvolume of transaction data to log, peersTransactionBytesbytessamplesnumber of transactionsTransactionBytesbytesmin, avg, maxdistribution of transaction sizesTransactionDatomscountsumdatoms per transactionTransactionMsecmsecmin, avg, maxdistribution of transaction latenciesValcachecountavgValcache hit ratio, from 0 (no hits) to 1 (all hits)Valcachecountsumtotal number of cache hits for ValcacheValcachecountsamplestotal number of requests to ValcacheValcachePutMsecmsecmin, avg, maxdistribution of successful valcache put latenciesValcachePutFailedMsecmsecmin, avg, maxdistribution of failed valcache put latenciesWriterMemcached   
+
+
+
+### Metrics outside of AWS
+
+If you're analyzing metrics through your own custom callback, or manually calculating statistics from the log, you may need to take additional steps to interpret metrics. The most common case is producing your own average by dividing a *sum* value for a metric by its *count* value.
+
+
+
+
+
+### Example using memcache
+
+If you're looking at *memcache* metrics outside of AWS, you would interpret it as follows:
+
+- *count* is the number of requests to memcached.
+- *sum* is the total number of hits.
+- You would manually calculate misses as *count* minus *sum*.
+- You would manually calculate your hit rate as *sum* divided by *count*, producing, e.g., a value like 0.95.
+
+
+
+
+
+
+
+Alarms
+------
+
+Cloudwatch allows you to create alarms when a Cloudwatch metric's value it outside of a predetermined range for a defined time period. Alarms can then send a notification to a pager or email, or trigger an Auto Scaling action to expand or contract some resource.
+
+Datomic transactors have a **metric** named *\[Alarm\]*. This metric indicates that something has gone wrong on a transactor, and that human intervention is likely to be necessary. When deploying Datomic in production, you should create a Cloudwatch alarm that notifies you if the Datomic *\[Alarm\]* count is ever nonzero.
+
+Each Datomic *\[Alarm\]* is accompanied by a more specific metric whose name is prefixed with *\[Alarm\]*. You can use these more specific alarms to plan your response to the problem, as shown in the table below.
+
+AlarmRecommended ActionAlarmIndexingJobFailedcheck for storage problemsAlarmBackPressurelet import finish, increase [capacity](../operation/capacity.html)AlarmUnhandledExceptioncontact Datomic supportAlarm{AnythingElse}contact Datomic support
+
+
+
+Internal Monitoring
+-------------------
+
+Metrics and events not documented above are *internal* to Datomic. Internal monitoring is implementation-specific, and subject to change at any time. You should not build systems that rely on internal monitoring. Please ask at the [knowledgbase](https://ask.datomic.com) and we will help you find an alternative approach.
+
+The descriptions of internal metrics and events below are provided for informational purposes only.
+
+*AlarmStorageSemaphoreTimeout* is an internal metric that occurs after a bounding timeout reading or writing storage. *AlarmStorageSemaphoreTimeout* can occur if Datomic is waiting tens of seconds to hear back from a storage call, and will likely correlate with spikes in [documented metrics](#transactor-metrics) such as *StorageGetMsec* or *StoragePutMsec*. After an *AlarmStorageSemaphoreTimeout*, check for problems in storage or the network between a Datomic process and storage.

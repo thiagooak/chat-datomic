@@ -1,0 +1,161 @@
+Legacy Storage Services
+=======================
+
+The storage services on this page are supported only for Enterprise customers. If you are setting up Datomic, use one of [these storage services](../overview/storage.html) instead.
+
+Provisioning Riak
+-----------------
+
+Riak is supported only on Datomic versions up to 1.0.6242, inclusive.
+
+Using Riak as a storage requires both a Riak cluster and a ZooKeeper cluster. If you already have either of these running, you can use the ones you have. Each Datomic system needs its own bucket in the Riak cluster. Datomic uses unique paths for its ZooKeeper nodes (starting with /datomic), so will not clash with other keys.
+
+To setup ZooKeeper, follow the [directions](https://zookeeper.apache.org/doc/r3.4.11/zookeeperStarted.html) on the ZooKeeper site. These notes are just a checklist to help you make sure you covered everything.
+
+- get zookeeper from the [zookeeper site](https://zookeeper.apache.org/releases.html)
+- edit config files, give instances running on same box (e.g. for dev) different ports
+- each instance needs a cfg file with section referencing all cluster members like this:
+    
+    server.1=127.0.0.1:2888:3888 server.2=127.0.0.1:2889:3889 server.3=127.0.0.1:2890:3890
+- autopurge is ok
+- put a 'myid' file (containing e.g. 1, 2 or 3) in zk data dir of each instance
+- start each instance (e.g. bin/zkServer.sh start conf/zooNNN.cfg)
+
+To setup Riak, follow the [directions](https://docs.riak.com/riak/latest/tutorials/fast-track/) on the Basho site.
+
+After starting the Riak cluster, you need to choose a bucket name for your Datomic system, and add an entry to that bucket named config\\zookeeper (note backslash) that describes your zookeeper cluster (as a string of host:port,host:port,…):
+
+- curl -v -d "127.0.0.1:2181,127.0.0.1:2182,127.0.0.1:2183" -H "Content-Type: text/plain; charset=utf-8" `http://127.0.0.1:8098/riak/bucketname/config\\zookeeper?dw=2`
+- simply adding this entry will create the bucket - that's ok, we like the defaults (e.g. N=3)
+
+Next, setup your transactor properties file:
+
+- Copy the *config/samples/riak-transactor-template.properties* file to another location and give it a new name, for instance, *riak-transactor.properties*
+- set the entries for riak-host and riak-bucket. You might want to set riak-host to point to a load balancer in order to distribute the workload on the cluster.
+- if you are running in Riak's single-box reldev mode, you will need to set the riak-port (since that mode does not use the standard ports, e.g. it will use port 8081/2/3/4 for protocol buffers). Otherwise, do not set it and Datomic will use the default port for the interface you choose.
+- Datomic will use the protocol buffers interface for communication with Riak by default. You can set the riak-interface entry to select http, https or protobuf explicitly. Only select https if you already have riak configured with appropriate certificates and can connect to it with a riak or HTTP client, e.g., curl. See the [Riak docs](https://docs.riak.com/riak/latest/ops/advanced/riak-control/)for more information.
+
+Add dependencies for [Riak Client](https://docs.riak.com/riak/latest/dev/using/libraries/) and [Apache Curator Framework](https://curator.apache.org).
+
+In a maven based build, add the following snippet to the dependencies section of your pom.xml:
+
+```
+<pre class="src src-xml"><<span style="color: #0000ff;">dependency</span>>
+  <<span style="color: #0000ff;">groupId</span>>com.riak.riak</<span style="color: #0000ff;">groupId</span>>
+  <<span style="color: #0000ff;">artifactId</span>>riak-client</<span style="color: #0000ff;">artifactId</span>>
+  <<span style="color: #0000ff;">version</span>>VERSION</<span style="color: #0000ff;">version</span>>
+</<span style="color: #0000ff;">dependency</span>>
+
+<<span style="color: #0000ff;">dependency</span>>
+  <<span style="color: #0000ff;">groupId</span>>org.apache.curator</<span style="color: #0000ff;">groupId</span>>
+  <<span style="color: #0000ff;">artifactId</span>>curator-framework</<span style="color: #0000ff;">artifactId</span>>
+  <<span style="color: #0000ff;">version</span>>VERSION</<span style="color: #0000ff;">version</span>>
+</<span style="color: #0000ff;">dependency</span>>
+```
+
+
+
+In a leiningen project, add the following to the dependencies section of your project.clj:
+
+```
+<pre class="src src-clojure"><span style="color: #b22222;">;; </span><span style="color: #b22222;">in collection under :dependencies key</span>
+[com.riak.riak/riak-client <span style="color: #8b2252;">"VERSION"</span>]
+[org.apache.curator/curator-framework <span style="color: #8b2252;">"VERSION"</span>]
+```
+
+
+
+Install the license key as described [here](../overview/storage.html#install-license) and you are ready to go.
+
+If you are accessing Riak via HTTPS, you must provide a Java [TrustStore](https://docs.oracle.com/cd/E21454_01/html/821-2544/cnfg_ssl-overview_c.html) for the transactor to use when connecting to storage. The TrustStore must contain one or more certificates that can be used to verify the identity of the storage node(s) the transactor is connecting to. You must also provide a Java KeyStore that the transactor will use to establish an SSL connection with peers. You specify the TrustStore and KeyStore using the standard Java system properties:
+
+```
+<pre class="src src-sh">bin/transactor -Djavax.net.ssl.trustStore=path-to-truststore
+-Djavax.net.ssl.trustStorePassword=password-for-truststore
+-Djavax.net.ssl.keyStore=path-to-keystore
+-Djavax.net.ssl.keyStorePassword=password-for-keystore my-transactor.properties
+```
+
+
+
+
+
+### Troubleshooting Riak
+
+The following error message indicates that the transactor or peer cannot communicate with the storage nodes. Verify that you can connect to the storage nodes using other tools; for instance a Cassandra cqlsh. Also verify that the TrustStore contains the certificates necessary for connecting to the storage nodes.
+
+Typical error message when unable to connect to Riak via HTTPS:
+
+```
+<pre class="src src-java"><span style="color: #008b8b;">javax</span>.<span style="color: #008b8b;">net</span>.<span style="color: #008b8b;">ssl</span>.<span style="color: #008b8b;">SSLPeerUnverifiedException</span>: peer <span style="color: #228b22;">not</span> <span style="color: #a0522d;">authenticated</span>
+```
+
+
+
+
+
+
+
+
+
+Provisioning Couchbase
+----------------------
+
+Using Couchbase as a storage requires a Couchbase cluster. If you already have one running, you can use the one you have. Each Datomic system needs its own bucket in the Couchbase cluster.
+
+To install Couchbase, follow the [directions](https://www.couchbase.com/downloads) on the Couchbase site. Note that if you are running on a Mac you might want to up the maxfiles limit in /etc/launchd.conf. (e.g. with an entry like: limit maxfiles 10000 100000)
+
+Start the Couchbase cluster and use their UI to create a bucket for your Datomic system.
+
+Next, setup your transactor properties file:
+
+- Copy the *config/samples/couchbase-transactor-template.properties* file to another location and give it a new name, for instance, *couchbase-transactor.properties*
+- set the entries for couchbase-host and couchbase-bucket. You can choose any member of the cluster, the peers will discover the other cluster members through that.
+- if you set a password on the bucket, set couchbase-password accordingly
+
+Install the license key as described [here](../overview/storage.html#install-license) and you are ready to go.
+
+
+
+
+
+Provisioning Infinispan memory cluster
+--------------------------------------
+
+The steps to provision an [Infinispan](https://www.jboss.org/infinispan) memory cluster as your Storage Service are:
+
+- download Infinispan
+- configure a namedCache
+- launch with hotrod
+
+There are scripts and configuration files for the last two steps in Datomic distribution's *bin/inf* directory.
+
+The scripts need to know where Infinispan is installed. Export the location as an environment variable:
+
+```
+<pre class="src src-sh"><span style="color: #483d8b;">export</span> <span style="color: #a0522d;">ISPN_HOME</span>=<path to infinispan install directory>
+```
+
+
+
+The *start-mem.sh* script launches a single node memory cache described by the *infinispan-mem.xml* config file.
+
+```
+<pre class="src src-sh">bin/inf/start-mem.sh
+```
+
+
+
+The *start-mem-3.sh* script launches a three node memory cache described the by the *infinispan-mem-distributed-(1|2|3).xml* config files.
+
+```
+<pre class="src src-sh">bin/inf/start-mem-3.sh
+```
+
+
+
+In both cases, all the infinispan processes run locally. For a production environment, run the *startServer.sh* script directly (see the other scripts for arguments) to launch nodes on separate servers.
+
+You can use the *listall.sh* and *killall.sh* scripts to list and shutdown all infinispan processes on a server, respectively.
+
+Now you are ready to [install your license key](../overview/storage.html#install-license).

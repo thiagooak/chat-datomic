@@ -1,0 +1,80 @@
+Setup
+=====
+
+To create a Datomic Cloud system:
+
+- [setup your AWS account](../operation/account-setup.html)
+- [create a master stack](#create-system)
+
+These tasks need only be performed once, by an [AWS administrator](https://docs.aws.amazon.com/IAM/latest/UserGuide/getting-started_create-admin-group.html).
+
+If you want to try Datomic locally without incurring AWS expense, you can install [dev-local](../dev-local.html) first.
+
+Create Master Stack
+-------------------
+
+This section contains instructions for starting a master stack system with defaults suitable for quickly getting started with Datomic. If you are an experienced AWS user or are starting a production system, you should follow the more detailed and flexible [split stack](../operation/new-system.html) instructions.
+
+Follow these steps from the [ Datomic listing on AWS Marketplace](https://aws.amazon.com/marketplace/pp/prodview-otb76awcrb7aa):
+
+1. Click **Continue to Subscribe**.
+2. Click the **Continue to Configuration** Button in the top right.
+3. Choose the most recent version and an AWS Region from the drop down menus.
+4. Click the **Continue to Launch** button.
+5. Select "Launch CloudFormation" from the the drop down menu and click the **Launch** button.
+
+
+
+### "Specify Template" Screen
+
+1. Under "Choose a Template", select the "Specify an Amazon S3 template URL" option. The URL field will be pre-populated for you.
+2. Click the **Next** button
+
+
+
+
+
+### "Specify Stack Details" Screen
+
+The recommended parameter values for getting started are listed below. Note that you should make changes only to **Stack Name** and **AWS EC2 Key Pair**.
+
+Stack NameThis will be your system name. Choose a name of up to 23 lowercase ASCII characters, numbers, and/or hyphens.Reuse existing storageAccept the default "false".Instance TypeAccept the default "t3.small".AWS EC2 Key PairAWS Marketplace requires that you [specify a key pair](../operation/account-setup.html#ec2-keypair). This can be any key pair you like and will not be used by Datomic itself.Application NameLeave this blank.Environment MapAccept the default "{:env :dev-or-prod}".Preload DatabaseLeave this blank.Metrics LevelAccept the default ["Default"](../operation/growing-your-system.html#instance-size-defaults)Auto Scaling ConfigurationDesired capacityAccept the default ["Default"](../operation/growing-your-system.html#instance-size-defaults).Minimum instancesAccept the default ["Default"](../operation/growing-your-system.html#instance-size-defaults).Maximum instancesAccept the default ["Default"](../operation/growing-your-system.html#instance-size-defaults).Minimum number of instances during updateAccept the default ["Default"](../operation/growing-your-system.html#instance-size-defaults).API GatewaysClient APIAccept the default "yes".IonsAccept the default "yes".VPCVPC CIDR blockAccept the default.First, Second, and Third CIDR Blocks.Accept the defaults.Existing IAM managed policy for instancesLeave blank.Click the **Next** button.
+
+
+
+
+
+### "Configure Stack options" Screen
+
+1. Leave the default settings
+2. Click the **Next** button.
+
+
+
+
+
+### "Review" Screen
+
+1. Under "Capabilities", click the checkbox stating "I acknowledge that AWS CloudFormation might create IAM resources with custom names." You may need to scroll down.
+2. Click the checkbox stating "I acknowledge that AWS CloudFormation might create IAM resources with custom names."
+3. Click the checkbox stating "I acknowledge that AWS CloudFormation might require the following capability: `CAPABILITY_AUTO_EXPAND`"
+4. Click "Create" to launch the stack.
+
+
+
+
+
+### Wait for Stack
+
+After you create a master stack, CloudFormation will create your Datomic system. This can take up to 25 minutes. You can refresh the CloudFormation dashboard to follow the stack's progress, which should end with `CREATE_COMPLETE`.
+
+
+
+
+
+
+
+Next Steps
+----------
+
+If you are trying Datomic for the first time, a good next step is the [Client API Tutorial](../tutorial/client.html).

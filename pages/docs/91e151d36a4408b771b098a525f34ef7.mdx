@@ -1,0 +1,198 @@
+Database Functions
+==================
+
+You can deploy code to a Datomic system by installing [database functions](#database-function-basics) into a Datomic database, or by adding [classpath functions](#classpath-functions)to the Java classpath. Both database functions and classpath functions can be used as [transaction functions](#transaction-functions) that run inside a transaction to enforce arbitrary data invariants.
+
+Database Functions
+------------------
+
+Datomic supports functions as first-class values in the database. This simple yet powerful facility enables:
+
+- Atomic transformation functions in transactions
+- Integrity checks and constraints
+- Predicates and generative functions for queries
+- Database-driven dynamic code distribution to peers
+- and much more - your imagination is the limit!
+
+There is a [video](https://www.youtube.com/watch?v=8fY687k7DMA) introducing database functions, and the Day of Datomic project includes [several examples](https://github.com/Datomic/day-of-datomic/blob/master/resources/day-of-datomic/clojure-data-functions.edn).
+
+
+
+### Create a function
+
+You can write database functions in Java or Clojure. A database function may have up to 10 arguments. You can programmatically create a database function by first creating a map with information about the function - its language, parameters and code, then supplying this map to the Peer.function() method. Alternatively, you can embed a function definition in a transaction script by using the #db/fn{…} literal, which tags a similar map. All database functions take and return Objects.
+
+Database functions will need any dependencies declared. When database functions are installed, you can optionally provide two keyword parameters, :imports and :requires, for Clojure dependencies. For Java dependencies, the method body set for :code may begin with one or more import statements. This functionality is documented in the [Clojure API](../clojure/index.html#datomic.api/function)and the [javadoc](../javadoc/datomic/Peer.html#function-java.util.Map-).
+
+
+
+
+
+### Installing a function
+
+You install a function by adding it as an attribute of an entity. There is already an attribute of the correct (:db.type/fn) type - :db/fn. Normally you will also add a :db/ident attribute on the function entity to serve as its name, as well as a :db/doc string. When a function is added to the database, its language and code are stored.
+
+
+
+
+
+### Using functions
+
+The function object that you get from calling Peer.function() is the same thing that you will get when retrieving the :db/fn attribute. It is an object that will implement datomic.functions.Fn, as well as the one of datomic.functions.FnN matching its arity. In addition, for Clojure users, it will implement clojure.lang.IFn. This object will dynamically compile itself the first time it is invoked. Subsequent calls will be as fast as any compiled Java code - *the calls are neither interpreted nor reflective*. To invoke a function, simply call invoke() on it. You can call database functions written in either language from any JVM language with interop support.
+
+
+
+
+
+### Cancel
+
+[`datomic.api/cancel`](../clojure/index.html#datomic.api/cancel) cancels the current Datomic query or transaction, and throws an ex-info with an [anomaly](https://github.com/cognitect-labs/anomalies) to the original caller.
+
+`cancel` requires a map with the key `:cognitect.anomalies/category`, which has valid values of:
+
+- `:cognitect.anomalies/incorrect`
+- `:cognitect.anomalies/conflict`
+
+When `:cognitect.anomalies/message` is provided, the message will be used as the Exception's detail message.
+
+All other keys should be namespace-qualified and all data passed to cancel must be either [transit](https://github.com/cognitect/transit-format)-serializable in client apis, or [fressian](https://github.com/Datomic/fressian/wiki)-serializable in peer.
+
+The example below uses a transaction function to ensure that users always have a `name` and `email`. The first transaction succeeds, but the second is canceled since `:address` is passed instead of `:email`.
+
+```
+<pre class="src src-clojure">(<span style="color: #a020f0;">def</span> <span style="color: #0000ff;">add-user-code</span>
+  '(<span style="color: #483d8b;">if</span> (<span style="color: #a0522d;">every?</span> umap [<span style="color: #008b8b;">:name</span> <span style="color: #008b8b;">:email</span>])
+     [{<span style="color: #008b8b;">:user/name</span> (<span style="color: #008b8b;">:name</span> umap)
+       <span style="color: #008b8b;">:user/email</span> (<span style="color: #008b8b;">:email</span> umap)}]
+     (datomic.api/cancel {<span style="color: #008b8b;">:cognitect.anomalies/category</span> <span style="color: #008b8b;">:cognitect.anomalies/incorrect</span>
+                          <span style="color: #008b8b;">:cognitect.anomalies/message</span> <span style="color: #8b2252;">"User map must contain :email and :name"</span>})))
+
+<span style="color: #b22222;">;; </span><span style="color: #b22222;">Install transaction function:</span>
+@(d/transact conn [{<span style="color: #008b8b;">:db/ident</span> <span style="color: #008b8b;">:add-user</span>
+                    <span style="color: #008b8b;">:db/fn</span> (d/function {<span style="color: #008b8b;">:lang</span> <span style="color: #8b2252;">"clojure"</span> <span style="color: #008b8b;">:params</span> '[db umap] <span style="color: #008b8b;">:code</span> add-user-code})}])
+
+<span style="color: #b22222;">;; </span><span style="color: #b22222;">Success:</span>
+@(d/transact conn [[<span style="color: #008b8b;">:add-user</span> {<span style="color: #008b8b;">:name</span> <span style="color: #8b2252;">"Marshall"</span> <span style="color: #008b8b;">:email</span> <span style="color: #8b2252;">"test@test.com"</span>}]])
+```
+
+
+
+```
+<pre class="src src-clojure">=> <span style="color: #b22222;">;; </span><span style="color: #b22222;">tx result map</span>
+<span style="color: #b22222;">;; </span><span style="color: #b22222;">Failure:</span>
+@(d/transact conn [[<span style="color: #008b8b;">:add-user</span> {<span style="color: #008b8b;">:name</span> <span style="color: #8b2252;">"Marshall"</span> <span style="color: #008b8b;">:address</span> <span style="color: #8b2252;">"test@test.com"</span>}]])
+```
+
+
+
+```
+<pre class="src src-clojure">=> <span style="color: #483d8b;">Execution</span> error (<span style="color: #483d8b;">ExceptionInfo</span>) at datomic.error/deserialize-exception (error.clj:175).
+<span style="color: #483d8b;">User</span> map must contain <span style="color: #008b8b;">:email</span> and <span style="color: #008b8b;">:name</span>
+```
+
+
+
+
+
+
+
+
+
+Classpath Functions
+-------------------
+
+A classpath function is an ordinary Clojure function added to the classpath of a Datomic peer or transactor. To add a classpath function for use by peers, use your ordinary classpath-building tools, e.g. tools.deps, leiningen, or maven.
+
+To add a classpath function for use by transactors, set the `DATOMIC_EXT_CLASSPATH` environment variable before launching the transactor, e.g. if you added your code in `mylibs/mylib.jar`:
+
+```
+<pre class="src src-example">export DATOMIC_EXT_CLASSPATH=mylibs/mylib.jar
+bin/transactor my-config.properties
+```
+
+
+
+
+
+
+
+Transaction Functions
+---------------------
+
+Datomic can invoke your functions as part of transaction processing. Functions written for this purpose are called *transaction functions*.
+
+
+
+### Creating and installing a transaction function
+
+Transaction functions must adhere to the following requirements:
+
+- Transaction functions must be pure functions, i.e. free of side effects.
+- A transaction function must expect to be passed a database value as its first argument. This is to allow transaction function to issue queries etc.
+- A transaction function must return transaction data in the same form as expected by Connection.transact().
+- If a transaction function throws an exception, Datomic will abort the entire transaction.
+
+
+
+
+
+### Using transaction functions
+
+A transaction function call is a vector whose first element is the name of the transaction function, and whose subsequent elements are the function's arguments.
+
+The following example installs and invokes a trivial database transaction function:
+
+```
+<pre class="src src-clojure"><span style="color: #b22222;">;; </span><span style="color: #b22222;">tx-data to install the function</span>
+[{<span style="color: #008b8b;">:db/ident</span> <span style="color: #008b8b;">:add-doc</span>
+  <span style="color: #008b8b;">:db/fn</span> (d/function
+                {<span style="color: #008b8b;">:lang</span> <span style="color: #8b2252;">"clojure"</span>
+                 <span style="color: #008b8b;">:params</span> '[db e doc]
+                 <span style="color: #008b8b;">:code</span> [[<span style="color: #008b8b;">:db/add</span> 'e <span style="color: #008b8b;">:db/doc</span> 'doc]]})}]
+
+<span style="color: #b22222;">;; </span><span style="color: #b22222;">tx-data to call the function</span>
+[[<span style="color: #008b8b;">:add-doc</span> <span style="color: #8b2252;">"foo"</span> <span style="color: #8b2252;">"this is foo's doc"</span>]]
+```
+
+
+
+The example below installs and invokes an equivalent classpath transaction function:
+
+```
+<pre class="src src-clojure"><span style="color: #b22222;">;; </span><span style="color: #b22222;">put this on the transactor's classpath</span>
+(<span style="color: #483d8b;">ns</span> my.fns)
+(<span style="color: #a020f0;">defn</span> <span style="color: #0000ff;">add-doc</span>
+  [db e doc]
+  [[<span style="color: #008b8b;">:db/add</span> e <span style="color: #008b8b;">:db/doc</span> doc]])
+
+<span style="color: #b22222;">;; </span><span style="color: #b22222;">and then put this tx-data in a transaction</span>
+[[my.fns/add-doc <span style="color: #8b2252;">"foo"</span> <span style="color: #8b2252;">"this is foo's doc"</span>]]
+```
+
+
+
+
+
+
+
+### Processing transaction functions
+
+The transaction processor will lookup the function in its :db/fn attribute, and then invoke it, passing the value of the db (currently, as of the beginning of the transaction), followed by the arguments - e.g. f.invoke(db, :foo, "this is foo's doc"). It will then take the result of the call (which is a list of transaction data), and 'splice' it into the transaction where the call was made. The result might contain several transaction entries, and some of them may be transaction function calls. The transaction processor will call these in turn, until the expansion consists only of :db/adds and :db/retracts.
+
+
+
+
+
+### Uses for transaction functions
+
+Transaction functions run on the transactor inside of transactions, and thus can atomically analyze and transform database values. You can use them to ensure atomic read-modify-update processing, and integrity constraints. (To abort a transaction, simply throw an [exception](../reference/exceptions.html#exceptions-in-transactor-functions)). If you frequently need to create entities with a particular 'shape' you can make constructor-like transaction functions. A transaction function can issue queries on the db value it is passed, and can perform arbitrary logic in the programming language. Note, however, that transaction functions must be pure functions and cannot be used to produce effects on the transactor.
+
+
+
+
+
+### Limitations of transaction functions
+
+- Transaction functions must be pure functions and cannot be used to produce effects on the transactor.
+- Transaction functions are serialized by design. To achieve best performance, limit the work of transaction functions to only things that require transaction-time access to the current value of the database.
+- [fressian](https://github.com/Datomic/fressian) serialization between tx and peer guarantees only the Java collection interfaces

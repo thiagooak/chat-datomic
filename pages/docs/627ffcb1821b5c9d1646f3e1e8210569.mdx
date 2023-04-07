@@ -1,0 +1,110 @@
+Storage Template
+================
+
+This page is a reference for the Datomic Cloud storage CloudFormation template. It is organized to follow the steps in CloudFormation's web interface for creating or updating a stack.
+
+- [Create or Update](#create-or-update)
+- [Specify template](#specify-template)
+- [Specify stack details](#specify-stack-details)
+- [Configure stack options](#configure-stack-options)
+- [Review](#review)
+- [Monitoring a template](#monitoring)
+
+Create or Update Stack
+----------------------
+
+To create a new storage stack, choose "Create stack (with new resources)". Then in the "Prepare template" section, choose "Template is ready".
+
+To upgrade to a newer template release, select an existing storage stack. Then chooose "Update Stack". In the "Prepare template" section, choose "Replace current template".
+
+After the initial choice of create or upgrade, the subsequent steps are similar.
+
+
+
+
+
+Specify template
+----------------
+
+Datomic CloudFormation templates are stored in S3. To specify a storage template:
+
+- Choose a template source of "Amazon S3 URL".
+- Set the Amazon S3 URL to the latest storage template: `<button class="copy-button" data-clipboard-text="https://s3.amazonaws.com/datomic-cloud-1/cft/990-9202/datomic-storage-990-9202.json" label="Copy to clipboard" title="copy CF URL to clipboard" type="button">CloudFormation Template 990-9202</button>`.
+
+
+
+
+
+Specify stack details
+---------------------
+
+CloudFormation stack details include the stack name and the stack parameters.
+
+
+
+### Stack Name
+
+The storage stack name is also the name of your Datomic system. You should choose system names that are shorter than 24 characters and that will make sense in compound names of the form "datomic-(system)-(resources)".
+
+
+
+
+
+### Parameters
+
+Storage stack parameters are named by a label in the CloudFormation UI, and by a parameter if you are reading the CloudFormation JSON:
+
+ParameterLabelValueRestartReuse Existing Storagetrue or falseVpcCidrBlockVPC CIDR Blocka CIDR blockSubnet0CidrBlockFirst Subnet CIDR Blocka CIDR blockSubnet1CidrBlockSecond Subnet CIDR Blocka CIDR blockSubnet2CidrBlockThird Subnet CIDR Blocka CIDR blockEach parameter is described below.
+
+
+
+
+
+### Restart
+
+The parameter `Restart` is labeled "Reuse Existing Storage" in the CloudFormation Template.
+
+A Datomic storage stack can either create storage resources or reuse existing resources, based on the value of `Restart`. Datomic automatically manages storage resources, so you must start new systems with `false` (the default).
+
+If you delete a Datomic storage stack, the underlying database storage is **not** deleted. You can recreate the storage stack later and continue using your data. If you are recreating a storage stack, (e.g. when splitting stacks) you must set `Restart` to `true`.
+
+
+
+
+
+### VPC Configuration Parameters
+
+VPC configuration pararemeters control the assignment of private IP addresses in the Datomic VPC. The Datomic VPC as a whole uses the `VpcCidrBlock`. Within the block, Datomic will allocate three subnets in separate availability zones. Each subnet has its own `Subnet{N}CidrBlock`, which must be non-overlapping subsets of the `VpcCidrBlock`.
+
+Datomic automatically creates and manages CIDR blocks for you. Datomic also manages gateways and load balancers so that you need never connect to (or even care about the addresses of) individual compute nodes. You should leave all VPC configuration parameters set to their defaults, unless you need [VPC peering](vpc-access.html#inter-vpc).
+
+
+
+
+
+
+
+Configure stack options
+-----------------------
+
+The "Configure stack options" screen has no Datomic-specific settings. You should use all the defaults.
+
+
+
+
+
+Review
+------
+
+The review step does two things. It shows you the choices you made in the previous steps, and it has a "Capabilities" section at the bottom where you must acknowledge the capabilities needed to run the stack.
+
+When starting a Datomic storage stack, you can simply scroll down to the Capabilities section, acknowledge the capabilities being used, and then create the stack.
+
+
+
+
+
+Monitoring a template
+---------------------
+
+After you create or update a storage stack, CloudFormation will create and/or update resources so that your stack matches the template. This can take up to 25 minutes. You can refresh the CloudFormation dashboard to follow the stack's progress, which should end with `CREATE_COMPLETE` or `UPDATE_COMPLETE`.

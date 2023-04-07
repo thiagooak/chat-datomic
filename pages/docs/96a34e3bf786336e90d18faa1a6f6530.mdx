@@ -1,0 +1,88 @@
+Querying on Byte Array Attributes
+=================================
+
+The equality semantics of byte arrays in Java are those of identity, not value, equality. This can be confusing when using byte arrays in datalog queries, since datalog queries match using value equality semantics. Consider the following example.
+
+First we do some setup, creating a simple schema with just one byte array attribute:
+
+```
+<pre class="src src-clojure">(<span style="color: #a0522d;">require</span> '[datomic.api <span style="color: #008b8b;">:as</span> d <span style="color: #008b8b;">:refer</span> [db q]])
+
+(<span style="color: #a020f0;">def</span> <span style="color: #0000ff;">uri</span> <span style="color: #8b2252;">"datomic:mem://bytes"</span>)
+(d/create-database uri)
+(<span style="color: #a020f0;">def</span> <span style="color: #0000ff;">conn</span> (d/connect uri))
+
+<span style="color: #b22222;">;; </span><span style="color: #b22222;">Load simple schema</span>
+@(d/transact conn [{<span style="color: #008b8b;">:db/id</span>                 #db/id[<span style="color: #008b8b;">:db.part/db</span>]
+                    <span style="color: #008b8b;">:db/ident</span>              <span style="color: #008b8b;">:some-bytes</span>
+                    <span style="color: #008b8b;">:db/valueType</span>          <span style="color: #008b8b;">:db.type/bytes</span>
+                    <span style="color: #008b8b;">:db/cardinality</span>        <span style="color: #008b8b;">:db.cardinality/one</span>
+                    <span style="color: #008b8b;">:db.install/_attribute</span> <span style="color: #008b8b;">:db.part/db</span>}])
+```
+
+
+
+Next, a few entities with two byte arrays with different object identities but equivalent values:
+
+```
+<pre class="src src-clojure">(<span style="color: #a020f0;">def</span> <span style="color: #0000ff;">bytes-1</span> (<span style="color: #a0522d;">byte-array</span> (<span style="color: #a0522d;">map</span> byte [1 2 3])))
+(<span style="color: #a020f0;">def</span> <span style="color: #0000ff;">bytes-2</span> (<span style="color: #a0522d;">byte-array</span> (<span style="color: #a0522d;">map</span> byte [1 2 3])))
+
+@(d/transact conn [{<span style="color: #008b8b;">:db/id</span>      (d/tempid <span style="color: #008b8b;">:db.part/user</span>)
+                    <span style="color: #008b8b;">:some-bytes</span> bytes-1}
+                   {<span style="color: #008b8b;">:db/id</span>      (d/tempid <span style="color: #008b8b;">:db.part/user</span>)
+                    <span style="color: #008b8b;">:some-bytes</span> bytes-2}])
+```
+
+
+
+Clojure's clojure{(=)} function called with these two byte arrays as arguments:
+
+```
+<pre class="src src-clojure">(<span style="color: #a0522d;">=</span> bytes-1 bytes-2)
+```
+
+
+
+```
+<pre class="src src-clojure">=> false
+```
+
+
+
+returns false. Therefore running the query:
+
+```
+<pre class="src src-clojure">(q '[<span style="color: #008b8b;">:find</span> ?e
+     <span style="color: #008b8b;">:in</span> $ ?bytes
+     <span style="color: #008b8b;">:where</span> [?e <span style="color: #008b8b;">:some-bytes</span> ?bytes]]
+   (db conn)
+   (<span style="color: #a0522d;">byte-array</span> (<span style="color: #a0522d;">map</span> byte [1 2 3])))
+```
+
+
+
+```
+<pre class="src src-clojure">=> #{}
+```
+
+
+
+returns the empty set.
+
+Using java.util.Arrays/equals to test for equality, instead of datalog's built-in matching returns the expected result:
+
+```
+<pre class="src src-clojure">(q '[<span style="color: #008b8b;">:find</span> ?e
+     <span style="color: #008b8b;">:in</span> $ ?bytes
+     <span style="color: #008b8b;">:where</span> [?e <span style="color: #008b8b;">:some-bytes</span> ?sbytes]
+     [(<span style="color: #483d8b;">java.util.Arrays/equals</span> <span style="color: #228b22;">^bytes</span> ?sbytes <span style="color: #228b22;">^bytes</span> ?bytes)]]
+   (db conn)
+   (<span style="color: #a0522d;">byte-array</span> (<span style="color: #a0522d;">map</span> byte [1 2 3])))
+```
+
+
+
+```
+<pre class="src src-clojure">=> #{[17592186045418] [17592186045419]}
+```

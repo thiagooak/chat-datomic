@@ -1,0 +1,31 @@
+Outer Joins
+===========
+
+In the relational database world, outer joins allow you to return relations even when data is missing from one side of a join. For example, you might want all of the [mbrainz](https://github.com/Datomic/mbrainz-importer#readme) artists and their start years, including artists who do not even have a start year.
+
+In Datomic, you can find the entities you want with [datalog](../query/query-data-reference.html), and then make an independent decision about which details you want to [pull](../query/query-pull.html). The following example uses query to find the artists, and then plugs in a pull pattern to get both the artist name and start year:
+
+```
+<pre class="src src-clojure">(<span style="color: #a020f0;">def</span> <span style="color: #0000ff;">find-expr</span> '[<span style="color: #008b8b;">:find</span> (pull ?e details-expr)
+                 <span style="color: #008b8b;">:in</span> $ details-expr
+                 <span style="color: #008b8b;">:where</span> [?e <span style="color: #008b8b;">:artist/name</span>]])
+(<span style="color: #a020f0;">def</span> <span style="color: #0000ff;">details-expr</span> [<span style="color: #008b8b;">:artist/name</span> <span style="color: #008b8b;">:artist/startYear</span>])
+(d/q find-expr db details-expr)
+```
+
+
+
+The query/pull separation also makes it easy to reuse query and pull logic independently.
+
+Datomic also includes the [get-else query function](../query/query-data-reference.html#get-else), which is closer to a literal outer join in that you can reference a possibly-missing attribute in directly in datalog, specifying an alternate value when the attribute is missing. The example below replaces a missing start year with "Unknown".
+
+```
+<pre class="src src-clojure">[<span style="color: #008b8b;">:find</span> ?e ?name ?year
+ <span style="color: #008b8b;">:where</span>
+ [?e <span style="color: #008b8b;">:artist/name</span> ?name]
+ [(get-else $ ?e <span style="color: #008b8b;">:artist/startYear</span> <span style="color: #8b2252;">"Unknown"</span>) ?year]]
+```
+
+
+
+You can see the [full code](https://github.com/cognitect-labs/day-of-datomic-cloud/blob/master/doc-examples/outer_join.clj) for this example in the [Day of Datomic Cloud repo](https://github.com/cognitect-labs/day-of-datomic-cloud#readme).

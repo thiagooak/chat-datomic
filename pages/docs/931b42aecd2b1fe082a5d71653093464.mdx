@@ -1,0 +1,51 @@
+Connecting
+==========
+
+This page covers:
+
+- [connecting to the access gateway](#connect)
+- [testing the analytics connection](#test)
+
+Prerequisites
+-------------
+
+This page assumes that an administrator has already:
+
+- [started a Datomic System](../getting-started/start-system.html)
+- [configured user access](../getting-started/configure-access.html)
+- [configured analytics](analytics-configuring.html)
+
+Before you connect, you need to:
+
+- Install the [AWS CLI](../operation/howto.html#install-cli) version 1.11.170 or greater.
+- Install the [Datomic CLI Tools](../operation/cli-tools.html)
+- Configure a shell environment with [AWS access keys](../operation/howto.html#aws-access-keys) for Datomic
+- Know the [region and name](../operation/howto.html#system-name) of the Datomic System you want to connect to
+
+
+
+
+
+Connecting
+----------
+
+Use the [datomic tools](../operation/cli-tools.html#analytics) to create an analytics connection, passing in the arguments `analytics` and your Datomic [system name](../operation/howto.html#system-name).
+
+```
+<pre class="example" id="orgbb96664">
+datomic analytics access <system-name>
+```
+
+
+
+
+
+Testing Your Connection
+-----------------------
+
+You should test your analytics connection in two different ways:
+
+- Browse to the analytics dashboard by visiting [localhost:8989](http://localhost:8989) in a web browser. You should see a monitoring dashboard.
+- Install the [SQL CLI](analytics-cli.html) and use it to validate your configuration.
+
+Once you have verified your connection via the dashboard and the SQL CLI, you can explore your data from the CLI or setup and run the [analytics tools](analytics-tools.html) of your choice.

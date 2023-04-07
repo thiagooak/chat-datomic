@@ -1,0 +1,131 @@
+Writing a Problem Report
+========================
+
+Datomic is a database, so problem reports about Datomic tend to be about putting data in, getting data out, or both. This guide will help you turn unexpected Datomic behavior into a reproducible problem report.
+
+Anatomy of a Report
+-------------------
+
+A reproducible problem report (hereafter just "report") contains the following elements:
+
+- **Environment**: the context in which the problem occured. This needs to include everything necessary for a third party to reconstruct the environment.
+- **History**: the steps to go from a starting environment to the moment a problem occurs
+- **Expectation**: what you expected to happen
+- **Actual**: what actually happened
+- **Evidence**: how you know what actually happened
+- **Impact**: what are the effects and severity of the problem?
+
+A report is also noticeable for what it does **not** contain:
+
+- Analysis
+- Attempts to assign causes and effects
+- Recommended courses of action
+- Judgment! (this is the correct pre-analytic posture, and it will also improve the mood of your colleagues)
+
+Obviously analysis is important too, but when you are reporting try to stay in "just the facts" mode. As Sherlock Holmes says, "It is a capital mistake to theorize before one has data. Insensibly one begins to twist facts to suit theories, instead of theories to suit facts."
+
+> Note that we are carefully avoiding the use of the word "bug"! We save "bug" for problems where we have a hypothesis, a reproducing test, and a fix.
+
+
+
+
+
+Writing a Good Report
+---------------------
+
+When you first encounter a problem, you are typically in the middle of something bigger. To write a good report, you must winnow that bigger thing down to something that is both concise and precise. Concision here is about the number of steps: If your problem history contains N&gt;1 steps, you should search for a problem history with fewer steps until you have the smallest number of steps that still reproduce.
+
+Precision is how completely you specify each step. Ideally, you will provide the exact data for each step. If you attempt to describe the data (instead of just enumerating it) it is very easy to introduce presumptions that generalize the problem in ways not (yet) supported by the evidence.
+
+Resist this.
+
+
+
+
+
+A Mediocre Report is Better than Nothing
+----------------------------------------
+
+Writing a good report takes time and care, especially if you are thorough about describing the environment and steps. There is a cost-benefit tradeoff, and it may be optimal to write a not-very-good report! In particular, the "what actually happened" portion of a report may be enough, all by itself, for an expert to immediately have a good hypothesis, before you incur the cost of carefully enumerating the environment and steps.
+
+Creating a good report is an iterative process. It is always ok to start with a minimal report and solicit feedback about what details to add next. As long as your report is descriptive and not judgment-laden, you will usually find that other developers are happy to help.
+
+
+
+
+
+Error Messages and Exceptions
+-----------------------------
+
+Error messages and stack traces have a bad reputation among developers and end users alike, but they are your best friends when you are creating a problem report.
+
+If an error message helps you understand a problem, that's great! But if not, remember a second function of error messages is that they are keys that point back to specific places in source code somewhere. Record them literally in problem reports, never summarize them, and you help developers quickly narrow the search space as they chase down your problem.
+
+Stacktraces are even better. They capture a moment in the execution of a program, showing a developer exactly where to look. Record them literally in problem reports, never summarize them, and you are showing developers *exactly* where they should look *first*. (And second, and third, and so on up the stack!)
+
+
+
+
+
+Clojure and Datomic Make Reporting Easy
+---------------------------------------
+
+Clojure and Datomic are particularly well suited to problem reporting, for three reasons.
+
+1. **everything** is immutable data: including queries, transactions, and database values. So program state has a direct data representation, without the need for complex and error prone recipes for getting the system into the state where the problem occurs.
+2. Clojure programs are made of **generic** data. Domain entities are represented as plain maps, lists, strings, etc. This eliminates the need for complex and error-prone "domain object" or "model" code. In other words, it is easy to simplify Datomic problem reports to a small number of operations with generic, immutable data because that is what Datomic programs already look like.
+3. Clojure programs are [dynamic and programmable](https://clojure.org/about/dynamic). When you are homing in a problem, you can sit inside your program at a REPL, quickly [carving out the parts of the program](https://youtu.be/Qx0-pViyIDU?t=1718s) that are irrelevant to the problem at hand.
+
+
+
+
+
+Getting Concise
+---------------
+
+Reports should include only the steps necessary to trigger the problem. In particular, they typically will **not** include:
+
+- test frameworks
+- (in)convenience wrapper libraries
+- build automation
+- dev tools
+
+In fact, the "reduce the problem steps idea" should by applied not just to steps, but also to dependencies. If you don't think a library is part of the problem, [it should not be in the report](https://www.youtube.com/watch?v=FihU5JxmnBg&t=1792s). (Taking this from the opposite direction, most Datomic problem reports should, after iteration, include an environment that depends only on Datomic.)
+
+Here are some specific tips for how to make a Clojure or Datomic repro more concise and precise.
+
+
+
+
+
+Clojure Tips
+------------
+
+- Functions should depend on their arguments, not on data in top-level defs.
+- Try to reduce or eliminate control flow. If the repro branches, can you eliminate some branches entirely.
+- Try to minimize the number of namespaces your repro depends on.
+
+
+
+
+
+Datomic Tips
+------------
+
+- The state preceding a problem should generally be represented as a single database value (or the transaction data to build a value).
+- Try to call `d/db` only once in the steps of a problem report.
+- Give every function in a problem report a doc string that explains the function's purpose, inputs, and outputs.
+- Naming the nouns is just as important as naming the verbs. Put query and transaction data in vars, and give them good names.
+- Every Datomic API call in a repro should either contribute to the problem or be removed from the repro. (If this sounds like I am just restating the earlier point I made about reducing the number of steps in a repro, you are damn right I am! This mechanical exercise alone would probably redirect or eliminate half of all problem reports.)
+- Datomic is a distributed system, with many potential processes: transactors, peers, clients, storage services, cluster nodes. When you describe environment and steps for a problem, be specific about which process(es) you are describing.
+- If your repro involves more than one process, try to shrink it repro down to a single process, with either [dev-local](https://docs.datomic.com/cloud/dev-local.html) (for client applications) or an [in-memory database](https://docs.datomic.com/on-prem/peer/peer-getting-started.html#connecting) (for peer applications).
+
+
+
+
+
+Additional Resources
+--------------------
+
+- [Why Programs Fail](https://www.elsevier.com/books/why-programs-fail/zeller/978-0-08-092300-0) is the book to read if you are debugging software.
+- The [Debugging with the Scientific Method](https://www.youtube.com/watch?v=FihU5JxmnBg) talk includes several Clojure and Datomic examples.

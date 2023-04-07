@@ -1,0 +1,368 @@
+Transaction Data Reference
+==========================
+
+Datomic represents transaction requests as [data structures](../whatis/edn.html). This is a significant difference from SQL databases, where requests are submitted as strings. Using data instead of strings makes it easier to build requests programmatically.
+
+Transaction Grammar
+-------------------
+
+
+
+### Syntax
+
+```
+<pre class="example" id="orgfbff894">
+'' literal
+"" string
+[] = list or vector
+{} = map {k1 v1 ...}
+() grouping
+| choice
+? zero or one
++ one or more
+```
+
+The symbols `keyword`, `string`, `boolean`, `instant`, `uuid`, `long`, `bigint`, `float`, `double`, and `bigdec` are the [primitive value types](../schema/schema-reference.html#db-valuetype) supported by datomic.
+
+
+
+
+
+### Grammar
+
+```
+<pre class="example" id="orgb4ccb8b" linkedtable="true"><span><a href="#tx-data">tx-data</a><span>      = [list-form | map-form]+</span><br></br><a href="#list-form">list-form</a><span>    = ([op n-identifier identifier value] | 
+               [tx-fn tx-fn-arg*])</span><br></br><a href="#map-form">map-form</a><span>     = {keyword (value | map-form | [map-form])}</span><br></br><a href="#op">op</a><span>           = (':db/add' | ':db/retract')</span><br></br><a href="#entity-identifiers">n-identifier</a><span> = (identifier | tempid)</span><br></br><a href="#tempids">tempid</a><span>       = string</span><br></br><a href="#identifier">identifier</a><span>   = eid | lookup-ref | ident</span><br></br><a href="#eid">eid</a><span>          = nat-int</span><br></br><a href="#lookup-ref">lookup-ref</a><span>   = [identifier value]</span><br></br><a href="#ident">ident</a><span>        = keyword</span><br></br><a href="#value">value</a><span>        = (string | keyword | boolean | ref | instant | uuid | number)</span><br></br><a href="#entity-identifiers">ref</a><span>          = n-identifier</span><br></br><span>number</span><span>       = (long | bigint | float | double | bigdec)</span><br></br><a href="#Transaction%20Functions">db-fn</a><span>        = identifier</span><br></br><a href="#Transaction%20Functions">classpath-fn</a><span> = qualified symbol</span><br></br><a href="#Transaction%20Functions">tx-fn-arg</a><span>    = (value | [value] | {value value})</span><br></br><a href="#Transaction%20Functions">tx-fn</a><span>        = db-fn | classpath-fn</span><br></br></span>
+```
+
+
+
+
+
+
+
+Tx Data
+-------
+
+```
+<pre class="example" id="orged10c1b">
+tx-data                    = [list-form | map-form]+
+```
+
+Transaction data is a list of list forms or map forms.
+
+
+
+
+
+List Form
+---------
+
+```
+<pre class="example" id="org892fb81">
+list-form                  = ([op n-identifier identifier value] |
+                              [tx-fn tx-fn-arg*])
+```
+
+Each list in a transaction represents one of
+
+- addition
+- retraction
+- invocation of a transaction function
+
+
+
+### Example List Forms
+
+```
+<pre class="src src-clojure">[<span style="color: #008b8b;">:db/add</span> <span style="color: #8b2252;">"John"</span> <span style="color: #008b8b;">:user/last-name</span> <span style="color: #8b2252;">"Doe"</span>]
+[<span style="color: #008b8b;">:db/retract</span> <span style="color: #8b2252;">"John"</span> <span style="color: #008b8b;">:user/last-name</span> <span style="color: #8b2252;">"Doe"</span>]
+[<span style="color: #008b8b;">:db/cas</span> <span style="color: #8b2252;">"my-account"</span> <span style="color: #008b8b;">:account/balance</span> + 10]
+```
+
+
+
+
+
+
+
+
+
+Map Form
+--------
+
+```
+<pre class="example" id="org3a41265">
+map-form                   = {keyword (value | map-form | [map-form])}
+```
+
+The map form provides a compact representation for multiple assertions about a single entity. Each map form is equivalent to a set of one or more `:db/add` operations. Map forms may include the special `:db/id` key to specify the entity identifier that the assertions are about.
+
+
+
+### Example Map Form
+
+For example, the following map form:
+
+```
+<pre class="src src-clojure">{<span style="color: #008b8b;">:order/id</span> <span style="color: #8b2252;">"X-001"</span>
+ <span style="color: #008b8b;">:order/line-items</span> [{<span style="color: #008b8b;">:item/sku</span> <span style="color: #8b2252;">"SKU-7"</span> <span style="color: #008b8b;">:item/count</span> 2}]
+```
+
+
+
+is equivalent to the following list forms:
+
+```
+<pre class="src src-clojure">[<span style="color: #008b8b;">:db/add</span> <span style="color: #8b2252;">"-42"</span> <span style="color: #008b8b;">:order/id</span> <span style="color: #8b2252;">"X-001"</span>]
+[<span style="color: #008b8b;">:db/add</span> <span style="color: #8b2252;">"-42"</span> <span style="color: #008b8b;">:order/line-items</span> <span style="color: #8b2252;">"-43"</span>]
+[<span style="color: #008b8b;">:db/add</span> <span style="color: #8b2252;">"-43"</span> <span style="color: #008b8b;">:item/sku</span> <span style="color: #8b2252;">"SKU-7"</span>]
+[<span style="color: #008b8b;">:db/add</span> <span style="color: #8b2252;">"-43"</span> <span style="color: #008b8b;">:item/count</span> 2] 
+```
+
+
+
+where "-42" and "-43" are tempids created by Datomic, and are guaranteed not to collide with any application tempids.
+
+
+
+
+
+
+
+Op
+--
+
+```
+<pre class="example" id="org370f70b">
+op                         = (':db/add' | ':db/retract')
+```
+
+The op is the first item of a list form, and it specifies whether the datoms is an assertion (`:db/add`), or a retraction (`:db/retract`).
+
+
+
+### Example Ops
+
+The following two transactions first assert that entity 42 likes pizza, then retracts this fact.
+
+```
+<pre class="src src-clojure"><span style="color: #b22222;">;; </span><span style="color: #b22222;">tx 1</span>
+[[<span style="color: #008b8b;">:db/add</span> 42 <span style="color: #008b8b;">:likes</span> <span style="color: #8b2252;">"pizza"</span>]]
+
+<span style="color: #b22222;">;; </span><span style="color: #b22222;">tx 2</span>
+[[<span style="color: #008b8b;">:db/retract</span> 42 <span style="color: #008b8b;">:likes</span> <span style="color: #8b2252;">"pizza"</span>]]
+```
+
+
+
+
+
+
+
+
+
+Entity Identifiers
+------------------
+
+```
+<pre class="example" id="org94ea2d9">
+n-identifier               = (identifier | tempid)
+tempid                     = string
+identifier                 = eid | lookup-ref | ident
+eid                        = nat-int
+lookup-ref                 = [identifier value]
+ident                      = keyword
+```
+
+Every datom is about an entity. There are three possible ways to identify an existing entity:
+
+- an [eid](#eid) for an entity that is already in the database
+- an [ident](#entity-identifiers) for an entity that has a `:db/ident`
+- a lookup ref for entity that has a unique attribute
+
+In transactions, there is a fourth option for identifying an entity that might not exist yet:
+
+- a [tempid](#tempids) for a new entity being added to the database
+
+
+
+
+
+Tempids
+-------
+
+```
+<pre class="example" id="org5f0e3f7">
+tempid                     = string
+```
+
+When you are adding data to a new entity, you identify it using a tempid. Datomic will convert tempids to entity ids when applying a transaction.
+
+A temporary id is simply a string. The content of the string does not matter to Datomic – it is used only as an opaque identifier. Datomic guarantees that multiple uses of the same tempid within a transaction will resolve to the same entity id.
+
+
+
+### Tempid example
+
+The following list forms use the tempid "foo" twice to indicate that two datoms are about the same entity.
+
+```
+<pre class="src src-clojure">[<span style="color: #008b8b;">:db/add</span> <span style="color: #8b2252;">"foo"</span> <span style="color: #008b8b;">:item/sku</span> <span style="color: #8b2252;">"sku-42"</span>]
+[<span style="color: #008b8b;">:db/add</span> <span style="color: #8b2252;">"foo"</span> <span style="color: #008b8b;">:item/description</span> <span style="color: #8b2252;">"Chandrian Repellant"</span>]
+```
+
+
+
+Datomic does not care what name you use for a tempid, but it is often convenient to use a string that uniquely identifies the entity within the domain. So the previous example might also be stated as:
+
+```
+<pre class="src src-clojure">[<span style="color: #008b8b;">:db/add</span> <span style="color: #8b2252;">"sku-42"</span> <span style="color: #008b8b;">:item/sku</span> <span style="color: #8b2252;">"sku-42"</span>]
+[<span style="color: #008b8b;">:db/add</span> <span style="color: #8b2252;">"sku-42"</span> <span style="color: #008b8b;">:item/description</span> <span style="color: #8b2252;">"Chandrian Repellant"</span>]
+```
+
+
+
+
+
+
+
+### Implicit Tempid
+
+If no *:db/id* value is specified in a transaction map form, Datomic will assign a unique tempid.
+
+For new entities, you only need to explicitly specify a temporary id if:
+
+- you want to [recover](transaction-processing.html#tempid-resolution) the assigned entity id from the transaction result
+- you need to refer to that entity elsewhere in the same transaction
+
+
+
+- <a id="implicit-tempid-example"></a>Implicit Tempid Example  
+    In the following example, "sku-42" is explicit so that the item and its occurrence in inventory can be linked. The "sku-43" entity occurs only once, so no explicit tempid is needed.
+    
+    ```
+    <pre class="src src-clojure">{<span style="color: #008b8b;">:db/id</span> <span style="color: #8b2252;">"sku-42"</span>
+     <span style="color: #008b8b;">:item/sku</span> <span style="color: #8b2252;">"sku-42"</span>
+     <span style="color: #008b8b;">:item/description</span> <span style="color: #8b2252;">"Chandrian Repellant"</span>}
+    {<span style="color: #008b8b;">:item/sku</span> <span style="color: #8b2252;">"sku-43"</span>
+     <span style="color: #008b8b;">:item/description</span> <span style="color: #8b2252;">"Iron Wheel"</span>}
+    {<span style="color: #008b8b;">:inventory/item</span> <span style="color: #8b2252;">"sku-42"</span>
+     <span style="color: #008b8b;">:inventory/count</span> 10}
+    ```
+
+
+
+
+
+Identifiers
+-----------
+
+```
+<pre class="example" id="org2e617ce">
+identifier                 = eid | lookup-ref | ident
+```
+
+An identifier uniquely identifies an entity within a single Datomic database. An identifier is either an [entity id](#eid), a [lookup-ref](#lookup-ref), or an [ident](#ident).
+
+
+
+
+
+Entity Ids
+----------
+
+```
+<pre class="example" id="orgc643d17">
+eid                        = nat-int
+```
+
+Datomic assigns an entity id (eid) to every entity, and this eid is stored in the e position of every datom. Entity ids are non-negative integers, but this is an implementation detail. Applications should treat entity ids as opaque identifiers.
+
+
+
+
+
+Lookup Refs
+-----------
+
+```
+<pre class="example" id="orga8e097b">
+lookup-ref                 = [identifier value]
+```
+
+A *lookup-ref* allows you to specify entities by their domain-unique identities. Inside a lookup-ref, the *identifier* names a [unique attribute](../schema/schema-reference.html#db-unique) in the database, and the value is a valid value for that attribute. For example, this lookup ref:
+
+```
+<pre class="src src-clojure">[<span style="color: #008b8b;">:person/email</span> <span style="color: #8b2252;">"joe@example.com"</span>]
+```
+
+
+
+identifies the entity with the *:person/email* value "joe@example.com".
+
+
+
+
+
+Idents
+------
+
+Idents are programmatic names that associate a keyword with an entity id. All idents for a database are interned and cached in memory on every Datomic compute node.
+
+To create an ident, add a `:db/ident` value for an entity. The transaction data below upserts four idents: `:red`, `:green`, `:blue`, and `:yellow`
+
+```
+<pre class="src src-clojure">[{<span style="color: #008b8b;">:db/ident</span> <span style="color: #008b8b;">:red</span>}
+ {<span style="color: #008b8b;">:db/ident</span> <span style="color: #008b8b;">:green</span>}
+ {<span style="color: #008b8b;">:db/ident</span> <span style="color: #008b8b;">:blue</span>}
+ {<span style="color: #008b8b;">:db/ident</span> <span style="color: #008b8b;">:yellow</span>}]
+```
+
+
+
+In a subsequent transaction, you can the use an ident instead of referring to an entity by name. The example below uses the `:yellow`instead of an entity id.
+
+```
+<pre class="src src-clojure">{<span style="color: #008b8b;">:db/doc</span> <span style="color: #8b2252;">"The submarine where we live"</span>
+ <span style="color: #008b8b;">:color</span> <span style="color: #008b8b;">:yellow</span>}
+```
+
+
+
+
+
+
+
+Values
+------
+
+```
+<pre class="example" id="org475fdca">
+value                      = (string | keyword | boolean | ref | instant | uuid | number)
+```
+
+The value type of a datom is dictated by its attribute's schema. The value types are defined and demonstrated in the [Schema Data Reference](../schema/schema-reference.html#db-valuetype).
+
+
+
+
+
+Transaction Functions
+---------------------
+
+```
+<pre class="example" id="orgf2b36d2">
+list-form                  = ([op n-identifier identifier value] |
+                              [tx-fn tx-fn-arg*])
+db-fn                      = identifier
+db-fn-arg                  = (value | [value] | {value value})
+```
+
+Transaction functions are code that is executed inside of a transaction. Transaction functions provide semantics beyond basic asserts or retracts; in particular they allow the data added in a transaction to be derived from the current value of the database.
+
+There are two kinds of transaction functions: *database functions* are loaded from the database, and *classpath functions* are loaded from the Java classpath.
+
+The set of database functions in Datomic Cloud is fixed, and is documented under [Built-In Transaction Functions](transaction-functions.html).
+
+You can [write your own classpath functions](transaction-functions.html#custom) and deploy them using [Ions](../ions.html).

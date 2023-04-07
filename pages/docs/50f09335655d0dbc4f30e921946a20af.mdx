@@ -1,0 +1,109 @@
+Moving To Cloud
+===============
+
+Datomic Cloud is ideal for greenfield projects where you need
+
+- quick and easy access to Datomic on AWS
+- more ops ability with less responsibility
+- graduated pay-as-you-go pricing
+
+> In order to take greatest advantage of AWS features, Cloud uses a storage format different from that used in On-Prem.
+> 
+> We are currently designing migration tools for users who want to move from On-Prem to Cloud, but these tools are not part of the initial release. If, after reviewing the differences outlined below, you want to migrate from On-Prem to Cloud, we want to [hear from you](mailto:support@cognitect.com), and help you plan.
+
+Similarities Between Cloud and On-Prem
+--------------------------------------
+
+The information model is what makes Datomic Datomic, and is entirely the same between Cloud and On-Prem. This includes
+
+- datoms, entities, and indexes
+- ACID transactions
+- the universal schema
+- Datalog query and structural pull
+- the indelible, accumulate only model of time
+- the database as a value
+
+
+
+
+
+Difference 1: AWS Integration
+-----------------------------
+
+Datomic Cloud is tightly integrated with AWS.
+
+This has three implications:
+
+- Greenfield Datomic apps on AWS should target Cloud
+- Datomic apps that do not run on AWS **must** target On-Prem
+- Existing Datomic apps on AWS can be ported to Cloud once the migration tools are available.
+
+
+
+
+
+Difference 2: Clients and Peers
+-------------------------------
+
+On-Prem supports client or peer access, while Cloud supports only client access.
+
+This has two implications:
+
+- Apps that target the client API are much easier to move between On-Prem and Cloud.
+- Apps that make heavy use of peer locality will require substantial alteration for Cloud.
+
+See [Clients and Peers](../overview/clients-and-peers.html) for more information.
+
+
+
+
+
+Difference 3: Ions
+------------------
+
+Datomic lets you run your code in process with your data. In On-Prem, this takes the form of [functions installed in a database](../reference/database-functions.html#database-function-basics), or [functions you add to the classpath](../reference/database-functions.html#classpath-functions).
+
+Datomic Cloud's tight AWS integration make this capability much more powerful. [Ions](https://docs.datomic.com/cloud/ions/ions.html) let you run your entire application on Datomic, with reproducible deployment, elastic autoscaling, and integration via AWS Lambda events and AWS API Gateway.
+
+
+
+
+
+Other Differences
+-----------------
+
+In each of the areas in the table below, we believe that the Cloud architecture can offer capabilities that will be superior to those currently in On-Prem:
+
+On-PremCloud (Future)user partition controlauto partitioning (now), partition routinglimited search capabilityCloudSearch integrationbyte array typeLOB typesThese and other differences are explained below.
+
+
+
+### Auto Partitioning
+
+The peer model supports two kinds of tempids: `#db/id` structures and strings. The client model supports only strings. This makes client drivers and client programs easier to write and use, and it eliminates partition control as a user-space concern.
+
+
+
+
+
+### Text Search
+
+On-Prem provides a limited text search capability that depends on keeping two index types (Datomic and Lucene) roughly in sync, despite the fact that the two kinds of indexing have different Big O time complexity. On Cloud, we recommend using CloudSearch, and are considering adding CloudSearch integration as an option in Datomic.
+
+
+
+
+
+### No Symbol Magic
+
+In an effort to transparently reach languages lacking a symbolic type, On-Prem will in some situations magically convert strings into symbolic types, e.g. ":hello" to `:hello`.
+
+Cloud does not perform this kind of magic, and client libraries are always responsible for mapping edn types to sensible language-local representations.
+
+
+
+
+
+### No Excision
+
+Cloud does not currently support Excision.

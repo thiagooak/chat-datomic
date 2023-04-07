@@ -1,0 +1,146 @@
+Transaction Functions
+=====================
+
+Built-In Transaction Functions
+------------------------------
+
+Datomic Cloud provides the following built-in transaction functions:
+
+
+
+### *:db/retractEntity*
+
+The *:db/retractEntity* function takes an entity id as an argument. It retracts all the attribute values where the given id is either the entity or value, effectively retracting the entity's own data and any references to the entity as well. Entities that are components of the given entity are also recursively retracted.
+
+The following example transaction data retracts two entities, specifying one of the entities by id, and the other by a [lookup ref](../transactions/transaction-data-reference.html#lookup-ref).
+
+```
+<pre class="src src-clojure">[[<span style="color: #008b8b;">:db/retractEntity</span> id-of-jane]
+ [<span style="color: #008b8b;">:db/retractEntity</span> [<span style="color: #008b8b;">:person/email</span> <span style="color: #8b2252;">"jdoe@example.com"</span>]]]
+```
+
+
+
+
+
+
+
+### *:db/cas*
+
+The *:db/cas* (compare-and-swap) function takes four arguments: an entity id, an attribute, an old value, and a new value. If the entity has the old value for attribute, then the new value will be asserted. Otherwise, the transaction will abort and throw an exception.
+
+You can use *nil* for the old value to specify that the new value should be asserted only if no value currently exists.
+
+The following example transaction data sets entity 42's *:account/balance* to 110, if and only if *:account/balance* is 100 at the time the transaction executes:
+
+```
+<pre class="src src-clojure">[[<span style="color: #008b8b;">:db/cas</span> 42 <span style="color: #008b8b;">:account/balance</span> 100 110]]
+```
+
+
+
+
+
+
+
+
+
+Custom Transaction Functions
+----------------------------
+
+You can use [Ions](../ions/ions.html) to deploy custom transaction functions. This simple yet powerful facility enables:
+
+- atomic transformation functions in transactions
+- integrity checks and constraints
+- spec-based validators
+- and much more - your imagination is the limit!
+
+Full source code for the examples below is available in the [ion-starter project](https://github.com/datomic/ion-starter).
+
+
+
+### Creating a Transaction Function
+
+Transaction functions have the following characteristics:
+
+- Transaction functions must be pure functions, i.e. free of side effects.
+- A transaction function must expect to be passed a database value as its first argument. This is to allow transaction function to issue queries, etc.
+- A transaction function must return transaction data, i.e. data in the same form as expected under the `:tx-data` key in `transact`.
+
+For example, the following transaction function finds the value of an `attr` of `entity`, and returns transaction data that adds `amount` to the value:
+
+```
+<pre class="src src-clojure">(<span style="color: #a020f0;">defn</span> <span style="color: #0000ff;">inc-attr</span>
+  <span style="color: #8b2252;">"Transaction function that increments the value of entity's card-1</span>
+<span style="color: #8b2252;">attr by amount, treating a missing value as 0."</span>
+  [db entity attr amount]
+  (<span style="color: #483d8b;">let</span> [m (d/pull db {<span style="color: #008b8b;">:eid</span> entity <span style="color: #008b8b;">:selector</span> [<span style="color: #008b8b;">:db/id</span> attr]})]
+    [[<span style="color: #008b8b;">:db/add</span> (<span style="color: #008b8b;">:db/id</span> m) attr (<span style="color: #a0522d;">+</span> (<span style="color: #483d8b;">or</span> (attr m) 0) amount)]]))
+```
+
+
+
+
+
+
+
+### Testing a Transaction Function
+
+You can test a transaction function interactively at the REPL or in a test suite. Given a database value, simply invoke the function:
+
+```
+<pre class="src src-clojure"><span style="color: #b22222;">;; </span><span style="color: #b22222;">get a connection from somewhere</span>
+(<span style="color: #a020f0;">def</span> <span style="color: #0000ff;">db</span> (d/db conn))
+
+(datomic.ion.starter/create-item db [<span style="color: #008b8b;">:inv/sku</span> <span style="color: #8b2252;">"SKU-42"</span>] <span style="color: #008b8b;">:large</span> <span style="color: #008b8b;">:green</span> <span style="color: #008b8b;">:hat</span>)
+```
+
+
+
+```
+<pre class="src src-clojure">=>
+[#<span style="color: #008b8b;">:inv</span>{<span style="color: #008b8b;">:sku</span> [<span style="color: #008b8b;">:inv/sku</span> <span style="color: #8b2252;">"SKU-42"</span>],
+       <span style="color: #008b8b;">:color</span> <span style="color: #008b8b;">:green</span>,
+       <span style="color: #008b8b;">:size</span> <span style="color: #008b8b;">:large</span>,
+       <span style="color: #008b8b;">:type</span> <span style="color: #008b8b;">:hat</span>}]
+```
+
+
+
+
+
+
+
+### Deploying a Transaction Function
+
+To deploy a transaction function:
+
+- Add the function's fully-qualified name under the `:allow` key in your [ion-config.edn file](../ions/ions-reference.html#ion-config). In the ion-starter project, this file is located at resources/datomic/ion-config.edn but in general it must be on the classpath.
+- [Push and deploy](../ions/ions-reference.html#push) the ion application to the primary compute group for your Datomic system.
+
+Now you can call the function from within a transaction.
+
+
+
+
+
+### Calling a Transaction Function
+
+Calls to your transaction functions are just ordinary transaction lists, with the fully-qualified name of the function followed by its arguments. You must leave out the first (database) argument, and Datomic will pass the transaction function the in-transaction value for the database automatically.
+
+For example:
+
+```
+<pre class="src src-clojure">(<span style="color: #a020f0;">def</span> <span style="color: #0000ff;">tx-data</span> ['(datomic.ion.starter/create-item [<span style="color: #008b8b;">:inv/sku</span> <span style="color: #8b2252;">"SKU-42"</span>] <span style="color: #008b8b;">:large</span> <span style="color: #008b8b;">:green</span> <span style="color: #008b8b;">:hat</span>)]
+(d/transact conn {<span style="color: #008b8b;">:tx-data</span> tx-data})
+```
+
+
+
+
+
+
+
+### Cancelling a Transaction Function
+
+[`cancel`](transaction-processing.html#cancel) can be used for cancelling a transaction function.

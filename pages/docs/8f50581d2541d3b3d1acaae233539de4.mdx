@@ -1,0 +1,956 @@
+Datomic Pull
+============
+
+Pull is a declarative way to make hierarchical (and possibly nested) selections of information about entities. Pull applies a *pattern*to a collection of entities, building a map for each entity. Pull is available
+
+- as a standalone [Java API](../javadoc/datomic/Database.html#pull-java.lang.Object-java.lang.Object-)
+- as a standalone [Clojure API](https://docs.datomic.com/on-prem/clojure/index.html#datomic.api/pull)
+- as a [find specification](query.html#find-specifications) in [query](query.html).
+
+Patterns support [forward](#attribute-names) and [reverse](#reverse-lookup) attribute navigation, [wildcarding](#wildcard-specifications), [nesting](#nesting), [recursion](#recursive-specifications), [naming control](#as-option), [defaults](#default-option), and [limits](#limit-option) on the results returned. Entities can be passed to pull by any kind of [entity identifier](../schema/identity.html#entity-identifiers): entity ids, idents, or lookup refs.
+
+Pull patterns are written in the [Extensible Data Notation](https://github.com/edn-format/edn) (edn), which is programming language neutral. In programs, you can create patterns programmatically out of your basic language data types, e.g. Java Strings, Lists, and Maps. Alternatively, you can pass the pattern argument as a serialized edn string.
+
+The results below are also written with edn, and they use an ellipsis `...` where large results have been elided for brevity.
+
+### Example Data
+
+The examples in this document use the [mbrainz 1968-1973 sample](https://s3.amazonaws.com/mbrainz/datomic-mbrainz-1968-1973-backup-2014-10-15.tar) set. Download and untar this file:
+
+```
+<pre class="src src-example">wget https://s3.amazonaws.com/mbrainz/datomic-mbrainz-1968-1973-backup-2014-10-15.tar -O mbrainz.tar
+tar -xvf mbrainz.tar
+bin/datomic restore-db file:///path/to/mbrainz-backup datomic:dev://localhost:4334/mbrainz-1968-1973
+```
+
+
+
+You can follow the examples in [Java](https://github.com/Datomic/datomic-java-examples/blob/master/src/java/datomic/samples/Pull.java) or [Clojure](https://github.com/Datomic/day-of-datomic/blob/master/tutorial/pull.clj) code.
+
+
+
+
+
+API
+---
+
+The pull API takes three arguments
+
+- a database
+- a pattern
+- an [entity identifier](../schema/identity.html#entity-identifiers)
+
+and returns a map of data about an entity as specified by the pattern. In object-oriented languages, the database argument will be the method target. In Java:
+
+```
+<pre class="src src-java">db.pull(<span style="color: #8b2252;">"[*]"</span>, <span style="color: #228b22;">ledZeppelin</span>);
+```
+
+
+
+In Clojure:
+
+```
+<pre class="src src-clojure">(pull db '[*] led-zeppelin)
+```
+
+
+
+The [pullMany API](../javadoc/datomic/Database.html#pullMany-java.lang.Object-java.util.List-)is similar, except that it takes a collection of entity identifiers, and returns a collection of maps. For example, in Clojure:
+
+```
+<pre class="src src-clojure">(pull-many db '[*] [led-zeppelin jimi-hendrix janis-joplin])
+```
+
+
+
+
+
+
+
+Pull Grammar
+------------
+
+
+
+### Grammar Syntax
+
+```
+<pre class="example" id="orga5ed6b1">
+'' literal
+"" string
+[] = list or vector
+{} = map {k1 v1 ...}
+() grouping
+| choice
++ one or more
+```
+
+
+
+
+
+### Pull Pattern Grammar
+
+```
+<pre class="example" id="org552fa87">
+pattern             = [attr-spec+]
+attr-spec           = attr-name | wildcard | map-spec | attr-expr
+attr-name           = an edn keyword that names an attr
+map-spec            = { ((attr-name | attr-expr) (pattern | recursion-limit))+ }
+attr-spec           = attr-name | wildcard | map-spec | attr-expr
+attr-expr           = [attr-name attr-option+] | legacy-attr-expr
+attr-option         = as-expr | limit-expr | default-expr
+as-expr             = [attr-name :as any-value]
+limit-expr          = [attr-name :limit (positive-number | nil)] 
+default-expr        = [attr-name :default any-value]
+wildcard            = "*" or '*'
+recursion-limit     = positive-number | '...'
+legacy-attr-expr    = legacy-limit-expr | legacy-default-expr
+legacy-limit-expr   = [("limit" | 'limit') attr-name (positive-number | nil)]
+legacy-default-expr = [("default" | 'default') attr-name any-value]
+```
+
+Terminals such as "limit" can be strings, but where languages have a symbol type you should prefer the idiomatic symbolic type, e.g. `(limit :friends 100)` in Clojure instead of `("limit" "friends" 100)`.
+
+
+
+
+
+
+
+Patterns
+--------
+
+A pattern is a list of Attribute Specifications.
+
+```
+<pre class="example" id="org6f7f191">
+pattern            = [attr-spec+]
+```
+
+
+
+
+
+Attribute Specifications
+------------------------
+
+```
+<pre class="example" id="org14eb136">
+attr-spec           = attr-name | wildcard | map-spec | attr-expr
+attr-expr           = [attr-name attr-option+] | legacy-attr-expr
+attr-option         = as-expr | limit-expr | default-expr
+wildcard            = "*" or '*'
+recursion-limit     = positive-number | '...'
+legacy-attr-expr    = legacy-limit-expr | legacy-default-expr
+legacy-limit-expr   = [("limit" | 'limit') attr-name (positive-number | nil)]
+legacy-default-expr = [("default" | 'default') attr-name any-value]
+```
+
+An attribute spec specifies an attribute to be returned, and (optionally) how that attribute should be returned. Attribute specs can be attribute names, wildcards, map specs, or attribute expressions.
+
+
+
+
+
+Attribute Names
+---------------
+
+```
+<pre class="example" id="org31b76f0">
+attr-name          = an edn keyword that names an attr
+```
+
+An attribute spec names an attribute, with an optional leading underscore on the local name to reverse the direction of navigation.
+
+
+
+### Attribute Name Example
+
+The following pattern uses two attribute names to return an `:artist/name`and `:artist/startYear`, pulling on *ledZeppelin*:
+
+```
+<pre class="src src-clojure">[<span style="color: #008b8b;">:artist/name</span> <span style="color: #008b8b;">:artist/gid</span>]
+```
+
+
+
+```
+<pre class="src src-clojure">=> {<span style="color: #008b8b;">:artist/gid</span> #uuid <span style="color: #8b2252;">"678d88b2-87b0-403b-b63d-5da7465aecc3"</span>, <span style="color: #008b8b;">:artist/name</span> <span style="color: #8b2252;">"Led Zeppelin"</span>}
+```
+
+
+
+
+
+
+
+### Reverse Lookup
+
+An underscore prefix (`\_`) on the local name component of an attribute name causes the attribute to be navigated in reverse.
+
+> Attribute names must not have a leading underscore. Attributes with a leading underscore can not be used with reverse lookup.
+
+
+
+
+
+### Attribute Name Reverse Lookup Example
+
+You navigate backwards from `:country/GB` to British artists by pulling `:artist/country`:
+
+```
+<pre class="src src-clojure">[<span style="color: #008b8b;">:artist/_country</span>]
+```
+
+
+
+```
+<pre class="src src-clojure">=> {<span style="color: #008b8b;">:artist/_country</span> [{<span style="color: #008b8b;">:db/id</span> 17592186045751} {<span style="color: #008b8b;">:db/id</span> 17592186045755} ...]}
+```
+
+
+
+
+
+
+
+
+
+Map Specifications
+------------------
+
+```
+<pre class="example" id="orgdf97370">
+map-spec           = { ((attr-name | limit-expr) (pattern | recursion-limit))+ }
+limit-expr         = [("limit" | 'limit') attr-name (positive-number | nil)]
+recursion-limit    = positive-number | '...'
+```
+
+You can explicitly specify the handling of referenced entities by using a map instead of just an attribute name. The simplest map specification is a map specifying a specific `pattern` for a particular `attr-name`.
+
+
+
+### Map Specification Example
+
+The `:track/artists` attribute appears in a map spec, causing the `:db/id` and `:artist/name` to be sub-pulled for each artist on the track *ghostRiders*:
+
+```
+<pre class="src src-clojure">[<span style="color: #008b8b;">:track/name</span> {<span style="color: #008b8b;">:track/artists</span> [<span style="color: #008b8b;">:db/id</span> <span style="color: #008b8b;">:artist/name</span>]}]
+```
+
+
+
+```
+<pre class="src src-clojure">=>
+{<span style="color: #008b8b;">:track/artists</span> [{<span style="color: #008b8b;">:db/id</span> 17592186048186, <span style="color: #008b8b;">:artist/name</span> <span style="color: #8b2252;">"Bob Dylan"</span>}
+                 {<span style="color: #008b8b;">:db/id</span> 17592186049854, <span style="color: #008b8b;">:artist/name</span> <span style="color: #8b2252;">"George Harrison"</span>}],
+ <span style="color: #008b8b;">:track/name</span> <span style="color: #8b2252;">"Ghost Riders in the Sky"</span>}
+```
+
+
+
+
+
+
+
+### Map Specification Nesting Example
+
+Map specs can nest arbitrarily. The pattern below pulls `concertForBanglaDesh`'s media's tracks' titles and artists' names:
+
+```
+<pre class="src src-clojure">[{<span style="color: #008b8b;">:release/media</span>
+    [{<span style="color: #008b8b;">:medium/tracks</span>
+        [<span style="color: #008b8b;">:track/name</span> {<span style="color: #008b8b;">:track/artists</span> [<span style="color: #008b8b;">:artist/name</span>]}]}]}]
+```
+
+
+
+```
+<pre class="src src-clojure">=>
+[{<span style="color: #008b8b;">:medium/tracks</span>
+ [{<span style="color: #008b8b;">:track/artists</span>
+     [{<span style="color: #008b8b;">:artist/name</span> <span style="color: #8b2252;">"Ravi Shankar"</span>} {<span style="color: #008b8b;">:artist/name</span> <span style="color: #8b2252;">"George Harrison"</span>}],
+     <span style="color: #008b8b;">:track/name</span> <span style="color: #8b2252;">"George Harrison / Ravi Shankar Introduction"</span>}
+ {<span style="color: #008b8b;">:track/artists</span> [{<span style="color: #008b8b;">:artist/name</span> <span style="color: #8b2252;">"Ravi Shankar"</span>}],
+     <span style="color: #008b8b;">:track/name</span> <span style="color: #8b2252;">"Bangla Dhun"</span>}]}
+  <span style="color: #008b8b;">:medium/tracks</span>
+    [{<span style="color: #008b8b;">:track/artists</span> [{<span style="color: #008b8b;">:artist/name</span> <span style="color: #8b2252;">"George Harrison"</span>}],
+        <span style="color: #008b8b;">:track/name</span> <span style="color: #8b2252;">"Wah-Wah"</span>}
+    {<span style="color: #008b8b;">:track/artists</span> [{<span style="color: #008b8b;">:artist/name</span> <span style="color: #8b2252;">"George Harrison"</span>}],
+        <span style="color: #008b8b;">:track/name</span> <span style="color: #8b2252;">"My Sweet Lord"</span>}
+    {<span style="color: #008b8b;">:track/artists</span> [{<span style="color: #008b8b;">:artist/name</span> <span style="color: #8b2252;">"George Harrison"</span>}],
+        <span style="color: #008b8b;">:track/name</span> <span style="color: #8b2252;">"Awaiting on You All"</span>}
+    {<span style="color: #008b8b;">:track/artists</span> [{<span style="color: #008b8b;">:artist/name</span> <span style="color: #8b2252;">"Billy Preston"</span>}],
+        <span style="color: #008b8b;">:track/name</span> <span style="color: #8b2252;">"That's the Way God Planned It"</span>}]
+            ...}    
+```
+
+
+
+
+
+
+
+
+
+Attribute Spec
+--------------
+
+```
+<pre class="src src-clojure">attr-spec           = attr-name | wildcard | map-spec | attr-expr
+attr-expr           = [attr-name attr-option+] | legacy-attr-expr
+attr-option         = as-expr | limit-expr | default-expr
+```
+
+
+
+The Attribute Specification provides control of various aspects of the values returned by the pull of an attribute.
+
+Note that the pattern appears in a seq. This necessitates that the whole clause be quoted or that the pattern is in a vector.
+
+
+
+
+
+:as Option
+----------
+
+```
+<pre class="src src-clojure">[attr-name <span style="color: #008b8b;">:as</span> any-value]
+```
+
+
+
+The `:as` option allows replacement of the key for an attribute result map with an arbitrary value.
+
+
+
+### :as Option Example
+
+The following pattern uses an :as option to pull an `:artist/name`, replacing the key in the result map with the string "Band Name", pulling on *ledZeppelin*:
+
+```
+<pre class="src src-clojure">[<span style="color: #008b8b;">:artist/name</span> <span style="color: #008b8b;">:as</span> <span style="color: #8b2252;">"Band Name"</span>]
+```
+
+
+
+```
+<pre class="src src-clojure">=> {<span style="color: #8b2252;">"Band Name"</span> <span style="color: #8b2252;">"Led Zeppelin"</span>}
+```
+
+
+
+
+
+
+
+
+
+:limit Option
+-------------
+
+```
+<pre class="src src-clojure">[attr-name <span style="color: #008b8b;">:limit</span> (positive-number | nil)]
+```
+
+
+
+The :limit option controls how many values will be returned for a cardinality-many attribute. A limit can be a positive number or nil. A nil limit causes all values to be returned, and should be used with caution.
+
+In the absence of an explicit limit, pull will return the first 1000 values for a cardinality-many attribute.
+
+
+
+### :limit Option Example
+
+To return only 10 of *ledZeppelin*'s tracks:
+
+```
+<pre class="src src-clojure">[<span style="color: #008b8b;">:artist/name</span> (<span style="color: #008b8b;">:track/_artists</span> <span style="color: #008b8b;">:limit</span> 10)]
+```
+
+
+
+```
+<pre class="src src-clojure">=>
+{<span style="color: #008b8b;">:artist/name</span> <span style="color: #8b2252;">"Led Zeppelin"</span>,
+ <span style="color: #008b8b;">:track/_artists</span>
+ [{<span style="color: #008b8b;">:db/id</span> 17592186057344}
+  {<span style="color: #008b8b;">:db/id</span> 17592186057345}
+  {<span style="color: #008b8b;">:db/id</span> 17592186057346}
+  {<span style="color: #008b8b;">:db/id</span> 17592186057347}
+  {<span style="color: #008b8b;">:db/id</span> 17592186057348}
+  {<span style="color: #008b8b;">:db/id</span> 17592186057349}
+  {<span style="color: #008b8b;">:db/id</span> 17592186057350}
+  {<span style="color: #008b8b;">:db/id</span> 17592186057351}
+  {<span style="color: #008b8b;">:db/id</span> 17592186057352}
+  {<span style="color: #008b8b;">:db/id</span> 17592186057355}]}
+```
+
+
+
+
+
+
+
+### :limit Inside a Map Specification Example
+
+Pulling from *ledZeppelin*', you can get a limited set of nested track names with:
+
+```
+<pre class="src src-clojure">[{(<span style="color: #008b8b;">:track/_artists</span> <span style="color: #008b8b;">:limit</span> 10) [<span style="color: #008b8b;">:track/name</span>]}]
+```
+
+
+
+```
+<pre class="src src-clojure">=>
+{<span style="color: #008b8b;">:track/_artists</span>
+ [{<span style="color: #008b8b;">:track/name</span> <span style="color: #8b2252;">"Whole Lotta Love"</span>}
+  {<span style="color: #008b8b;">:track/name</span> <span style="color: #8b2252;">"What Is and What Should Never Be"</span>}
+  {<span style="color: #008b8b;">:track/name</span> <span style="color: #8b2252;">"The Lemon Song"</span>}
+  {<span style="color: #008b8b;">:track/name</span> <span style="color: #8b2252;">"Thank You"</span>}
+  {<span style="color: #008b8b;">:track/name</span> <span style="color: #8b2252;">"Heartbreaker"</span>}
+  {<span style="color: #008b8b;">:track/name</span> <span style="color: #8b2252;">"Living Loving Maid (She's Just a Woman)"</span>}
+  {<span style="color: #008b8b;">:track/name</span> <span style="color: #8b2252;">"Ramble On"</span>}
+  {<span style="color: #008b8b;">:track/name</span> <span style="color: #8b2252;">"Moby Dick"</span>}
+  {<span style="color: #008b8b;">:track/name</span> <span style="color: #8b2252;">"Bring It on Home"</span>}
+  {<span style="color: #008b8b;">:track/name</span> <span style="color: #8b2252;">"Whole Lotta Love"</span>}]}
+```
+
+
+
+
+
+
+
+### Nil :limit Example
+
+Ths pattern below returns all of Led Zeppelin's tracks, without limit:
+
+```
+<pre class="src src-clojure">[<span style="color: #008b8b;">:artist/name</span> (<span style="color: #008b8b;">:track/_artists</span> <span style="color: #008b8b;">:limit</span> nil)]
+```
+
+
+
+```
+<pre class="src src-clojure">=>
+{<span style="color: #008b8b;">:artist/name</span> <span style="color: #8b2252;">"Led Zeppelin"</span>,
+ <span style="color: #008b8b;">:track/_artists</span>
+ [{<span style="color: #008b8b;">:db/id</span> 17592186057344}
+  {<span style="color: #008b8b;">:db/id</span> 17592186057345}
+  {<span style="color: #008b8b;">:db/id</span> 17592186057346}
+  {<span style="color: #008b8b;">:db/id</span> 17592186057347}
+  {<span style="color: #008b8b;">:db/id</span> 17592186057348}
+  {<span style="color: #008b8b;">:db/id</span> 17592186057349}
+  {<span style="color: #008b8b;">:db/id</span> 17592186057350}
+  {<span style="color: #008b8b;">:db/id</span> 17592186057351}
+  {<span style="color: #008b8b;">:db/id</span> 17592186057352}
+  {<span style="color: #008b8b;">:db/id</span> 17592186057355}
+  {<span style="color: #008b8b;">:db/id</span> 17592186057356}
+  {<span style="color: #008b8b;">:db/id</span> 17592186057357}
+  {<span style="color: #008b8b;">:db/id</span> 17592186057358}
+  {<span style="color: #008b8b;">:db/id</span> 17592186057359}
+  {<span style="color: #008b8b;">:db/id</span> 17592186057360}
+  {<span style="color: #008b8b;">:db/id</span> 17592186057361}
+  {<span style="color: #008b8b;">:db/id</span> 17592186057362}
+  {<span style="color: #008b8b;">:db/id</span> 17592186057363}
+  {<span style="color: #008b8b;">:db/id</span> 17592186057366}
+  {<span style="color: #008b8b;">:db/id</span> 17592186057367}
+  ...]} <span style="color: #b22222;">;; </span><span style="color: #b22222;">lots more</span>
+```
+
+
+
+
+
+
+
+
+
+:default Option
+---------------
+
+```
+<pre class="src src-clojure">[attr-name <span style="color: #008b8b;">:default</span> any-value]
+```
+
+
+
+The :default option specifies a value to use if an attribute is not present for an entity.
+
+
+
+### :default Option Example
+
+The following select reports a zero :artist/endYear for Paul McCartney, who is still active:
+
+```
+<pre class="src src-clojure">[<span style="color: #008b8b;">:artist/name</span> (<span style="color: #008b8b;">:artist/endYear</span> <span style="color: #008b8b;">:default</span> 0)] 
+```
+
+
+
+```
+<pre class="src src-clojure">=> {<span style="color: #008b8b;">:artist/endYear</span> 0, <span style="color: #008b8b;">:artist/name</span> <span style="color: #8b2252;">"Paul McCartney"</span>}
+```
+
+
+
+The default need not be of the same type as the attribute's values:
+
+```
+<pre class="src src-clojure">[<span style="color: #008b8b;">:artist/name</span> (<span style="color: #008b8b;">:artist/endYear</span> <span style="color: #008b8b;">:default</span> <span style="color: #8b2252;">"N/A"</span>)] 
+```
+
+
+
+```
+<pre class="src src-clojure">=> {<span style="color: #008b8b;">:artist/endYear</span> <span style="color: #8b2252;">"N/A"</span>, <span style="color: #008b8b;">:artist/name</span> <span style="color: #8b2252;">"Paul McCartney"</span>}
+```
+
+
+
+
+
+
+
+
+
+:xform Option
+-------------
+
+```
+<pre class="src src-clojure">[attr-name <span style="color: #008b8b;">:xform</span> symbol]
+```
+
+
+
+The `:xform` option provides the ability to transform the value returned by pull for an attribute.
+
+The `resources/datomic/extensions.edn` resource contains an `:xforms` key that is a vector of fully qualified symbols naming functions allowlisted for use by xforms. You can use a whitelisted function or one of the following built-ins:
+
+- [str](https://clojure.github.io/clojure/clojure.core-api.html#clojure.core/str)
+- [keyword](https://clojure.github.io/clojure/clojure.core-api.html#clojure.core/keyword)
+- [symbol](https://clojure.github.io/clojure/clojure.core-api.html#clojure.core/symbol)
+- [name](https://clojure.github.io/clojure/clojure.core-api.html#clojure.core/name)
+- [namespace](https://clojure.github.io/clojure/clojure.core-api.html#clojure.core/namespace)
+- [clojure.edn/read-string](https://clojure.github.io/clojure/clojure.edn-api.html#clojure.edn/read-string)
+
+The `fn` takes the value returned from the pull expression and returns a value that will be included in the result instead. The return value needs to be supported by [transit](https://github.com/cognitect/transit-format) without any extension handlers.
+
+[`:default`](#default-option) values are not transformed by `:xform`, and the `:xform` result takes precedence.
+
+[`cancel`](../reference/database-functions.html#cancel) can be used to cancel an xform.
+
+
+
+### :xform Option Example
+
+The following example uses the unqualified symbol `str` (from the default functions) to transform the result of pulling the `:artist/endYear` for led-zeppelin from an integer to a string:
+
+```
+<pre class="src src-clojure">[[<span style="color: #008b8b;">:artist/endYear</span> <span style="color: #008b8b;">:xform</span> str]]
+```
+
+
+
+```
+<pre class="src src-clojure">=> {<span style="color: #008b8b;">:artist/endYear</span> <span style="color: #8b2252;">"1980"</span>}
+```
+
+
+
+
+
+
+
+
+
+Wildcards
+---------
+
+```
+<pre class="example" id="org1affe89">
+wildcard           = "*" or '*'
+```
+
+The wildcard specification `*` pulls all attributes of an entity, and recursively pulls any component attributes:
+
+
+
+### Wildcard Example
+
+The wildcard pulls all the direct attributes of the release. It also recursively pulls `:release/media` because it is a component attribute. It does not recursively pull `:release/artists` or `:release/country`, because those are *not* component attributes.
+
+```
+<pre class="src src-clojure">[*]
+```
+
+
+
+```
+<pre class="src src-clojure">=>
+{<span style="color: #008b8b;">:release/name</span> <span style="color: #8b2252;">"The Concert for Bangla Desh"</span>,
+ <span style="color: #008b8b;">:release/artists</span> [{<span style="color: #008b8b;">:db/id</span> 17592186049854}],
+ <span style="color: #008b8b;">:release/country</span> {<span style="color: #008b8b;">:db/id</span> 17592186045504},
+ <span style="color: #008b8b;">:release/gid</span> #uuid <span style="color: #8b2252;">"f3bdff34-9a85-4adc-a014-922eef9cdaa5"</span>,
+ <span style="color: #008b8b;">:release/day</span> 20,
+ <span style="color: #008b8b;">:release/status</span> <span style="color: #8b2252;">"Official"</span>,
+ <span style="color: #008b8b;">:release/month</span> 12,
+ <span style="color: #008b8b;">:release/artistCredit</span> <span style="color: #8b2252;">"George Harrison"</span>,
+ <span style="color: #008b8b;">:db/id</span> 17592186072003,
+ <span style="color: #008b8b;">:release/year</span> 1971,
+ <span style="color: #008b8b;">:release/media</span>
+ [{<span style="color: #008b8b;">:db/id</span> 17592186072004,
+   <span style="color: #008b8b;">:medium/format</span> {<span style="color: #008b8b;">:db/id</span> 17592186045741},
+   <span style="color: #008b8b;">:medium/position</span> 1,
+   <span style="color: #008b8b;">:medium/trackCount</span> 2,
+   <span style="color: #008b8b;">:medium/tracks</span>
+   [{<span style="color: #008b8b;">:db/id</span> 17592186072005,
+     <span style="color: #008b8b;">:track/duration</span> 376000,
+     <span style="color: #008b8b;">:track/name</span> <span style="color: #8b2252;">"George Harrison / Ravi Shankar Introduction"</span>,
+     <span style="color: #008b8b;">:track/position</span> 1,
+     <span style="color: #008b8b;">:track/artists</span> [{<span style="color: #008b8b;">:db/id</span> 17592186048829} {<span style="color: #008b8b;">:db/id</span> 17592186049854}]}
+    {<span style="color: #008b8b;">:db/id</span> 17592186072006,
+     <span style="color: #008b8b;">:track/duration</span> 979000,
+     <span style="color: #008b8b;">:track/name</span> <span style="color: #8b2252;">"Bangla Dhun"</span>,
+     <span style="color: #008b8b;">:track/position</span> 2,
+     <span style="color: #008b8b;">:track/artists</span> [{<span style="color: #008b8b;">:db/id</span> 17592186048829}]}]}
+  ...
+  ]}
+```
+
+
+
+
+
+
+
+### Combining Wildcards and Map Specifications
+
+A map specification can be used in conjunction with the wildcard to provide subpatterns for specific attributes.
+
+
+
+#### Combining Wildcards and Map Specifications Example
+
+The wildcard pulls all attributes of the *ghostRiders* track, and an explicit map overrides the handling of `:track/artists` to pull `:artist/name`.
+
+```
+<pre class="src src-clojure">[<span style="color: #8b2252;">"*"</span> {<span style="color: #008b8b;">:track/artists</span> [<span style="color: #008b8b;">:artist/name</span>]}]
+```
+
+
+
+```
+<pre class="src src-clojure">=>
+{<span style="color: #008b8b;">:db/id</span> 17592186063810,
+ <span style="color: #008b8b;">:track/duration</span> 218506,
+ <span style="color: #008b8b;">:track/name</span> <span style="color: #8b2252;">"Ghost Riders in the Sky"</span>,
+ <span style="color: #008b8b;">:track/position</span> 11,
+ <span style="color: #008b8b;">:track/artists</span>
+ [{<span style="color: #008b8b;">:artist/name</span> <span style="color: #8b2252;">"Bob Dylan"</span>} {<span style="color: #008b8b;">:artist/name</span> <span style="color: #8b2252;">"George Harrison"</span>}]}
+```
+
+
+
+
+
+
+
+
+
+
+
+Recursion Limits
+----------------
+
+```
+<pre class="example" id="org3638489">
+recursion-limit    = positive-number | '...'
+map-spec           = { ((attr-name | limit-expr) (pattern | recursion-limit))+ }
+```
+
+A map specification can govern recursion. If a map specification has a numeric value, then the selector containing that specification will be applied recursively up to N times. The ellipsis symbol (`...`) will follow recursive references to arbitrary depth, and should be used with caution!
+
+If a recursive subselect encounters an entity that it has already seen, it will not apply the pattern, instead returning only the `:db/id` of the entity. Thus recursive select is safe in the presence of cycles.
+
+
+
+### Limited Recursion Example
+
+The following (non-mbrainz) specification will pull the first and last names of friends-of-friends up to six degrees of separation from the original entity.
+
+```
+<pre class="src src-clojure">[<span style="color: #008b8b;">:person/firstName</span> <span style="color: #008b8b;">:person/lastName</span> {<span style="color: #008b8b;">:person/friends</span> 6}]
+```
+
+
+
+
+
+
+
+### Unlimited Recursion Example
+
+The following specification will find all reachable friends, which might be most of the friends in the entire database.
+
+```
+<pre class="src src-clojure">[<span style="color: #008b8b;">:person/firstName</span> <span style="color: #008b8b;">:person/lastName</span> {<span style="color: #008b8b;">:person/friends</span> ...}]
+```
+
+
+
+
+
+
+
+### Empty Results
+
+If there is no match between a pattern and an entity, then `pull` will return nil (not an empty map):
+
+```
+<pre class="src src-clojure"><span style="color: #b22222;">;; </span><span style="color: #b22222;">pattern</span>
+[<span style="color: #008b8b;">:penguins</span>]
+<span style="color: #b22222;">;; </span><span style="color: #b22222;">entity</span>
+led-zeppelin
+```
+
+
+
+```
+<pre class="src src-clojure">=> nil
+```
+
+
+
+Non-matching results will be removed entirely from collections. Even though *ghost-riders* has artists, none of those artists have `:penguins`:
+
+```
+<pre class="src src-clojure"><span style="color: #b22222;">;; </span><span style="color: #b22222;">pattern</span>
+[{<span style="color: #008b8b;">:track/artists</span> [<span style="color: #008b8b;">:penguins</span>]}]
+
+<span style="color: #b22222;">;; </span><span style="color: #b22222;">entity</span>
+ghost-riders
+```
+
+
+
+```
+<pre class="src src-clojure">
+<span style="color: #b22222;">;; </span><span style="color: #b22222;">result</span>
+=> {<span style="color: #008b8b;">:track/artists</span> []}
+```
+
+
+
+
+
+
+
+
+
+Pull Results
+------------
+
+
+
+### Component Defaults
+
+If a pull `attr-name` names a reference attribute, `pull` will return a map for the referenced value. If the attribute is a component attribute, the map will contain all attributes of the related entity as well.
+
+
+
+#### Component Defaults Example
+
+`:medium/tracks` is a component attribute, so pulling `:release/media` will also pull related tracks. The example below pulls from *darkSideOfTheMoon*.
+
+```
+<pre class="src src-clojure">[<span style="color: #008b8b;">:release/media</span>]
+```
+
+
+
+```
+<pre class="src src-clojure">=>
+{<span style="color: #008b8b;">:release/media</span>
+ [{<span style="color: #008b8b;">:db/id</span> 17592186121277,
+   <span style="color: #008b8b;">:medium/format</span> {<span style="color: #008b8b;">:db/id</span> 17592186045741},
+   <span style="color: #008b8b;">:medium/position</span> 1,
+   <span style="color: #008b8b;">:medium/trackCount</span> 10,
+   <span style="color: #008b8b;">:medium/tracks</span>
+   [{<span style="color: #008b8b;">:db/id</span> 17592186121278,
+     <span style="color: #008b8b;">:track/duration</span> 68346,
+     <span style="color: #008b8b;">:track/name</span> <span style="color: #8b2252;">"Speak to Me"</span>,
+     <span style="color: #008b8b;">:track/position</span> 1,
+     <span style="color: #008b8b;">:track/artists</span> [{<span style="color: #008b8b;">:db/id</span> 17592186046909}]}
+    {<span style="color: #008b8b;">:db/id</span> 17592186121279,
+     <span style="color: #008b8b;">:track/duration</span> 168720,
+     <span style="color: #008b8b;">:track/name</span> <span style="color: #8b2252;">"Breathe"</span>,
+     <span style="color: #008b8b;">:track/position</span> 2,
+     <span style="color: #008b8b;">:track/artists</span> [{<span style="color: #008b8b;">:db/id</span> 17592186046909}]}
+    {<span style="color: #008b8b;">:db/id</span> 17592186121280,
+     <span style="color: #008b8b;">:track/duration</span> 230600,
+     <span style="color: #008b8b;">:track/name</span> <span style="color: #8b2252;">"On the Run"</span>,
+     <span style="color: #008b8b;">:track/position</span> 3,
+     <span style="color: #008b8b;">:track/artists</span> [{<span style="color: #008b8b;">:db/id</span> 17592186046909}]}
+    ...]}]}
+```
+
+
+
+
+
+
+
+
+
+### Non-Component Defaults
+
+If a reference is to a non-component attribute, the default is to pull only the `:db/id`.
+
+
+
+#### Non-Component Defaults Example
+
+Pulling `:artist/_{country}` of `:country/GB` returns only the entity ids for the artists from Great Britain:
+
+```
+<pre class="src src-clojure">[<span style="color: #008b8b;">:artist/_country</span>]
+```
+
+
+
+```
+<pre class="src src-clojure">=> {<span style="color: #008b8b;">:artist/_country</span> [{<span style="color: #008b8b;">:db/id</span> 17592186045751} {<span style="color: #008b8b;">:db/id</span> 17592186045755} ...]}
+```
+
+
+
+
+
+
+
+
+
+### Multiple Results
+
+If navigating an attribute might lead to more than one value, the pull result will be a list of the values found. These cases include:
+
+- All forward cardinality-many references
+- Reverse references for non-component attributes.
+
+
+
+#### Multiple Results Example
+
+Pulling `:artist/_{country}` of `:country/GB` returns a list of the entity ids for the artists from Great Britain:
+
+```
+<pre class="src src-clojure">[<span style="color: #008b8b;">:artist/_country</span>]
+```
+
+
+
+```
+<pre class="src src-clojure">=> {<span style="color: #008b8b;">:artist/_country</span> [{<span style="color: #008b8b;">:db/id</span> 17592186045751} {<span style="color: #008b8b;">:db/id</span> 17592186045755} ...]}
+```
+
+
+
+
+
+
+
+
+
+### Missing Attributes
+
+In the absence of a default, attribute specifications that do not match an entity are omitted from that entity's result map, rather than e.g. appearing with a `nil` value.
+
+
+
+#### Missing Attributes Example
+
+Paul McCartney has an `:artist/name` but not a `died-in-1966`, so only the former appears in a pull result:
+
+```
+<pre class="src src-clojure">[<span style="color: #008b8b;">:artist/name</span> <span style="color: #008b8b;">:died-in-1966?</span>]
+```
+
+
+
+```
+<pre class="src src-clojure">=> {<span style="color: #008b8b;">:artist/name</span> <span style="color: #8b2252;">"Paul McCartney"</span>}
+```
+
+
+
+
+
+
+
+
+
+
+
+Legacy Attribute Expressions
+----------------------------
+
+> NOTE: [Attributes Specifications](#attribute-with-options) provides a superset of the functionality of Attribute Expressions and is preferred, however `limit` and `default` Attribute Expressions will continue to be supported.
+
+```
+<pre class="example" id="org43b6a5c">
+attr-expr           = [attr-name attr-option+] | legacy-attr-expr
+legacy-attr-expr    = legacy-limit-expr | legacy-default-expr
+legacy-limit-expr   = [("limit" | 'limit') attr-name (positive-number | nil)]
+legacy-default-expr = [("default" | 'default') attr-name any-value]
+```
+
+Attribute specifications can be wrapped in expressions to control the attribute's default or limit. Each is shown below.
+
+
+
+
+
+Legacy Limit Expression
+-----------------------
+
+```
+<pre class="example" id="org58c335a">
+legacy-limit-expr   = [("limit" | 'limit') attr-name (positive-number | nil)]
+```
+
+The legacy limit expression is an alternate syntax for [Limit Option](#limit-option). Limit Option is preferred.
+
+
+
+
+
+Legacy Default Expressions
+--------------------------
+
+```
+<pre class="example" id="org46cdfb6">
+legacy-default-expr = [("default" | 'default') attr-name any-value]
+```
+
+The legacy default expression is an alternate syntax for [Default Option](#default-option). Default Option is preferred.
+
+
+
+
+
+Pull API vs. Entity API
+-----------------------
+
+The Pull API has two important advantages over the [Entity API](../overview/entities.html):
+
+Pull uses a declarative, data-driven spec, whereas Entity encourages building results via code. Data-driven specs are easier to build, compose, transmit and store. Pull patterns are smaller than entity code that does the same job, and can be easier to understand and maintain.
+
+Pull API results match standard collection interfaces (e.g. Java maps) in programming languages, where Entity results do not. This eliminates the need for an additional allocation/transformation step per entity.

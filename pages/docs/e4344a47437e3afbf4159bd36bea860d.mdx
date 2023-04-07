@@ -1,0 +1,37 @@
+Setup
+=====
+
+Clone the sample project
+------------------------
+
+```
+<pre class="src src-sh">git clone https://github.com/Datomic/ion-starter.git
+```
+
+
+
+The [ion-starter](https://github.com/Datomic/ion-starter) project contains a complete ion-based application. To begin the tutorial, clone the ion-starter project.
+
+
+
+
+
+Set application name
+--------------------
+
+Ions are deployed with an [application name](../ions/ions-reference.html#application-name) that must match your compute group.
+
+Edit the `resources/datomic/ion-config.edn` file and set the `:app-name` to your application name.
+
+> Multiple compute groups can share the application name. The compute groups that you can deploy to, for that application, are displayed after a successful [push operation](push-and-deploy.html#push).
+
+
+
+
+
+Install the ion-dev tools
+-------------------------
+
+Make sure you have [installed the ion-dev tools](../operation/howto.html#ion-dev).
+
+Before [deploying](push-and-deploy.html), learn to [develop at the REPL](develop.html).

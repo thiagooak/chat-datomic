@@ -1,0 +1,100 @@
+Ions
+====
+
+Ions let you develop applications for the cloud by deploying your code to a running Datomic compute group. You can **focus on your application logic**, writing ordinary Clojure functions, and the ion tooling and infrastructure handles the deployment and execution details. You can leverage your code both inside Datomic transactions and queries, and from the world at large via built-in support for AWS Lambda and web services.
+
+There are four activities involved in using Datomic Ions:
+
+- [dev](#how-dev) - Write your application as a set of ordinary Clojure functions.
+- [push](#how-push) - Capture your current local view of the world as a *revision* you can later deploy.
+- [deploy](#how-deploy) a revision to a Datomic compute group.
+- [bond](#how-bond) - Use the functions you have deployed in transactions, queries, AWS Lambdas, or web services.
+
+Benefits
+--------
+
+- Focus on your application.
+- Leverage your Datomic Cloud cluster compute resources and data locality.
+- Extend Datomic transactions and queries with your own logic.
+- Connect to the broader AWS cloud via [Lambda events](https://docs.aws.amazon.com/lambda/latest/dg/lambda-services.html).
+- Service web consumers with API Gateway.
+- Scale Datomic and your app together.
+- Deliver on AWS with high agility.
+
+[![ions-who-do.png](../images/ions-who-do.png)](../images/ions-who-do.png)
+
+
+
+
+
+
+
+Activities
+----------
+
+
+
+### dev
+
+You devlop ions in an ordinary [tools.deps](https://clojure.org/guides/deps_and_cli) based Clojure project kept in git. You can have git and maven dependencies, and even local deps of libs in progress.
+
+Ions include one or more [entry points](ions-reference.html#entry-points). These are Clojure functions that have a signature matching their intended use:
+
+- Transaction functions take and return transaction data.
+- Query expressions take an return arbitrary data.
+- Lambdas take and return JSON payloads. Ion Lambdas can handle [AWS events](https://docs.aws.amazon.com/lambda/latest/dg/invoking-lambda-function.html), or you can invoke them directly.
+- Web service functions support [ring-like edn handlers](../ions/ions-reference.html#web-ion).
+
+You can develop and test these entry points (and all their supporting code) as ordinary Clojure functions at the REPL.
+
+
+
+
+
+### push
+
+You capture the current state of your application code by invoking [push](ions-reference.html#push). *push* creates a named CodeDeploy revision in Amazon S3, which you can later deploy to one or more Datomic [compute groups](../whatis/architecture.html#compute-groups). If you are working on committed code with no local deps you will get a repropducible revision named after your commit. For work in progress, you will have to supply a name for your (unreproducible) revision.
+
+*push* reads your deps.edn and ensures all library dependencies and local code are moved to S3. In addition, it creates a first-class [revision](https://docs.aws.amazon.com/codedeploy/latest/userguide/application-revisions.html) in Code Deploy. push is smart about minimizing the transfer of code to S3.
+
+
+
+
+
+### deploy
+
+When you create a [primary compute group](../operation/new-system.html#compute) or [query group](../operation/query-groups.html#creating), you associate it with a [Code Deploy](https://aws.amazon.com/codedeploy/) application. The `:app-name` in your ion-config.edn connects your code to a Code Deploy application and determines which compute groups you can deploy to.
+
+Datomic Cloud manages a Code Deploy [deployment group](https://docs.aws.amazon.com/codedeploy/latest/userguide/deployment-groups.html) for each compute group. The [ion deploy](ions-reference.html#deploy) command deploys a previously-pushed ion revision to a deployment group.
+
+*deploy* uses AWS [Step Functions](https://aws.amazon.com/step-functions/) to:
+
+- Deploy your code and dependencies to the compute group using Code Deploy. Code Deploy works by moving code from S3 to the compute group's EC2 instances and cycling the Datomic process with a newly-extended classpath, in a rolling fashion. This is much faster than cycling EC2 instances. Deploy is smart about minimizing the transfer of code from S3.
+- \[optionally\] ensure Lambdas If you've configured Lambdas, deploy ensures an AWS Lambda corresponding to each [lambda entry point](ions-reference.html#lambda-ion). These AWS Lambdas are in fact just lightweight proxies that forward invocations to your functions running on the Datomic cluster (i.e. your code is **not**running in AWS Lambda). In this way your code runs near the data and cache, and without the limitations and complexities of running in the Lambda execution context.
+
+
+
+
+
+### bond
+
+Ions include an [ion-config.edn file](ions-reference.html#ion-config) that specifies how to invoke your your ion code:
+
+- as [transaction functions](../transactions/transaction-functions.html#custom) inside a Datomic transaction
+- as [query expressions](../query/query-data-reference.html#calling-clojure-functions) inside a Datomic query
+- as [lambda functions](ions-reference.html#invoke-lambda), either directly or in response to AWS events
+- as web services via AWS API Gateway and either [HTTP Direct](ions-reference.html#http-direct-config) or a [Lambda Proxy](ions-reference.html#lambda-config)
+
+
+
+
+
+
+
+Ion Developer Resources
+-----------------------
+
+- [Ions tutorial](../ions-tutorial/ions-tutorial.html)
+- [Ions reference](ions-reference.html)
+- Rich Hickey's [Clojure/nyc presentation](https://www.youtube.com/watch?v=thpzXjmYyGk) (1:45)
+- Stuart Halloway's [Ions in Seven Minutes](https://www.youtube.com/watch?v=TbthtdBw93w) (0:07)

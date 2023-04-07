@@ -1,0 +1,39 @@
+Data Modeling
+=============
+
+Use `:db/ident` for Enumerations
+--------------------------------
+
+Many databases need to represent a set of enumerated values. In Datomic, it is idiomatic to represent enumerated values as entities with a `:db/ident` attribute.
+
+For example, the transaction below defines an `:artist/country`attribute, and two initial enumerated values, `:country/CA` and `:country/JP`, ISO alpha-2 country codes for Canada and Japan.
+
+```
+<pre class="src src-clojure">[{<span style="color: #008b8b;">:db/ident</span> <span style="color: #008b8b;">:artist/country</span>
+ <span style="color: #008b8b;">:db/valueType</span> <span style="color: #008b8b;">:db.type/ref</span>
+ <span style="color: #008b8b;">:db/cardinality</span> <span style="color: #008b8b;">:db.cardinality/one</span>
+ <span style="color: #008b8b;">:db/doc</span> <span style="color: #8b2252;">"An artist's country of residence"</span>}
+
+{<span style="color: #008b8b;">:db/ident</span> <span style="color: #008b8b;">:country/CA</span>}
+
+{<span style="color: #008b8b;">:db/ident</span> <span style="color: #008b8b;">:country/JP</span>}]
+```
+
+
+
+The use of `:db/ident` on the enumerated value entities makes it possible to refer to the entities using their identity keywords, `:country/CA` and `:country/JP`.
+
+The transaction below creates an artist named *Leonard Cohen* with the country `:country/CA`.
+
+```
+<pre class="src src-clojure">[{<span style="color: #008b8b;">:artist/name</span> <span style="color: #8b2252;">"Leonard Cohen"</span>
+ <span style="color: #008b8b;">:artist/country</span> <span style="color: #008b8b;">:country/CA</span>}]
+```
+
+
+
+The `:artist/country` attribute is of type `:db.type/ref`, so its value must be a reference to another entity. The `:country/CA` keyword can be used as a value because it is the identity of an entity, as specified by `:db/ident` in the previous transaction.
+
+Attempting to use identity keywords that have not been transacted as referenced identities will result in an [anomaly](../client/client-api.html#anomalies).
+
+**Next:** [Schema Limits](schema-limits.html)

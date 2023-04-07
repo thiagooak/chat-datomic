@@ -1,0 +1,58 @@
+Turning Off Unused Compute Resources
+====================================
+
+While you can [delete a compute stack](../operation/deleting.html#deleting-stacks) at any time without loss of data, it is often be useful to instead temporarily turn down unused compute capacity in a Datomic system. This is achieved by setting the scaling capacity targets for your compute group's auto scaling group to 0:
+
+Adjusting the ASG
+-----------------
+
+
+
+### CloudFormation
+
+- Go to [CloudFormation](https://console.aws.amazon.com/cloudformation/home).
+- Select the stack that you want to adjust the ASG on.
+- Click "Stack Actions".
+- Click "Update".
+- Select "Use current template".
+- Click "Next".
+- Make your changes in the "Auto Scaling Configuration" section. 
+    - Ensure that the other settings match your desired stack configuration.
+    - "Minimum number of instances during update" should always be 1 fewer than "Maximum instances".
+- Click "Next".
+- Click "Next".
+- Acknowledge any capabilities listed.
+- Click "Update Stack".
+
+
+
+
+
+### AWS Console (Legacy)
+
+Select your stack (query group or primary compute group) in the [Auto Scaling Group Console](https://console.aws.amazon.com/ec2/autoscaling/home#AutoScalingGroups:view=details) and click the "Edit" button:
+
+[![editASG.png](../images/editASG.png)](../images/editASG.png)
+
+
+
+In the dialog box that appears, set the *Desired Capacity*, *Min*, and *Max* to 0 and click "Save".
+
+The ASG will terminate all nodes of that compute or query group without removing any of the other system resources. When you wish to re-activate your capacity, edit the same ASG and set the scaling capacity targets back to their original values.
+
+
+
+
+
+
+
+Legacy
+------
+
+
+
+### CLI Tools - Solo Topology (Legacy)
+
+> This section only applies to [Datomic 781-9041](../changes.html#781-9041) and lower.
+
+The [`datomic solo`](cli-tools.html#solo) CLI Tool command can be used to set the ASG to 0 or 1 for [Solo Topology Systems](../whatis/architecture.html#solo-topology).

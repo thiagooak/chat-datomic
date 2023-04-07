@@ -1,0 +1,112 @@
+Peer Language Support
+=====================
+
+JVM Languages
+-------------
+
+The Datomic team supports the Java and Clojure APIs. Community supported, third-party libraries are described in the section [Third-party Libraries](#third-party-libraries).
+
+
+
+### Java
+
+The [Java API](../javadoc/index.html) gives Java users access to all the features of the Peer library. Additionally, the [Util](../javadoc/datomic/Util.html) class contains convenience functions for creating and working with Datomic's commonly used datastructures.
+
+
+
+
+
+### Clojure
+
+The [Clojure API](../clojure/index.html) is a functional projection of the [Java API](../javadoc/index.html). The methods of the Java types are flattened to functions in a single *datomic.api* namespace with an instance of the given type as the first argument.
+
+It is idiomatic to reference the *datomic.api* namespace as *d*, with *db* and *q* added to the current namespace.
+
+```
+<pre class="src src-clojure">(<span style="color: #483d8b;">ns</span> project-ns
+  (<span style="color: #008b8b;">:require</span> [datomic.api <span style="color: #008b8b;">:as</span> d <span style="color: #008b8b;">:refer</span> [db q]]))
+```
+
+
+
+The code below illustrates the translation of the Java API to Clojure.
+
+Here is the code in Java:
+
+```
+<pre class="src src-java"><span style="color: #228b22;">String</span> <span style="color: #a0522d;">uri</span> = <span style="color: #8b2252;">"datomic:mem://test"</span>;
+<span style="color: #228b22;">Connection</span> <span style="color: #a0522d;">conn</span> = Peer.connect(uri);
+<span style="color: #228b22;">Collection</span> <span style="color: #a0522d;">results</span> = Peer.query(<span style="color: #8b2252;">"[:find ?e :where [?e :db/doc]]"</span>, conn.db);
+```
+
+
+
+and the equivalent code in Clojure:
+
+```
+<pre class="src src-clojure"><span style="color: #b22222;">;; </span><span style="color: #b22222;">clojure</span>
+(<span style="color: #a020f0;">def</span> <span style="color: #0000ff;">uri</span> <span style="color: #8b2252;">"datomic:mem://test"</span>)
+(<span style="color: #a020f0;">def</span> <span style="color: #0000ff;">conn</span> (d/connect uri))
+(<span style="color: #a020f0;">def</span> <span style="color: #0000ff;">results</span> (q '[<span style="color: #008b8b;">:find</span> ?e <span style="color: #008b8b;">:where</span> [?e <span style="color: #008b8b;">:db/doc</span>]] (db conn)))
+```
+
+
+
+
+
+
+
+### Other JVM Languages (JRuby, Scala, Groovy etc.)
+
+Users of other JVM languages can use the [Java API](../javadoc/index.html) via their respective Java interop capabilities.
+
+
+
+
+
+
+
+Non-JVM Languages
+-----------------
+
+Non-JVM languages can access Datomic through the REST service via HTTP.
+
+
+
+### The REST Service
+
+A Datomic peer can be run as a standalone HTTP service. See the REST service [documentation](../api/rest.html) for information on starting and stopping the service. Many clients can connect to a single instance of the HTTP service, and one instance of the service represents one licensed peer.
+
+The service is its own documentation. Just point a browser at the root of the server:port on which you started the service. Note that the 'web app' that results **is** the service. It is not an app built on the service, nor a set of documentation pages about the service. The URIs, query params, and POST data are the same ones you will use when accessing the service programmatically.
+
+In addition to the self-describing nature of the REST service, some basic documentation of the available endpoints is available in the REST service [documentation](../api/rest.html).
+
+The REST service accepts and responds with EDN data.
+
+
+
+
+
+### [EDN](https://github.com/edn-format/edn)
+
+EDN is an extensible data notation (pronounced \[eed-n\]). For more information, see the [specification](https://github.com/edn-format/edn). Reader/writer implementations are available in various [languages](https://github.com/edn-format/edn/wiki/Implementations).
+
+A full-featured client of the Datomic REST service should support round-trip conversions between native data structures and [EDN](https://github.com/edn-format/edn), the data format that the REST service sends and receives. Doing so would allow users of the native language to build transactions and queries using native data structures, just like users of the Peer library in JVM languages.
+
+
+
+
+
+
+
+Third-party Libraries
+---------------------
+
+Datomic community members have contributed the following language-specific libraries which provide idiomatic support for Datomic. The Datomic team encourages third-party language libraries, but does not support them directly.
+
+- <https://dwhjames.github.io/datomisca/> - Native JVM Peer with Scala idioms
+- <https://github.com/relevance/diametric> – Native (JRuby) and REST ActiveModel wrapper for Ruby
+- <https://github.com/limadelic/datomicjs> – REST client in JavaScript, for use with Node.js and similar
+- <https://github.com/jeffbrown/groovy-datomic> – Native JVM Peer with Groovy idioms
+- <https://github.com/gns24/pydatomic> – REST client in Python
+- <https://github.com/scalamolecule/molecule> - Native JVM Peer with type-safe Scala meta-DSL

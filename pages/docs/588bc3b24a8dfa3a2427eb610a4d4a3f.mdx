@@ -1,0 +1,106 @@
+Integrating the Peer Library
+============================
+
+This document describes how to integrate the [Datomic peer library](https://docs.datomic.com/on-prem/clojure/index.html) with your Java or clojure project.
+
+Maven setup
+-----------
+
+There are two ways to install the Datomic libraries in your local maven repository. You can configure your project to use the my.datomic.com maven repository, or run an install script included with the Datomic distribution.
+
+
+
+### Datomic maven repository
+
+Datomic Pro users can get the Datomic peer library directly from the maven repository hosted at my.datomic.com. See the download and integration instructions by logging into your account at <https://my.datomic.com>.
+
+
+
+
+
+### Installing from Datomic distribution
+
+You can install the Datomic peer library in your local maven repository by running the following command from the Datomic distribution's root directory:
+
+```
+<pre class="src src-sh">bin/maven-install
+```
+
+
+
+Or on [Windows](https://maven.apache.org/guides/getting-started/windows-prerequisites.html):
+
+```
+<pre class="src src-sh">mvn install:install-file -DgroupId=com.datomic -DartifactId=datomic-pro -Dfile=datomic-pro-0.9.5703.jar -DpomFile=pom.xml
+```
+
+
+
+
+
+
+
+
+
+deps.edn
+--------
+
+To include the datomic peer library in your deps.edn:
+
+```
+<pre class="src src-clojure">com.datomic/datomic-pro     {<span style="color: #008b8b;">:mvn/version</span> <span style="color: #8b2252;">"datomic-EDITION"</span>}
+```
+
+
+
+
+
+
+
+Using from maven
+----------------
+
+To include the datomic peer library in a maven based build:
+
+- replace VERSION in the snippet below with the contents of the VERSION file at the root of this distribution
+- replace EDITION with either 'free' or 'pro' based on which edition you are installing
+- add the modified snippet to the dependencies section of your pom.xml
+
+```
+<pre class="src src-xml"><<span style="color: #0000ff;">dependency</span>>
+  <<span style="color: #0000ff;">groupId</span>>com.datomic</<span style="color: #0000ff;">groupId</span>>
+  <<span style="color: #0000ff;">artifactId</span>>datomic-EDITION</<span style="color: #0000ff;">artifactId</span>>
+  <<span style="color: #0000ff;">version</span>>VERSION</<span style="color: #0000ff;">version</span>>
+</<span style="color: #0000ff;">dependency</span>>
+```
+
+
+
+
+
+
+
+Using from leiningen
+--------------------
+
+To include the Datomic peer library in a leiningen project:
+
+- replace VERSION in the snippet below with the contents of the VERSION file at the root of this distribution
+- replace EDITION with either 'free' or 'pro' based on which edition you are installing
+- Then add the snippet to the dependencies section of your project.clj:
+
+```
+<pre class="src src-clojure"><span style="color: #b22222;">;; </span><span style="color: #b22222;">in collection under :dependencies key</span>
+[com.datomic/datomic-EDITION <span style="color: #8b2252;">"VERSION"</span>]
+```
+
+
+
+
+
+
+
+Configuring caching
+-------------------
+
+Datomic peers use [caching](../overview/caching.html) to reduce the load they place on storage. This caching can be configured at two levels: an in-process object cache, and an out-of-process use of memcached. Please see the [Caching documentation](../overview/caching.html) for more information on cache configuration.

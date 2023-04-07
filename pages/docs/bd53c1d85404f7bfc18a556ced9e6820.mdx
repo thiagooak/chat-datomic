@@ -1,0 +1,138 @@
+Intra- and Inter- VPC Access
+============================
+
+For most applications, the preferred way to access Datomic is via the [built-in API Gateways](../whatis/architecture.html#api-gateway), which includes powerful features for traffic management and authn/authz.
+
+This page describes alternatives for situations where you *don't* want an API Gateway. If you want callers to connect to a private endpoint instead, you can connect directly to the load balancer for a compute group. There are two alternatives:
+
+- Intra-VPC: If you launch AWS resources [in Datomic's VPC](#intra-vpc), they will automatically be able to connect to Datomic.
+- Inter-VPC: Callers from other VPCs require additional setup. The specific instructions vary depending on the type of load balancer Datomic provisions for your compute group, and are covered under [ALB](#vpc-peering)and [NLB](#vpc-endpoint) instructions below.
+
+Each of these alternatives is described in more detail below. Throughout this page, the following metavariables are used:
+
+- *SystemName* is the Datomic system name.
+- *GroupName* is a Datomic compute group name. For the primary compute group, this is the *SystemName*. For a query group, this is the name of the query group.
+- *Region* is the AWS region in which the Datomic system is running.
+
+Intra-VPC Access
+----------------
+
+The [storage stack](new-system.html#storage) creates a [Virtual Private Cloud](https://aws.amazon.com/vpc/), named *datomic-$(SystemName)* in which to run a Datomic system. Inside this VPC, the stack creates 3 subnets named *datomic-$(SystemName)-subnet-0*, *datomic-$(SystemName)-subnet-1*, and *datomic-$(SystemName)-subnet-2*.
+
+Simply launch your calling application instances into any of these subnets, which are preconfigured for access to the Datomic system.
+
+
+
+
+
+Inter-VPC Access
+----------------
+
+To configure inter-VPC access, first determine whether your Datomic system uses an ALB or an NLB:
+
+- Versions of Datomic from 884-9095 (2021/07/13) forward use an ALB.
+- Versions of Datomic from 732-8993 (2020/11/30) to 781-9041 (2021/03/02) use an NLB.
+- Versions of Datomic older than 732-8993 (2020/11/30) are no longer supported. Upgrade before configuring an Inter-VPC connection.
+
+Then follow the directions below as appropriate for your load balancer.
+
+
+
+### Inter-VPC Access with VPC Peering (ALB only)
+
+To connect callers from an external VPC to a Datomic compute group ALB, you must create a
+
+ [VPC Peering Connection](http://docs.aws.amazon.com/AmazonVPC/latest/PeeringGuide/working-with-vpc-peering.html)
+
+between the calling VPC and Datomic VPC. See the AWS documentation for
+
+- [Creating and Accepting a VPC Peering Connection](http://docs.aws.amazon.com/AmazonVPC/latest/PeeringGuide/create-vpc-peering-connection.html#create-vpc-peering-connection-local)
+- [Updating the Route Tables](http://docs.aws.amazon.com/AmazonVPC/latest/PeeringGuide/vpc-peering-routing.html)
+- [Configuring Securty Group Ingress](https://docs.aws.amazon.com/vpc/latest/peering/vpc-peering-security-groups.html)
+
+Datomic nodes run in a security group with tag `Name=(System)-nodes`.
+
+If you want to allow applications in your existing VPC to refer to the Datomic system entry point using its DNS name, `entry-http.$(SystemName).$(Region).datomic.net:8182`, you must also associate your calling VPC with the Datomic system's Route 53 hosted zone:
+
+- [Associating a VPC with a Private Hosted Zone](http://docs.aws.amazon.com/Route53/latest/DeveloperGuide/hosted-zone-private-associate-vpcs.html)
+
+Associate your existing VPC with the Datomic system Route 53 Hosted Zone, named `$(SystemName).$(Region).datomic.net`. This allows the Datomic system VPC to handle private DNS resolution of the datomic.net domain for your VPC.
+
+
+
+
+
+### Inter-VPC Access with VPC Endpoint (NLB only)
+
+To connect callers from an external VPC to a Datomic compute group NLB,
+
+ [VPC Endpoint](https://docs.aws.amazon.com/AmazonVPC/latest/UserGuide/vpc-endpoints.html)
+
+> **Prerequisites**
+> 
+> - Your application VPC must be in the same AWS region as your Datomic Cloud system
+> - Your VPC must contain at least one subnet in the same Availability Zone (AZ) as one of the Datomic subnets
+
+
+
+#### Verifying Subnet AZs
+
+Find your Datomic System subnets and your application VPC subnets in the [subnet list](https://console.aws.amazon.com/vpc/home#subnets:) of the VPC Dashboard, taking note of the Availability Zones.
+
+If at least one of your application VPC subnets is in the same AZ as one of the Datomic system subnets, you can proceed to [create your VPC endpoint](#create-endpoint).
+
+If your application VPC does not contain any AZ-matching subnets, you will need to [create an additional subnet](https://docs.aws.amazon.com/AmazonVPC/latest/UserGuide/working-with-vpcs.html#AddaSubnet) (or subnets) in your VPC in one of the AZs used by your Datomic system subnets.
+
+
+
+
+
+#### Creating VPC Service and Endpoint
+
+- In the [CloudFormation Console](https://console.aws.amazon.com/cloudformation/home?#/stacks?filter=active&tab=outputs)browse to the Output tab of your Datomic compute or Query group stack
+- Find and record the Load Balancer Name reported under the key "*LoadBalancerName*"
+- Open the [Endpoint Services Console](https://console.aws.amazon.com/vpc/home?#EndpointServices:sort=serviceId)
+- Click "Create Endpoint Service"
+- Choose the Network Load Balancer corresponding to the name you recorded from the CloudFormation Output
+- Click "Create Service"
+- Record the Endpoint Service address of the new service
+- Open the [VPC Endpoints Console](https://console.aws.amazon.com/vpc/home?#Endpoints:sort=vpcEndpointId)
+- Click "Create Endpoint"
+- Select "Find Service By Name"
+- Paste the VPC Endpoint Service address recorded in the prior step in the "Service Name" field
+- Click "Verify" to ensure the address is correct
+- Click "Create Endpoint"
+
+
+
+
+
+#### Using the VPC Endpoint
+
+Datomic clients must use the VPC Endpoint DNS (or Route53 entry if you created one) and port 8182 for the `:endpoint` parameter in your Datomic [client configuration](https://docs.datomic.com/client-api/datomic.client.api.html#var-client)when connecting from your VPC:
+
+```
+<pre class="src src-clojure">(<span style="color: #a020f0;">def</span> <span style="color: #0000ff;">cfg</span> {<span style="color: #008b8b;">:server-type</span> <span style="color: #008b8b;">:ion</span>
+          <span style="color: #008b8b;">:region</span> <span style="color: #8b2252;">"<your AWS Region>"</span> <span style="color: #b22222;">;; </span><span style="color: #b22222;">e.g. us-east-1</span>
+          <span style="color: #008b8b;">:system</span> <span style="color: #8b2252;">"<system-name>"</span>
+          <span style="color: #008b8b;">:endpoint</span> <span style="color: #8b2252;">"http://<VpcEndpointDns>:8182"</span>})
+```
+
+
+
+The endpoint DNS name can be found in the Outputs of the VPC Endpoint CloudFormation Stack under the `VpcEndpointDns` key.
+
+
+
+
+
+#### Deleting VPC Endpoint and Service:
+
+To delete an Endpoint and Endpoint Service that you no longer need:
+
+- First, delete the endpoint that is using the Endpoint Service. Generally this will be the API Gateway entry you are using for your Lambda Ions
+- In the [CloudFormation Console](https://console.aws.amazon.com/cloudformation/) browse to the Output tab of your Datomic compute or Query group stack
+- Find and record the Service Endpoint ID under the key "*VpcEndpointServiceId*"
+- Open the [Endpoint Service Page](https://console.aws.amazon.com/vpc/home?#EndpointServices:sort=serviceId)
+- Find the Datomic Endpoint Service via the ID you recorded from the CloudFormation Output
+- Highlight the Service, click "*Action*" and "*Delete Service*"

@@ -1,0 +1,25 @@
+Schema Limits
+=============
+
+Number of Schema Elements
+-------------------------
+
+Datomic enforces the total number of schema elements to be fewer than 220, which includes schema attributes and value types. Attempts to create more than 220 schema elements will fail.
+
+
+
+
+
+Namespace Restrictions
+----------------------
+
+The `:db` namespace, and all `:db.*` namespaces, are reserved for use by Datomic.
+
+
+
+
+
+Schema Element Restrictions
+---------------------------
+
+With the exception of `:db/doc` and `:db/ident`, names in the `:db`namespace and all `:db.*` namespaces are reserved for use in Datomic schema. Domain entities cannot use these names.

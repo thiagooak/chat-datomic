@@ -1,0 +1,247 @@
+Assertion
+=========
+
+Create and Connect
+------------------
+
+An assertion requires a database to exist and a connection. Utilize a configuration map as described [in the Client API tutorial](client-api.html).
+
+noslide
+
+```
+<pre class="src src-clojure">(<span style="color: #a0522d;">require</span> '[datomic.client.api <span style="color: #008b8b;">:as</span> d])
+
+(<span style="color: #a020f0;">def</span> <span style="color: #0000ff;">cfg</span> {<span style="color: #008b8b;">:server-type</span> <span style="color: #008b8b;">:dev-local</span>
+          <span style="color: #008b8b;">:system</span> <span style="color: #8b2252;">"datomic-samples"</span>})
+
+(<span style="color: #a020f0;">def</span> <span style="color: #0000ff;">client</span> (d/client cfg))
+```
+
+
+
+Create a new database with [`create-database`](https://docs.datomic.com/client-api/datomic.client.api.html#var-create-database):
+
+noslide
+
+```
+<pre class="src src-clojure">(d/create-database client {<span style="color: #008b8b;">:db-name</span> <span style="color: #8b2252;">"tutorial"</span>})
+```
+
+
+
+Acquire a connection to the database with [`connect`](https://docs.datomic.com/client-api/datomic.client.api.html#var-connect):
+
+noslide
+
+```
+<pre class="src src-clojure">(<span style="color: #a020f0;">def</span> <span style="color: #0000ff;">conn</span> (d/connect client {<span style="color: #008b8b;">:db-name</span> <span style="color: #8b2252;">"tutorial"</span>}))
+```
+
+
+
+
+
+
+
+List and Map Forms
+------------------
+
+An assertion adds a single atomic fact to Datomic. Assertions are represented by ordinary data structures (lists or maps). Our inventory database will need to have enumerated types for various product attributes such as color, so let's start with an [edn](https://github.com/edn-format/edn) list that asserts the color green:
+
+noslide
+
+```
+<pre class="src src-clojure">[<span style="color: #008b8b;">:db/add</span> <span style="color: #8b2252;">"foo"</span> <span style="color: #008b8b;">:db/ident</span> <span style="color: #008b8b;">:green</span>]
+```
+
+
+
+- `:db/add` specifies that this is an assertion
+- "foo" is a temporary entity id for the new entity
+- `:db/ident` is an *attribute* used for programmatic identifiers
+- `:green` is the datom's *value*
+
+The same datom can be represented by a map:
+
+noslide
+
+```
+<pre class="src src-clojure">{<span style="color: #008b8b;">:db/ident</span> <span style="color: #008b8b;">:green</span>}
+```
+
+
+
+Maps imply (and are equivalent to) a set of assertions, all about the same entity.
+
+
+
+
+
+Transactions
+------------
+
+Datomic databases are updated via [ACID](../transactions/acid.html) transactions, which add a set of datoms to the database. Execute the code below at a [Clojure REPL](../getting-started/connecting.html)to add colors to the inventory database in a single transaction.
+
+The transaction below adds four colors to the database.
+
+noslide
+
+```
+<pre class="src src-clojure">(d/transact
+ conn 
+ {<span style="color: #008b8b;">:tx-data</span> [{<span style="color: #008b8b;">:db/ident</span> <span style="color: #008b8b;">:red</span>}
+            {<span style="color: #008b8b;">:db/ident</span> <span style="color: #008b8b;">:green</span>}
+            {<span style="color: #008b8b;">:db/ident</span> <span style="color: #008b8b;">:blue</span>}
+            {<span style="color: #008b8b;">:db/ident</span> <span style="color: #008b8b;">:yellow</span>}]})
+```
+
+
+
+```
+<pre class="src src-clojure">=> <span style="color: #b22222;">;; </span><span style="color: #b22222;">returns a big map</span>
+```
+
+
+
+A successful transaction returns a map with information about the transaction and the state of the database. We will explore this more later.
+
+
+
+
+
+Programming with Data
+---------------------
+
+In addition to colors, our inventory database will also track sizes and types of items. Since we are programming with data, it is easy to write a helper function to make these transactions more concise. The `make-idents` function shown below will take a collection of keywords, and return transaction-ready maps.
+
+noslide
+
+```
+<pre class="src src-clojure">(<span style="color: #a020f0;">defn</span> <span style="color: #0000ff;">make-idents</span>
+  [x]
+  (mapv #(<span style="color: #a0522d;">hash-map</span> <span style="color: #008b8b;">:db/ident</span> %) x))
+```
+
+
+
+You can quickly see that this works by trying it out at the REPL:
+
+noslide
+
+```
+<pre class="src src-clojure">(<span style="color: #a020f0;">def</span> <span style="color: #0000ff;">sizes</span> [<span style="color: #008b8b;">:small</span> <span style="color: #008b8b;">:medium</span> <span style="color: #008b8b;">:large</span> <span style="color: #008b8b;">:xlarge</span>])
+(make-idents sizes)
+```
+
+
+
+```
+<pre class="src src-clojure">=>
+[#<span style="color: #008b8b;">:db</span>{<span style="color: #008b8b;">:ident</span> <span style="color: #008b8b;">:small</span>} #<span style="color: #008b8b;">:db</span>{<span style="color: #008b8b;">:ident</span> <span style="color: #008b8b;">:medium</span>} 
+ #<span style="color: #008b8b;">:db</span>{<span style="color: #008b8b;">:ident</span> <span style="color: #008b8b;">:large</span>} #<span style="color: #008b8b;">:db</span>{<span style="color: #008b8b;">:ident</span> <span style="color: #008b8b;">:xlarge</span>}]
+```
+
+
+
+Note that because `make-idents` function takes and returns pure data, no database is necessary to develop and test this function.
+
+The `#:db` before the map indicates a [namespaced map](https://clojure.org/guides/weird_characters#_and_namespace_map_syntax).
+
+Let's put types, colors and sizes into the database and define a collection of colors we already added:
+
+noslide
+
+```
+<pre class="src src-clojure">(<span style="color: #a020f0;">def</span> <span style="color: #0000ff;">types</span> [<span style="color: #008b8b;">:shirt</span> <span style="color: #008b8b;">:pants</span> <span style="color: #008b8b;">:dress</span> <span style="color: #008b8b;">:hat</span>])
+(<span style="color: #a020f0;">def</span> <span style="color: #0000ff;">colors</span> [<span style="color: #008b8b;">:red</span> <span style="color: #008b8b;">:green</span> <span style="color: #008b8b;">:blue</span> <span style="color: #008b8b;">:yellow</span>])
+
+(d/transact conn {<span style="color: #008b8b;">:tx-data</span> (make-idents sizes)})
+(d/transact conn {<span style="color: #008b8b;">:tx-data</span> (make-idents colors)})
+(d/transact conn {<span style="color: #008b8b;">:tx-data</span> (make-idents types)})
+```
+
+
+
+
+
+
+
+Schema
+------
+
+So far we have used only built-in schema such as `:db/ident`. Now we want to add some inventory-specific attributes:
+
+- *sku*, a unique string identifier for a particular product
+- *color*, a reference to a color entity
+- *size*, a reference to a size entity
+- *type*, a reference to a type entity
+
+In Datomic, schema are entities just like program data. A schema entity must include:
+
+- [:db/ident](../schema/schema-reference.html#db-ident), a programmatic name
+- [:db/valueType](../schema/schema-reference.html#db-valuetype), a reference to an entity that specifies what type the attribute allows
+- [:db/cardinality](../schema/schema-reference.html#db-cardinality), a reference to an entity that specifies whether a particular entity can possess more than one value for the attribute at a given time.
+
+So we can add our schema like this:
+
+noslide
+
+```
+<pre class="src src-clojure">(<span style="color: #a020f0;">def</span> <span style="color: #0000ff;">schema-1</span>
+  [{<span style="color: #008b8b;">:db/ident</span> <span style="color: #008b8b;">:inv/sku</span>
+    <span style="color: #008b8b;">:db/valueType</span> <span style="color: #008b8b;">:db.type/string</span>
+    <span style="color: #008b8b;">:db/unique</span> <span style="color: #008b8b;">:db.unique/identity</span>
+    <span style="color: #008b8b;">:db/cardinality</span> <span style="color: #008b8b;">:db.cardinality/one</span>}
+   {<span style="color: #008b8b;">:db/ident</span> <span style="color: #008b8b;">:inv/color</span>
+    <span style="color: #008b8b;">:db/valueType</span> <span style="color: #008b8b;">:db.type/ref</span>
+    <span style="color: #008b8b;">:db/cardinality</span> <span style="color: #008b8b;">:db.cardinality/one</span>}
+   {<span style="color: #008b8b;">:db/ident</span> <span style="color: #008b8b;">:inv/size</span>
+    <span style="color: #008b8b;">:db/valueType</span> <span style="color: #008b8b;">:db.type/ref</span>
+    <span style="color: #008b8b;">:db/cardinality</span> <span style="color: #008b8b;">:db.cardinality/one</span>}
+   {<span style="color: #008b8b;">:db/ident</span> <span style="color: #008b8b;">:inv/type</span>
+    <span style="color: #008b8b;">:db/valueType</span> <span style="color: #008b8b;">:db.type/ref</span>
+    <span style="color: #008b8b;">:db/cardinality</span> <span style="color: #008b8b;">:db.cardinality/one</span>}])
+(d/transact conn {<span style="color: #008b8b;">:tx-data</span> schema-1})
+```
+
+
+
+Notice that the `:inv/sku` attribute also has a `:db/unique`value. This specifies that every `:inv/sku` must be unique within the database.
+
+
+
+
+
+Sample Data
+-----------
+
+Now let's make some sample data. Again, no special API is necessary, we can just use ordinary Clojure collections. The following expression creates one example inventory entry for each combination of color, size, and type.
+
+noslide
+
+```
+<pre class="src src-clojure">  <span style="color: #b22222;">;;; </span><span style="color: #b22222;">Defined earlier, but repeated for clarity</span>
+  (<span style="color: #a020f0;">def</span> <span style="color: #0000ff;">colors</span> [<span style="color: #008b8b;">:red</span> <span style="color: #008b8b;">:green</span> <span style="color: #008b8b;">:blue</span> <span style="color: #008b8b;">:yellow</span>])
+  (<span style="color: #a020f0;">def</span> <span style="color: #0000ff;">sizes</span> [<span style="color: #008b8b;">:small</span> <span style="color: #008b8b;">:medium</span> <span style="color: #008b8b;">:large</span> <span style="color: #008b8b;">:xlarge</span>])
+  (<span style="color: #a020f0;">def</span> <span style="color: #0000ff;">types</span> [<span style="color: #008b8b;">:shirt</span> <span style="color: #008b8b;">:pants</span> <span style="color: #008b8b;">:dress</span> <span style="color: #008b8b;">:hat</span>])
+
+  (<span style="color: #a020f0;">defn</span> <span style="color: #0000ff;">create-sample-data</span>
+  <span style="color: #8b2252;">"Create a vector of maps of all permutations of args"</span>
+    [colors sizes types]
+    (<span style="color: #483d8b;">->></span> (<span style="color: #483d8b;">for</span> [color colors size sizes type types]
+           {<span style="color: #008b8b;">:inv/color</span> color
+            <span style="color: #008b8b;">:inv/size</span> size
+            <span style="color: #008b8b;">:inv/type</span> type})
+         (map-indexed
+          (<span style="color: #a0522d;">fn</span> [idx map]
+            (<span style="color: #a0522d;">assoc</span> map <span style="color: #008b8b;">:inv/sku</span> (<span style="color: #a0522d;">str</span> <span style="color: #8b2252;">"SKU-"</span> idx))))
+         vec)) <span style="color: #b22222;">;; </span><span style="color: #b22222;">64 (4 x 4 x 4) maps</span>
+
+  @(<span style="color: #a020f0;">def</span> <span style="color: #0000ff;">sample-data</span> (create-sample-data colors sizes types))
+
+@(<span style="color: #a020f0;">def</span> <span style="color: #0000ff;">sample-data-transaction</span> (d/transact conn {<span style="color: #008b8b;">:tx-data</span> sample-data}))
+```
+
+
+
+Now that we have asserted some data, let's look at some different ways we can [retrieve it](read.html).

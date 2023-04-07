@@ -1,0 +1,699 @@
+Troubleshooting
+===============
+
+- [Troubleshooting CloudFormation Templates](#troubleshooting-templates)
+- [Troubleshooting Compute Nodes](#troubleshooting-nodes)
+- [Troubleshooting Solo Stacks](#troubleshooting-solo)
+- [Troubleshooting Clients](#troubleshooting-clients)
+- [Troubleshooting Socks Proxy](#troubleshooting-socks)
+- [Troubleshooting Ions](#troubleshooting-ions)
+
+> Not finding what you need here? Ask at the [Knowledgebase](https://ask.datomic.com).
+
+**IMPORTANT** - Datomic Cloud is configured with a set of well-tested default parameters for scaling and provisioning. You should **NOT** alter system settings (i.e. [storage provisioning and scaling](operation/scaling.html), changes to network or instance configurations, alterations to the default CloudFormation templates) without first contacting [Datomic Support](https://www.datomic.com/support.html) unless the changes are explicitly described in the Datomic Documentation.
+
+Troubleshooting CloudFormation Templates
+----------------------------------------
+
+
+
+### Failures in Nested Templates
+
+If a nested template fails, the root template will fail also, and the console will by default show only the root template's `CREATE_FAILED`event. To see the important details in the nested template's events:
+
+- Click on the Filter popup, and choose "Deleted"
+    
+    [![template-filters.png](images/template-filters.png)](images/template-filters.png)
+- Select the nested template, and then choose the Events tab to see the cause of failure.
+
+
+
+
+
+### Check for CloudFormation failure
+
+To check your CloudFormation for errors, find your stack in the [CloudFormation](https://console.aws.amazon.com/cloudformation/home?#/stacks?filter=active&tab=events)
+
+window and click the checkbox at the start of its row.
+
+If the status of the stack is "CREATE\_IN\_PROGRESS" the stack is still being created, and you should continue to wait for the stack to start. You can monitor it from the Cloudformation details window. The stack is done when it says "CREATE\_COMPLETE."
+
+If the status of the stack is "CREATE\_FAILED" there was an error starting the stack. See the other topics on this page for help tracking down the source of the failure.
+
+
+
+
+
+### Production Topology Create Failed
+
+If the production topology fails to create in CloudFormation with a *CREATE\_FAILED* on the `AWS::AutoScaling::AutoScalingGroup` for the `TxAutoScalingGroup` resource with the message:
+
+```
+<pre class="example" id="org95989b2">
+You have requested more instances (2) than your current instance limit of 1 allows for the specified instance type. Please visit http://aws.amazon.com/contact-us/ec2-request to request an adjustment to this limit. Launching EC2 instance failed.
+```
+
+You need to [request a limit increase](operation/account-setup.html#i3-limit) in your allowed number of running i3.large instances.
+
+
+
+
+
+### Starting a compute stack without a storage stack.
+
+Without a storage system, compute will fail immediately and rollback. The stack event message will report the following error, substitute &lt;system-name&gt; for the system name you specified when launching your compute stack.
+
+```
+<pre class="example" id="orgdced680">
+No export named <system-name>-FileSystemId found. Rollback requested by user.
+```
+
+[![compute-only-error.png](./images/compute-only-error.png)](./images/compute-only-error.png)
+
+
+
+
+
+
+
+### Running in EC2 Classic
+
+Datomic Cloud is currently only supported in accounts that support only EC2-VPC. If you attempt to run Datomic Cloud in an EC2-Classic, the Cloudformation stack will fail. The stack event message will have an error with a Type of "Custom::ResourceCheck" and a Logical ID of "EnsureEc2Vpc."
+
+See [Setting Up](setting-up.html) for more information.
+
+
+
+
+
+### Update Failed with "Export cannot be deleted"
+
+A failed compute stack update to or past version 470-8654 with the error:
+
+```
+<pre class="example" id="org0756089">
+Export <SystemName>-VpcEndpointServiceName cannot be deleted as it is in use by <systemname>-vpc-endpoint
+```
+
+Indicates that you have previously launched a VPC Endpoint using the provided Endpoint CloudFormation template. Versions from 470-8654 on do not create the necessary services for the VPC Endpoint template. You will need to delete the VPC Endpoint stack from the [CloudFormation dashboard](https://console.aws.amazon.com/cloudformation/home)and [recreate the endpoint](operation/vpc-access.html#create-endpoint).
+
+
+
+
+
+
+
+Troubleshooting Compute Nodes
+-----------------------------
+
+
+
+### Check Alerts First
+
+Datomic publishes a [metric](operation/monitoring.html#metrics) named `Alert` for any situation that might require operator intervention. You can create a Cloudwatch Alarm for the `Alert` metric, and then [search the logs](operation/monitoring.html#finding-alerts) for specific details.
+
+Reviewing alerts should be your first step when you are troubleshooting Datomic Cloud nodes.
+
+
+
+
+
+### Check Memory Second
+
+Running out of memory is the number one cause of both availability and performance problems.
+
+Every Datomic node publishes a JvmFreeMb [metric](operation/monitoring.html#metrics). If the Minimum value for this metric dips below 15% of its initial startup value for an extended period, memory pressure is likely a problem.
+
+- If you believe the problem is individual large queries, upgrade to larger EC2 instance sizes.
+- If you believe the problem is a high volume of smaller queries, increase the number of instances in your compute group.
+
+
+
+
+
+
+
+Troubleshooting Solo Nodes
+--------------------------
+
+
+
+### Check Alerts and Logs First
+
+As described [above](#check-alerts-first), Datomic publishes a [metric](operation/monitoring.html#metrics) named `Alert` for any situation that might require operator intervention. You can create a Cloudwatch Alarm for the `Alert` metric, and then [search the logs](operation/monitoring.html#finding-alerts) for specific details.
+
+When troubleshooting a Solo system, you should ensure that the single compute node in your system is healthy and reporting [logs](operation/monitoring.html#logs) and [metrics](operation/monitoring.html#metrics). If it is not, you should use the [EC2 Dashboard](https://console.aws.amazon.com/ec2/) to terminate your compute node and allow the AutoScaling group to replace it.
+
+If you require an HA system with built-in monitoring and failover, you should move to the [Production Topology](whatis/architecture.html#production-topology).
+
+
+
+
+
+
+
+Troubleshooting Client Errors
+-----------------------------
+
+
+
+### Missing Connect Arguments
+
+If you leave out a required argument.
+
+```
+<pre class="example" id="orgeb9d721">
+CompilerException clojure.lang.ExceptionInfo: Expected string for :query-group {:cognitect.anomalies/category :cognitect.anomalies/incorrect, :cognitect.anomalies/message "Expected string for :query-group", :datomic.client.impl.shared.validator/got {:server-type :cloud, :region "us-east-1", :system "errortest2", :endpoint "http://entry.errortest2.us-east-1.datomic.net:8182/", :proxy-port 8888}, :datomic.client.impl.shared.validator/op :client, :datomic.client.impl.shared.validator/requirements {:region string, :system string, :query-group string, :endpoint string, :server-type keyword}}, compiling:(form-init8129817634595122502.clj:1:13)
+```
+
+
+
+
+
+### ::cognitect.anomalies/forbidden
+
+If you get a *forbidden* error when using the Client API, this means that your AWS credentials do not grant permission to this functionality.
+
+
+
+- <a id="make-sure-that-you-have-an-iam-policy"></a>Make sure that you have an IAM policy that [authorizes](operation/access-control.html) the operation you are trying to perform.
+- <a id="make-sure-that-policy-is-associated-with-the-identity"></a>Make sure that policy is associated with the identity you are running under.
+
+
+
+### ExceptionInfo Forbidden to read keyfile
+
+```
+<pre class="example" id="org2bd09ac">
+>d/create-database client {:db-name "test"})
+ExceptionInfo Forbidden to read keyfile at s3://datomic-test-storagef7f305e7-1bpzuyaf5d-s3datomic-1wgl6uvtl9bei/datomic-test/datomic/access/admin/.keys. Make sure that your endpoint is correct, and that your ambient AWS credentials allow you to GetObject on the keyfile.  clojure.core/ex-info (core.clj:4739)
+```
+
+Ensure that you have sourced the right credentials with all necessary permissions.
+
+
+
+
+
+### Connection Failure
+
+The client error:
+
+```
+<pre class="src src-clojure"><span style="color: #483d8b;">Exception</span> in thread <span style="color: #8b2252;">"main"</span> clojure.lang.ExceptionInfo: <span style="color: #483d8b;">Unable</span> to connect to system: 
+{<span style="color: #008b8b;">:cognitect.anomalies/category</span> <span style="color: #008b8b;">:cognitect.anomalies/fault</span>, <span style="color: #008b8b;">:cognitect.anomalies/message</span> <span style="color: #8b2252;">"SOCKS4 tunnel failed, connection closed"</span>, <span style="color: #008b8b;">:cognitect.http-client/throwable</span> #error {
+ <span style="color: #008b8b;">:cause</span> <span style="color: #8b2252;">"SOCKS4 tunnel failed, connection closed"</span>
+ <span style="color: #008b8b;">:via</span>
+  [{<span style="color: #008b8b;">:type</span> <span style="color: #483d8b;">java.io.IOException</span>
+    <span style="color: #008b8b;">:message</span> <span style="color: #8b2252;">"SOCKS4 tunnel failed, connection closed"</span>
+    <span style="color: #008b8b;">:at</span> [<span style="color: #483d8b;">org.eclipse.jetty.client.Socks4Proxy$Socks4ProxyConnection</span> <span style="color: #483d8b;">onFillable</span> <span style="color: #8b2252;">"Socks4Proxy.java"</span> 166]}] ...
+```
+
+
+
+Accompanied by the following message from your SOCKS Proxy:
+
+```
+<pre class="example" id="orgac84410">
+debug1: channel 2: new [dynamic-tcpip]
+channel 2: open failed: administratively prohibited: open failed
+```
+
+Indicates that the client was unable to reach the Datomic system through the proxy. Check your configuration `:endpoint` carefully and use the [Access Gateway Connection Test](getting-started/connecting.html) to ensure your proxy is configured correctly.
+
+
+
+
+
+### java.lang.NoClassDefFoundError: javax/xml/bind/DatatypeConverter
+
+> This issue is resolved on [client-cloud 0.8.63](./releases.html#client-0-8-63)
+
+On `com.datomic/client-cloud 0.8.56` and Java 9+ you'll run into this error when connecting:
+
+```
+<pre class="example" id="orge35930d">
+CompilerException clojure.lang.ExceptionInfo: java.lang.NoClassDefFoundError: javax/xml/bind/DatatypeConverter #:cognitect.anomalies{:category :cognitect.anomalies/fault, :message "java.lang.NoClassDefFoundError: javax/xml/bind/DatatypeConverter"}, compiling:(form-init692047429040487558.clj:1:11)
+```
+
+As of Java 9 the `jaxb` module was removed from the default JDK. As such, you must explicitly require the `javax.xml.bind/jaxb-api {:mvn/version "2.3.0"}` dep to resolve this error.
+
+
+
+
+
+### Jetty Dependency Conflict
+
+The following error will occur if your project has a transient dependency on a more recent version of Apache Jetty than the version used by Datomic:
+
+```
+<pre class="src src-clojure">#error {
+ <span style="color: #008b8b;">:cause</span> <span style="color: #8b2252;">"org.eclipse.jetty.util.thread.Invocable$InvocationType"</span>
+  <span style="color: #008b8b;">:via</span>
+   [{<span style="color: #008b8b;">:type</span> <span style="color: #483d8b;">java.lang.NoClassDefFoundError</span>
+     <span style="color: #008b8b;">:message</span> <span style="color: #8b2252;">"org/eclipse/jetty/util/thread/Invocable$InvocationType"</span>
+     <span style="color: #008b8b;">:at</span> [<span style="color: #483d8b;">org.eclipse.jetty.io.ManagedSelector</span> <init> <span style="color: #8b2252;">"ManagedSelector.java"</span> 79]}
+    {<span style="color: #008b8b;">:type</span> <span style="color: #483d8b;">java.lang.ClassNotFoundException</span>
+     <span style="color: #008b8b;">:message</span> <span style="color: #8b2252;">"org.eclipse.jetty.util.thread.Invocable$InvocationType"</span>
+     <span style="color: #008b8b;">:at</span> [<span style="color: #483d8b;">java.net.URLClassLoader</span> <span style="color: #483d8b;">findClass</span> <span style="color: #8b2252;">"URLClassLoader.java"</span> 381]}]
+ ...}
+```
+
+
+
+The conflict can be resolved by excluding the version of Jetty used by Datomic:
+
+```
+<pre class="src src-clojure">[com.datomic/client-cloud <span style="color: #8b2252;">"0.8.54"</span>
+ <span style="color: #008b8b;">:exclusions</span> [org.eclipse.jetty/jetty-client
+              org.eclipse.jetty/jetty-http
+              org.eclipse.jetty/jetty-util]]
+```
+
+
+
+
+
+
+
+### Loading database error when connecting
+
+The "Loading database" message:
+
+```
+<pre class="src src-clojure">#<span style="color: #008b8b;">:cognitect.anomalies</span>{<span style="color: #008b8b;">:category</span> <span style="color: #008b8b;">:cognitect.anomalies/unavailable</span>,
+                      <span style="color: #008b8b;">:message</span> <span style="color: #8b2252;">"Loading database"</span>}
+```
+
+
+
+indicates that the Datomic node you've reached has not yet loaded the requested database into memory. This error can occur when you call `create-database`, followed immediately by `connect`, as well as following an instance restart. You should consider this a retry-able error and wrap the connection attempt with retry logic.
+
+
+
+
+
+### ::cognitect.anomalies/busy
+
+If you get a *busy* response from the Client API, your request rate has temporarily exceeded the capacity of a node, and has already been through an exponential backoff and retry implemented by the client. At this point you have three options:
+
+- When transacting continue to retry the request at the application level with you own exponential backoff. The [Mbrainz Importer](https://github.com/Datomic/mbrainz-importer) example project demonstrates a [batch import with retry](https://github.com/Datomic/mbrainz-importer/blob/master/src/cognitect/xform/batch.clj#L70-L92).
+- When querying, expand the capacity of your system, by [adding and scaling a Query Group](operation/growing-your-system.html#query-group).
+- Give up on completing the request.
+
+
+
+
+
+### Server type mismatch in datomic client
+
+Ions support the *synchronous* Datomic Client API
+
+The error:
+
+```
+<pre class="src src-js">{
+    <span style="color: #8b2252;">"Msg"</span>: <span style="color: #8b2252;">"IonLambdaException"</span>,
+    <span style="color: #8b2252;">"Ex"</span>: {
+        <span style="color: #8b2252;">"Cause"</span>: <span style="color: #8b2252;">":server-type must be :cloud or :peer-server"</span>,
+        <span style="color: #8b2252;">"Via"</span>: [
+            {
+                <span style="color: #8b2252;">"Type"</span>: <span style="color: #8b2252;">"clojure.lang.ExceptionInfo"</span>,
+                <span style="color: #8b2252;">"Message"</span>: <span style="color: #8b2252;">":server-type must be :cloud or :peer-server"</span>,
+                <span style="color: #8b2252;">"Data"</span>: {
+                    <span style="color: #8b2252;">"CognitectAnomaliesCategory"</span>: <span style="color: #8b2252;">"CognitectAnomaliesIncorrect"</span>,
+                    <span style="color: #8b2252;">"CognitectAnomaliesMessage"</span>: <span style="color: #8b2252;">":server-type must be :cloud or :peer-server"</span>
+                },
+                <span style="color: #8b2252;">"At"</span>: [
+                    <span style="color: #8b2252;">"clojure.core$ex_info"</span>,
+                    <span style="color: #8b2252;">"invokeStatic"</span>,
+                    <span style="color: #8b2252;">"core.clj"</span>,
+                    4739
+                ]
+            }
+```
+
+
+
+Indicates an attempt to use the async API with the server-type `:ion`
+
+You should use the synchronous Client API in your Ion(s).
+
+
+
+
+
+
+
+Troubleshooting Socks Proxy Errors
+----------------------------------
+
+
+
+### Unsupported AWS CLI Version
+
+****Information for previous CLI tools**** - Please update to [the latest version](../releases.html#current).
+
+Symptom: The script prints a generic AWS CLI help message before failing:
+
+```
+<pre class="src src-sh">$ bash datomic-access client -r eu-central-1 good-system
+```
+
+
+
+```
+<pre class="src src-sh">=>
+To see help text, you can run:
+
+  aws help
+  aws <command> help
+  aws <command> <subcommand> help
+aws: error: argument command: Invalid choice, valid choices are:
+...
+```
+
+
+
+**Fix:** Update to the latest version of the [AWS CLI](http://docs.aws.amazon.com/cli/latest/userguide/installing.html).
+
+
+
+
+
+### Wrong AWS Creds
+
+> This section only applies to [Datomic 781-9041](../changes.html#781-9041) and lower.
+
+****Information for previous CLI tools**** - Please update to [the latest version](../releases.html#current).
+
+```
+<pre class="src src-sh">$ bash datomic-access client -r eu-central-1 good-system
+```
+
+
+
+```
+<pre class="src src-sh">=>
+Unable to read bastion key, make sure your AWS creds are correct.
+```
+
+
+
+**Fix:** Make sure your AWS creds are connected to a policy that is [authorized](getting-started/configuring-access.html#authorize-user)for your Datomic system.
+
+
+
+
+
+### Wrong System Name
+
+> This section only applies to [Datomic 781-9041](../changes.html#781-9041) and lower.
+
+****Information for previous CLI tools**** - Please update to [the latest version](../releases.html#current).
+
+```
+<pre class="src src-sh">$ bash datomic-access client -r eu-central-1 not-a-system
+```
+
+
+
+```
+<pre class="src src-sh">=>
+Datomic system not-a-system not found, make sure your system name and AWS creds are correct.
+```
+
+
+
+
+
+
+
+### AccessDeniedException
+
+```
+<pre class="example" id="org92c135a">
+An error occurred (AccessDeniedException) when calling the GetResources operation: User: arn:aws:iam::<number>:user/<user-name> is not authorized to perform: tag:GetResources
+Datomic system <system-name> not found, make sure your system name and AWS creds are correct.
+```
+
+**Fix:** Ensure that you [configured the correct AWS credentials.](getting-started/connecting.html)This error indicates that the configured AWS credentials do not match what is necessary to access the indicated system. You are may be using the wrong credentials for the account.
+
+
+
+
+
+### SOCKS4 tunnel failed, connection closed and connection refused errors in Client
+
+> This section only applies to [Datomic 781-9041](../changes.html#781-9041) and lower.
+
+****Information for previous CLI tools**** - Please update to [the latest version](../releases.html#current).
+
+This error will throw when the connection is unable to find a Datomic Socks proxy, if you're seeing this error while running remotely it is because the Client is expecting a proxy and you'll need to remove the proxy from your config map:
+
+```
+<pre class="src src-clojure"><span style="color: #483d8b;">CompilerException</span> clojure.lang.ExceptionInfo: <span style="color: #483d8b;">Unable</span> to connect to localhost:8182 {<span style="color: #008b8b;">:cognitect.anomalies/category</span> <span style="color: #008b8b;">:cognitect.anomalies/fault</span>, <span style="color: #008b8b;">:cognitect.anomalies/message</span> <span style="color: #8b2252;">"SOCKS4 tunnel failed, connection closed"</span>, <span style="color: #008b8b;">:cognitect.http-client/throwable</span> #error {
+ <span style="color: #008b8b;">:cause</span> <span style="color: #8b2252;">"SOCKS4 tunnel failed, connection closed"</span>
+ <span style="color: #008b8b;">:via</span>
+   [{<span style="color: #008b8b;">:type</span> <span style="color: #483d8b;">java.io.IOException</span>
+ <span style="color: #008b8b;">:message</span> <span style="color: #8b2252;">"SOCKS4 tunnel failed, connection closed"</span>
+ <span style="color: #008b8b;">:at</span> [<span style="color: #483d8b;">org.eclipse.jetty.client.Socks4Proxy$Socks4ProxyConnection</span> <span style="color: #483d8b;">onFillable</span> <span style="color: #8b2252;">"Socks4Proxy.java"</span> 166]}]
+ <span style="color: #008b8b;">:trace</span>
+   [[<span style="color: #483d8b;">org.eclipse.jetty.client.Socks4Proxy$Socks4ProxyConnection</span> <span style="color: #483d8b;">onFillable</span> <span style="color: #8b2252;">"Socks4Proxy.java"</span> 166]
+   [<span style="color: #483d8b;">org.eclipse.jetty.io.AbstractConnection$ReadCallback</span> succeeded <span style="color: #8b2252;">"AbstractConnection.java"</span> 273]
+   [<span style="color: #483d8b;">org.eclipse.jetty.io.FillInterest</span> fillable <span style="color: #8b2252;">"FillInterest.java"</span> 95]
+   [<span style="color: #483d8b;">org.eclipse.jetty.io.SelectChannelEndPoint$2</span> run <span style="color: #8b2252;">"SelectChannelEndPoint.java"</span> 75]
+   [<span style="color: #483d8b;">org.eclipse.jetty.util.thread.strategy.ExecuteProduceConsume</span> <span style="color: #483d8b;">produceAndRun</span> <span style="color: #8b2252;">"ExecuteProduceConsume.java"</span> 213]
+   [<span style="color: #483d8b;">org.eclipse.jetty.util.thread.strategy.ExecuteProduceConsume</span> run <span style="color: #8b2252;">"ExecuteProduceConsume.java"</span> 147]
+   [<span style="color: #483d8b;">org.eclipse.jetty.util.thread.QueuedThreadPool</span> <span style="color: #483d8b;">runJob</span> <span style="color: #8b2252;">"QueuedThreadPool.java"</span> 654]
+   [<span style="color: #483d8b;">org.eclipse.jetty.util.thread.QueuedThreadPool$3</span> run <span style="color: #8b2252;">"QueuedThreadPool.java"</span> 572]
+   [<span style="color: #483d8b;">java.lang.Thread</span> run <span style="color: #8b2252;">"Thread.java"</span> 745]]}, <span style="color: #008b8b;">:config</span> {<span style="color: #008b8b;">:server-type</span> <span style="color: #008b8b;">:cloud</span>, <span style="color: #008b8b;">:region</span> <span style="color: #8b2252;">"us-east-1"</span>, <span style="color: #008b8b;">:system</span> <span style="color: #8b2252;">"wrong"</span>, <span style="color: #008b8b;">:query-group</span> <span style="color: #8b2252;">"wrong"</span>, <span style="color: #008b8b;">:endpoint</span> <span style="color: #8b2252;">"http://entry.wrong.us-east-1.datomic.net:8182/"</span>, <span style="color: #008b8b;">:proxy-port</span> 8182, <span style="color: #008b8b;">:endpoint-map</span> {<span style="color: #008b8b;">:headers</span> {<span style="color: #8b2252;">"host"</span> <span style="color: #8b2252;">"entry.wrong.us-east-1.datomic.net:8182"</span>}, <span style="color: #008b8b;">:scheme</span> <span style="color: #8b2252;">"http"</span>, <span style="color: #008b8b;">:server-name</span> <span style="color: #8b2252;">"entry.wrong.us-east-1.datomic.net"</span>, <span style="color: #008b8b;">:server-port</span> 8182}}}, compiling:(sync_client_test.clj:138:13) 
+```
+
+
+
+This error will throw when the config map is pointing to the wrong proxy port.
+
+```
+<pre class="src src-clojure"><span style="color: #483d8b;">CompilerException</span> clojure.lang.ExceptionInfo: <span style="color: #483d8b;">Unable</span> to connect to localhost:8188 {<span style="color: #008b8b;">:cognitect.anomalies/category</span> <span style="color: #008b8b;">:cognitect.anomalies/unavailable</span>, <span style="color: #008b8b;">:cognitect.anomalies/message</span> <span style="color: #8b2252;">"Connection refused"</span>, <span style="color: #008b8b;">:config</span> {<span style="color: #008b8b;">:server-type</span> <span style="color: #008b8b;">:cloud</span>, <span style="color: #008b8b;">:region</span> <span style="color: #8b2252;">"us-east-1"</span>, <span style="color: #008b8b;">:system</span> <span style="color: #8b2252;">"jaret-lambda-test"</span>, <span style="color: #008b8b;">:query-group</span> <span style="color: #8b2252;">"jaret-lambda-test"</span>, <span style="color: #008b8b;">:endpoint</span> <span style="color: #8b2252;">"http://entry.jaret-lambda-test.us-east-1.datomic.net:8182/"</span>, <span style="color: #008b8b;">:proxy-port</span> 8188, <span style="color: #008b8b;">:endpoint-map</span> {<span style="color: #008b8b;">:headers</span> {<span style="color: #8b2252;">"host"</span> <span style="color: #8b2252;">"entry.jaret-lambda-test.us-east-1.datomic.net:8182"</span>}, <span style="color: #008b8b;">:scheme</span> <span style="color: #8b2252;">"http"</span>, <span style="color: #008b8b;">:server-name</span> <span style="color: #8b2252;">"entry.jaret-lambda-test.us-east-1.datomic.net"</span>, <span style="color: #008b8b;">:server-port</span> 8182}}}, compiling:(form-init7068544986673255826.clj:1:13)
+```
+
+
+
+You will see this error when using the `datomic-access` if the connection or proxy process has failed.
+
+With both of these errors, you'll want to double check your connection config.
+
+
+
+
+
+### Error retrieving results
+
+The `datomic` command is unable to access the Datomic system. Specify an [AWS Credentials](https://docs.aws.amazon.com/cli/latest/userguide/cli-configure-files.html) source using `-p` **or** `--profile`, and make sure the currently specified credentials are correct for the Datomic system that you are trying to access.
+
+
+
+
+
+
+
+Troubleshooting Ion push
+------------------------
+
+
+
+### Ion push requires a clean git commit
+
+If you attempt to [*push*](ions/ions-reference.html#push) an ion project with uncommitted local changes, you will see the following exception:
+
+```
+<pre class="example" id="org48da966">
+java.lang.IllegalArgumentException: You must either specify a uname or deploy from clean git commit
+```
+
+You must either
+
+- push from a fully clean git commit (recommended)
+- provide an [unreproducible name](ions/ions-reference.html#unreproducible)
+
+
+
+
+
+### Ion push fails to find a code bucket
+
+The ion push operation pushes your code to a region-specific Datomic code bucket. If push fails to find a code bucket, it will report a message like:
+
+```
+<pre class="src src-clojure">{<span style="color: #008b8b;">:command-failed</span> <span style="color: #8b2252;">"{:op :push}"</span>,
+ <span style="color: #008b8b;">:causes</span>
+ ({<span style="color: #008b8b;">:message</span>
+   <span style="color: #8b2252;">"Unable to find a unique code bucket. Make sure that you are running\nDatomic Cloud in the region you are deploying to."</span>,
+   <span style="color: #008b8b;">:class</span> <span style="color: #483d8b;">ExceptionInfo</span>,
+   <span style="color: #008b8b;">:data</span> {<span style="color: #8b2252;">"datomic:code"</span> nil}})}
+```
+
+
+
+The most common cause of this is that you are accidentally using the wrong AWS keys, or your AWS credentials configuration is defaulting to the wrong AWS region. Make sure you are [using the right AWS access keys](operation/howto.html#aws-access-keys).
+
+
+
+
+
+### Ion push requires ion-dev tools
+
+The ion-dev tools are invoked via a deps.edn alias. If you have not installed the ion-dev tools, the Clojure CLI will report that the alias is undeclared when you try to push:
+
+```
+<pre class="src src-sh">clojure -A:ion-dev <span style="color: #8b2252;">'{:op :push}'</span>
+```
+
+
+
+```
+<pre class="src src-clojure">=>
+WARNING: <span style="color: #483d8b;">Specified</span> aliases are undeclared: [<span style="color: #008b8b;">:ion-dev</span>]
+<span style="color: #483d8b;">Execution</span> error (<span style="color: #483d8b;">FileNotFoundException</span>) at <span style="color: #483d8b;">java.io.FileInputStream/open0</span> (FileInputStream.java:-2).
+{<span style="color: #008b8b;">:op</span> <span style="color: #008b8b;">:push</span>} (<span style="color: #483d8b;">No</span> such file or directory)
+```
+
+
+
+If you encounter this error, [install the ion-dev tools](operation/howto.html#ion-dev).
+
+
+
+
+
+### Ion push requires a recent version of Clojure CLI
+
+The ion-dev tools require a recent version of the Clojure CLI. If you see the following error:
+
+```
+<pre class="example" id="orgeb5e18a">
+Error building classpath. Unknown alias key: :deps
+```
+
+then you need a [more recent version](operation/howto.html#clojure-cli) of the Clojure CLI.
+
+
+
+
+
+
+
+Troubleshooting Ion deploy
+--------------------------
+
+
+
+### Ion deploy fails with "Assert failed" message
+
+Failure of [Ion Deployment](ions/ions-reference.html#deploy) with the following error message in the [Datomic system CloudWatch Logs](operation/monitoring.html#searching-cloudwatch-logs):
+
+```
+<pre class="src src-js"><span style="color: #8b2252;">"Cause"</span>: <span style="color: #8b2252;">"Assert failed: cfg"</span>,
+<span style="color: #8b2252;">"Via"</span>: [
+    {
+        <span style="color: #8b2252;">"Type"</span>: <span style="color: #8b2252;">"java.lang.AssertionError"</span>,
+        <span style="color: #8b2252;">"Message"</span>: <span style="color: #8b2252;">"Assert failed: cfg"</span>,
+        <span style="color: #8b2252;">"At"</span>: [
+            <span style="color: #8b2252;">"datomic.client.impl.local$create_client"</span>,
+            <span style="color: #8b2252;">"invokeStatic"</span>,
+            <span style="color: #8b2252;">"local.clj"</span>,
+            97
+        ]
+    }
+]
+```
+
+
+
+Indicates that a namespace in the ion attempted to create a connection to a Datomic system as a side effect of loading a namespace. You should follow the "connect on use" pattern as shown in the [Ion Starter](https://github.com/Datomic/ion-starter/blob/master/src/datomic/ion/starter.clj#L13) example.
+
+
+
+
+
+
+
+Troubleshooting Ion deploy-status
+---------------------------------
+
+If your ion-deploy succeeds, but never reaches `SUCCEEDED` status, it is likely that your application code cannot load correctly on your compute nodes. Follow the steps for [troubleshooting compute nodes](#troubleshooting-nodes).
+
+
+
+
+
+Troubleshooting Ions
+--------------------
+
+
+
+### Supported Lambda Ion Return Types
+
+Returning an unsupported type from a Lambda Ion will result in the exception:
+
+```
+<pre class="example" id="orgf3724bc">
+datomic.ion.lambda.handler.exceptions.Incorrect: No implementation of method: :->bbuf of protocol: #'datomic.ion.lambda.dispatcher/ToBbuf found for class: clojure.lang.LazySeq
+```
+
+Lambda ions [should return](ions/ions-reference.html#lambda-ion) a String, InputStream, ByteBuffer, or File.
+
+
+
+
+
+### API Gateway Returns a 500 Internal Server Error
+
+A `HTTP 500 Internal server error` returned from API Gateway indicates that the ion code threw an exception. Find the full exception text and stack trace in the Datomic system CloudWatch Logs:
+
+- Open the [CloudWatch Logs](https://console.aws.amazon.com/cloudwatch/home#logs:) in the AWS Console
+- Click on the Log Group named "datomic-{System}", where System is your system name. Each EC2 instance will create a separate log stream. Usually you will want to search across all log streams.
+- Click the "Search Log Group" button
+- Enter "Exception" in the search dialog
+- Find the event of interest in the search results and click the arrow to expand the details
+
+The screenshot below shows finding an ion exception in the log:
+
+[![ion-exception-log.png](images/ion-exception-log.png)](images/ion-exception-log.png)
+
+
+
+
+
+
+
+
+
+Troubleshooting OPTIONS Requests Blocked by CORS Policy
+-------------------------------------------------------
+
+
+
+### Symptom
+
+If you are leveraging authorization, such as Cognito, in your API Gateway on your ANY http method then you will receive an error when your browser makes the preflight OPTIONS request. The error will manifest as a failed request and a message similar to:
+
+
+
+- <a id="org8eb55de"></a>Chrome  
+    ```
+    <pre class="example">
+    Access to XMLHttpRequest at 'https://a3gy67dew7.execute-api.us-east-1.amazonaws.com/dev/api/v1/authenticated-example' from origin 'http://localhost:9876' has been blocked by CORS policy: Response to preflight request doesn't pass access control check: No 'Access-Control-Allow-Origin' header is present on the requested resource.
+    ```
+- <a id="orgc292b52"></a>FireFox  
+    ```
+    <pre class="example">
+    Cross-Origin Request Blocked: The Same Origin Policy disallows reading the remote resource at https://a3gy67dew7.execute-api.us-east-1.amazonaws.com/dev/api/v1/authenticated-example. (Reason: CORS header 'Access-Control-Allow-Origin' missing).
+    ```
+
+
+
+### Fix
+
+Follow the instructions found in [Enabling CORS in a Lambda Proxy Web Service](tech-notes/cors-lambda-proxy.html)

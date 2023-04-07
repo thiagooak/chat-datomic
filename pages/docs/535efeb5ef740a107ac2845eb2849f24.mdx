@@ -1,0 +1,50 @@
+Exceptions
+==========
+
+Datomic makes particular use of two kinds of *RuntimeException*:
+
+- *IllegalStateException*
+- *IllegalArgumentException*
+
+*IllegalArgumentException* indicates a program bug. For example, attempts to refer to an entity via a *:db/ident* that does not exist will trigger an *IllegalArgumentException*. Such failures should not be retried.
+
+*IllegalStateException* indicates that an operation is not allowed given the current state of the system. For example, a transaction that violates a *:db.unique* constraint will throw an *IllegalStateException*.
+
+For other kinds of failures, Datomic uses Java runtime exceptions. However, note that checked exceptions might still arise from underlying subsystems, so "catch-all" code should catch *Throwable* or *Exception*.
+
+Exceptions in Transaction Functions
+-----------------------------------
+
+Exceptions in transaction functions occur on the transactor, but may be of interest to peers. Exceptions in transaction functions are reported as follows:
+
+On the transactor, the exception stack trace is written to the log.
+
+On the peer, an exception will be thrown when the transaction future is dereferenced. This peer exception will contain the following information:
+
+- The peer exception will have the same string message as the original exception on the transactor.
+- If the transactor exception is an instance of a class whose package name begins with "java", then the peer exception will be an instance of the same class. Otherwise, the exception will be a runtime exception.
+- If the transactor exception implements *clojure.lang.IExceptionInfo*, the peer exception will also, and will contain a map of additional information.
+
+These peer rules make it possible for transaction functions to report different failures in a way that peers can usefully distinguish between them.
+
+Transaction functions that report different problems with different exception types should match Datomic's own use of *IllegalArgumentException* and *IllegalStateException*, if possible, to avoid proliferating cases that peer code might need to handle.
+
+
+
+
+
+Exceptions May Be Wrapped
+-------------------------
+
+Note that exceptions may be wrapped to comply with Java conventions, so you may need to walk the *.getCause* chain to find the "interesting" exception. In particular, the futures returned by [transact](../javadoc/datomic/Connection.html#transact-java.util.List-) and transactAsync will wrap exceptions in an [ExecutionException](https://docs.oracle.com/javase/6/docs/api/java/util/concurrent/ExecutionException.html) to comply with the contract of [Future.get](https://docs.oracle.com/javase/6/docs/api/java/util/concurrent/Future.html#get()).
+
+
+
+
+
+Clojure IExceptionInfo
+----------------------
+
+In Clojure, it is idiomatic to attach a map of additional information to exceptions, accessible via the *ex-data* function. Many exceptions thrown by Datomic support this, implementing the *clojure.lang.IExceptionInfo* interface.
+
+Except where explicitly documented as a part of a function's contract, *ex-data* information is for diagnostic use only. It is not public API and is subject to change.

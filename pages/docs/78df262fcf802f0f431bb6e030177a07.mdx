@@ -1,0 +1,273 @@
+Client API Tutorial
+===================
+
+This tutorial introduces the Datomic Client API. You will
+
+- [create a database](#create-database)
+- [transact schema](#transact-schema)
+- [transact data](#transact-data)
+- [query the database](#query)
+- optionally [delete the database](#delete-database) when you are done
+
+Prerequisites
+-------------
+
+This tutorial assumes that you have [setup dev-local](../dev-local.html) and started a REPL with dev-local on your classpath, or you have [launched](../getting-started/start-system.html) a Datomic Cloud system and know how to start a Clojure REPL with the [Datomic Client API installed](../client/client-api.html#installing).
+
+
+
+
+
+Create a Client
+---------------
+
+
+
+### Using dev-local:
+
+To interact with Datomic, you must first create a [datomic.client.api/client](https://docs.datomic.com/client-api/datomic.client.api.html#var-client).
+
+In your REPL, execute:
+
+noslide
+
+```
+<pre class="src src-clojure">(<span style="color: #a0522d;">require</span> '[datomic.client.api <span style="color: #008b8b;">:as</span> d])
+
+(<span style="color: #a020f0;">def</span> <span style="color: #0000ff;">cfg</span> {<span style="color: #008b8b;">:server-type</span> <span style="color: #008b8b;">:dev-local</span>
+          <span style="color: #008b8b;">:system</span> <span style="color: #8b2252;">"datomic-samples"</span>})
+
+(<span style="color: #a020f0;">def</span> <span style="color: #0000ff;">client</span> (d/client cfg))
+```
+
+
+
+
+
+
+
+### Using Datomic Cloud:
+
+To [connect](,,/client/client-api.html#connection) to Datomic Cloud, you will need the following information:
+
+- `:region` is the AWS region in which you've started Datomic Cloud.
+- `:system` is your Datomic system's name.
+- `:endpoint` is your system's client endpoint. Check your [CloudFormation outputs](../operation/howto.html#template-outputs) for `ClientApiGatewayEndpoint`.
+
+Use this information to create a client with [datomic.client.api/client](https://docs.datomic.com/client-api/datomic.client.api.html#var-client):
+
+Even though the endpoint is public, client access is securely managed by [IAM permissions](../operation/access-control.html#how-datomic-access-control-works).
+
+noslide
+
+```
+<pre class="src src-clojure">(<span style="color: #a0522d;">require</span> '[datomic.client.api <span style="color: #008b8b;">:as</span> d])
+
+(<span style="color: #a020f0;">def</span> <span style="color: #0000ff;">cfg</span> {<span style="color: #008b8b;">:server-type</span> <span style="color: #008b8b;">:ion</span>
+          <span style="color: #008b8b;">:region</span> <span style="color: #8b2252;">"<your AWS Region>"</span> <span style="color: #b22222;">;; </span><span style="color: #b22222;">e.g. us-east-1</span>
+          <span style="color: #008b8b;">:system</span> <span style="color: #8b2252;">"<system name>"</span>
+          <span style="color: #008b8b;">:creds-profile</span> <span style="color: #8b2252;">"<your_aws_profile_if_not_using_the_default>"</span>
+          <span style="color: #008b8b;">:endpoint</span> <span style="color: #8b2252;">"<your endpoint>"</span>})
+
+(<span style="color: #a020f0;">def</span> <span style="color: #0000ff;">client</span> (d/client cfg))
+```
+
+
+
+Warnings may occur. Do not be alarmed as they will not affect functionality during this tutorial.
+
+
+
+
+
+
+
+Create a Database
+-----------------
+
+Create a new database with [datomic.client.api/create-database](https://docs.datomic.com/client-api/datomic.client.api.html#var-create-database).
+
+noslide
+
+```
+<pre class="src src-clojure">(d/create-database client {<span style="color: #008b8b;">:db-name</span> <span style="color: #8b2252;">"movies"</span>})
+```
+
+
+
+Now you're ready to connect to your newly created database using [dataomic.client.api/connect](https://docs.datomic.com/client-api/datomic.client.api.html#var-connect).
+
+noslide
+
+```
+<pre class="src src-clojure">(<span style="color: #a020f0;">def</span> <span style="color: #0000ff;">conn</span> (d/connect client {<span style="color: #008b8b;">:db-name</span> <span style="color: #8b2252;">"movies"</span>}))
+```
+
+
+
+The next step will be to define some schema for your new database.
+
+Schema defines the set of possible attributes that can be associated with an entity. We'll [need to provide](../schema/defining-schema.html) 3 attributes: [db/ident](../schema/schema-reference.html#db-ident), [db/valueType](../schema/schema-reference.html#db-valuetype) and [db/cardinality](../schema/schema-reference.html#db-cardinality). [db/doc](../schema/schema-reference.html#db-doc) will also be provided for documentation.
+
+
+
+
+
+Transact Schema
+---------------
+
+Now we need to create a [schema](../schema/schema.html).
+
+Define the following small schema for a database about movies:
+
+noslide
+
+```
+<pre class="src src-clojure">(<span style="color: #a020f0;">def</span> <span style="color: #0000ff;">movie-schema</span> [{<span style="color: #008b8b;">:db/ident</span> <span style="color: #008b8b;">:movie/title</span>
+                    <span style="color: #008b8b;">:db/valueType</span> <span style="color: #008b8b;">:db.type/string</span>
+                    <span style="color: #008b8b;">:db/cardinality</span> <span style="color: #008b8b;">:db.cardinality/one</span>
+                    <span style="color: #008b8b;">:db/doc</span> <span style="color: #8b2252;">"The title of the movie"</span>}
+
+                   {<span style="color: #008b8b;">:db/ident</span> <span style="color: #008b8b;">:movie/genre</span>
+                    <span style="color: #008b8b;">:db/valueType</span> <span style="color: #008b8b;">:db.type/string</span>
+                    <span style="color: #008b8b;">:db/cardinality</span> <span style="color: #008b8b;">:db.cardinality/one</span>
+                    <span style="color: #008b8b;">:db/doc</span> <span style="color: #8b2252;">"The genre of the movie"</span>}
+
+                   {<span style="color: #008b8b;">:db/ident</span> <span style="color: #008b8b;">:movie/release-year</span>
+                    <span style="color: #008b8b;">:db/valueType</span> <span style="color: #008b8b;">:db.type/long</span>
+                    <span style="color: #008b8b;">:db/cardinality</span> <span style="color: #008b8b;">:db.cardinality/one</span>
+                    <span style="color: #008b8b;">:db/doc</span> <span style="color: #8b2252;">"The year the movie was released in theaters"</span>}])
+```
+
+
+
+Now transact the schema using [datomic.client.api/transact](https://docs.datomic.com/client-api/datomic.client.api.html#var-transact).
+
+noslide
+
+```
+<pre class="src src-clojure">(d/transact conn {<span style="color: #008b8b;">:tx-data</span> movie-schema})
+```
+
+
+
+```
+<pre class="src src-clojure">=>
+{<span style="color: #008b8b;">:db-before</span> ..., 
+ <span style="color: #008b8b;">:db-after</span> ..., 
+ <span style="color: #008b8b;">:tx-data</span> [...], <span style="color: #b22222;">;; </span><span style="color: #b22222;">data added to the database</span>
+ <span style="color: #008b8b;">:tempids</span> {}}
+```
+
+
+
+You should get back [a response](../transactions/transaction-processing.html#results) as shown above.
+
+
+
+
+
+Transact Data
+-------------
+
+Now you can define some movies to add to the database utilizing the [schema](../schema/defining-schema.html) we defined earlier:
+
+noslide
+
+```
+<pre class="src src-clojure">(<span style="color: #a020f0;">def</span> <span style="color: #0000ff;">first-movies</span> [{<span style="color: #008b8b;">:movie/title</span> <span style="color: #8b2252;">"The Goonies"</span>
+                    <span style="color: #008b8b;">:movie/genre</span> <span style="color: #8b2252;">"action/adventure"</span>
+                    <span style="color: #008b8b;">:movie/release-year</span> 1985}
+                   {<span style="color: #008b8b;">:movie/title</span> <span style="color: #8b2252;">"Commando"</span>
+                    <span style="color: #008b8b;">:movie/genre</span> <span style="color: #8b2252;">"thriller/action"</span>
+                    <span style="color: #008b8b;">:movie/release-year</span> 1985}
+                   {<span style="color: #008b8b;">:movie/title</span> <span style="color: #8b2252;">"Repo Man"</span>
+                    <span style="color: #008b8b;">:movie/genre</span> <span style="color: #8b2252;">"punk dystopia"</span>
+                    <span style="color: #008b8b;">:movie/release-year</span> 1984}])
+```
+
+
+
+[Transact](../transactions/transaction-processing.html) the movies into the database:
+
+noslide
+
+```
+<pre class="src src-clojure">(d/transact conn {<span style="color: #008b8b;">:tx-data</span> first-movies})
+```
+
+
+
+```
+<pre class="src src-clojure">=>
+{<span style="color: #008b8b;">:db-before</span> ... 
+ <span style="color: #008b8b;">:db-after</span> ...
+ <span style="color: #008b8b;">:tx-data</span> [...], 
+ <span style="color: #008b8b;">:tempids</span> {}}
+```
+
+
+
+You should see a response similar to the above with different data.
+
+
+
+
+
+Query
+-----
+
+Get a current value for the database with [datomic.client.api/db](https://docs.datomic.com/client-api/datomic.client.api.html#var-db):
+
+noslide
+
+```
+<pre class="src src-clojure">(<span style="color: #a020f0;">def</span> <span style="color: #0000ff;">db</span> (d/db conn))  
+```
+
+
+
+Now create a [query](../query/query-executing.html) for all movie titles:
+
+noslide
+
+```
+<pre class="src src-clojure">(<span style="color: #a020f0;">def</span> <span style="color: #0000ff;">all-titles-q</span> '[<span style="color: #008b8b;">:find</span> ?movie-title 
+                    <span style="color: #008b8b;">:where</span> [_ <span style="color: #008b8b;">:movie/title</span> ?movie-title]])
+```
+
+
+
+And execute the query with the value of the database using [datomic.client.ap/q](https://docs.datomic.com/client-api/datomic.client.api.html#var-q):
+
+noslide
+
+```
+<pre class="src src-clojure">(d/q all-titles-q db)
+```
+
+
+
+```
+<pre class="src src-clojure">=>
+[[<span style="color: #8b2252;">"Commando"</span>] [<span style="color: #8b2252;">"The Goonies"</span>] [<span style="color: #8b2252;">"Repo Man"</span>]]
+```
+
+
+
+If your database had a large number of movies, it may be prudent to use [qseq](../query-executing.html#qseq) to return a lazy sequence quickly rather than waiting for the full results to build and return.
+
+
+
+
+
+Delete a Database (Optional)
+----------------------------
+
+When you are done with this tutorial, you can use [datomic.client.api/delete-database](https://docs.datomic.com/client-api/datomic.client.api.html#var-delete-database) to delete the *movies* database:
+
+noslide
+
+```
+<pre class="src src-clojure">(d/delete-database client {<span style="color: #008b8b;">:db-name</span> <span style="color: #8b2252;">"movies"</span>})
+```

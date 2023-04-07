@@ -1,0 +1,77 @@
+Valcache
+========
+
+Everything gets better when data moves closer to processing. Datomic Valcache is a local, immutable, high capacity, durable, SSD-backed, low latency cache for Datomic.
+
+- Valcache is transparent to application code.
+- Valcache caches segments of [index](../query/indexes.html#efficient-accumulation) and [log](../api/log.html#implementation), which are immutable values that never expire.
+- Valcache runs on the same instance as a Datomic process, serving that process.
+- Valcache is backed by an SSD, providing higher capacity per price than a memory-backed cache.
+- Valcache stays hot across process restarts.
+- Valcache reduces the load placed on storage, which is particularly helpful for provisioned storages such as DynamoDB.
+
+![valcache.svg](../images/valcache.svg)
+
+
+
+Prerequisites
+-------------
+
+Valcache relies on an SSD with the `strictatime` and `lazytime` flags set. When you mount an SSD for Valcache, you **must** set the `strictatime` and `lazytime` flags.
+
+
+
+
+
+Configuration
+-------------
+
+To configure Valcache you need to set properties in your [transactor](../overview/transactor.html)properties file (for transactors) or set Java [system properties](../configuration/system-properties.html) (for peers):
+
+transactor propertysystem propertyvaluevalcache-pathdatomic.valcachePathdirectory on an SSD that meets [prerequisites](#prerequisites)valcache-max-gbdatomic.valcacheMaxGbmaximum space valcache will try to useTransactor example:
+
+```
+<pre class="src src-example">valcache-path=/opt/valcache
+valcache-max-gb=100
+```
+
+
+
+Peer example:
+
+```
+<pre class="src src-example">java -Ddatomic.valcachePath=/opt/valcache/ -Ddatomic.valcacheMaxGb=100 {your-args}
+```
+
+
+
+
+
+
+
+Monitoring Valcache
+-------------------
+
+Valcache entries in the operational [log](../configuration/configuring-logging.html) begin with `:valcache`. In particular, you can search for `:valcache/start` to see the settings used to launch Valcache.
+
+The `Valcache` metric can be use to monitor Valcache utilization and performance.
+
+MetricMeaningaveragecache hit ratio, from 0 (no hits) to 1 (all hits)sumnumber of cache hitssamplesnumber of cache requests
+
+
+
+Valcache vs. Memcached
+----------------------
+
+You can choose [memcached](../overview/caching.html#memcached) instead of Valcache, and you can make this choice independently per process.
+
+When used in Datomic, memcached differs from Valcache in that
+
+- Memcached can run on separate instances, with lifecycles independent of transactor and peer processes.
+- Memcached can be clustered.
+- Memcached is not specific to Datomic, and can support Datomic while simultaneously serving other clients.
+
+We believe that for most Datomic usage, Valcache will be more effective than memcached, providing a larger, hotter cache with similar latency at a lower price. However, if your deployment strategy prevents new processes from using existing SSDs, memcached may be a better fit. Two common cases for this are:
+
+- Your peer or transactor instances do not have SSDs.
+- New processes cannot reuse SSDs that were populated by a previous process. This is often the case in cloud deployment, where instances and their disks are ephemeral. (If you are running on AWS, check out [Datomic Cloud](https://www.datomic.com/index.html) which uses Valcache automatically.)

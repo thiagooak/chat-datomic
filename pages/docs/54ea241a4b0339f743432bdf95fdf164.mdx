@@ -1,0 +1,268 @@
+Growing Your System
+===================
+
+This page covers topics that will help you improve the operation of Datomic as your system grows:
+
+- [Instance Sizes](#instance-sizes)
+- [Primary Compute Group](#primary-compute-group)
+- [Adding and Scaling a Query Group](#query-group)
+- [Task-specific Query Groups](#task-specific-query-groups)
+- [Valcache for Large Datasets](#valcache)
+- [Scaling Storage](#scaling-storage)
+- [Understanding Your AWS Bill](#understanding-bill)
+- [Reducing AWS Costs](#reducing-costs)
+- [Development Workflow](#dev-workflow)
+
+There is a lot of information here, and we are glad to help you adapt it to your particular needs. If you are in doubt, please ask *before*making changes.
+
+Instance Sizes
+--------------
+
+You can change your Datomic Cloud instance size at any time by updating the CloudFormation template. As the table below shows, moving up the [t3 instance size chart](https://aws.amazon.com/ec2/instance-types/t3/#Product_Details) provides more memory and more CPUs.
+
+- Additional memory can improve performance of query and transations.
+- Increasing the number of CPUs allows Datomic to serve more requests simultaneously, and can also improve the performance of individual queries and transactions.
+
+If you need maximum performance, consider [i3 instances.](https://aws.amazon.com/ec2/instance-types/i3/) They provide [valcache](#valcache), are not subject to [unlimited mode usage charges](#usage-price), and require that you [raise your AWS account limit](#verify-i3).
+
+ dev-local\*t3.smallt3.mediumt3.larget3.xlarget3.2xlargei3.largei3.xlarge(v)CPUsany2224824GB RAMany2481632816[default metrics](#monthly-price)n/anonebasicdetaileddetaileddetailed4759501 instance on-demand$0$34$74$127$216$395$216$3952 instances on-demandn/a$49$118$216$396$754$396$7541 instance reservedn/a$28$62$104$172$306$172$3062 instances reservedn/a$37$96$172$307$576$307$576To develop and test your Datomic applications at no cost, use [dev-local](../dev-local.html). For complete details on monthly base price see [Understanding Your AWS Bill](#understanding-bill).
+
+
+
+### Instance Defaults
+
+The CloudFormation template provides settings for AutoScaling and Metrics level which are based on instance size:
+
+ t3.smallt3.mediumt3.larget3.xlarget3.2xlargei3.largei3.xlargeMetricsNoneBasicDetailedDetailedDetailedDetailedDetailedAutoScaling Desired1122222AutoScaling Minimum1122222AutoScaling Maximum3333333AutoScaling During Update1122222
+
+
+
+
+
+Primary Compute Group
+---------------------
+
+The primary compute group of a system performs all transactions, while queries can be performed by any compute group (primary or query). The primary compute group should not autoscale, and should run a fixed number of instances based on your transaction load and database count.
+
+For a system with a single primary database or with low total write volume, you should fix the size of the primary compute group at two instances. When you need to scale queries beyond what these two instances can support, add a [query group](#query-group).
+
+If your system serves a high write volume across more than one database, you may want to run more than two instances in your primary compute group. Please [contact Datomic support](mailto:support@datomic.com) with your specific needs and we can guide you.
+
+
+
+
+
+Adding and Scaling a Query Group
+--------------------------------
+
+When you first launch a Datomic system it has only a single compute group, the primary compute group described above. When you are ready to support higher query volume, you can add a query group. To add your first query group:
+
+- Create a new query group [with the same application name](compute-template.html#parameters) used by the original system.
+- Direct production traffic [to this query group](../client/client-api.html#client) instead of the primary compute group.
+
+Datomic will automatically coordinate between query groups and the primary group, using the primary group for transactions and indexing.
+
+
+
+### Query Group Instance Size
+
+Query group instances should typically be at least as large as the instances in the primary compute group. There are two reasons for this:
+
+- Most systems spend more resources reading than writing.
+- Query group instances "follow" the recent transactions in the primary compute group, which consumes both CPU and memory. If the query group instances are underpowered compared to the primary compute group, this following may consume so many resources that performance suffers.
+
+
+
+
+
+### Query Group Instance Count
+
+You can set the minimum and maximum number of instances that will run in the group via the Cloudformation template. There are two reasons to increase the number of instances in a query group.
+
+- Any number of instances greater than one will automatically enable [High Availability (HA)](ha.html)
+- Each instance will increase the total amount of CPUs and memory available for Datomic queries. This will enable your system to serve a higher volume of queries.
+
+
+
+
+
+### Autoscaling Triggers
+
+You can configure autoscaling triggers for a query group. These triggers should be based on [a metric](monitoring.html#metrics) that measures when work is (or is close to) backing up. For example:
+
+- If your system serves remote Datomic clients, then you can scale on `HttpEndpointThrottled`, which counts the number of *client*requests that were throttled because the system is busy.
+- If your system serves *web* requests, then you can scale on `HttpDirectThrottled`, which counts the number of *web* requests that were throttled, or based on a domain-specific metric that you create.
+
+
+
+
+
+
+
+Task-Specific Query Groups
+--------------------------
+
+If usage of your system is homogeneous, one query group is all you ever need. You can simply expand that single query group to match increasing query load. But in many cases, a growing system has more than one audience. In those cases, you can create additional query groups for different use cases. Simply start an additional query group for each distinct use case, and direct traffic for that use case to the query group's unique endpoints.
+
+Tasks specific query groups provide
+
+- the ability to scale resources independently for a task, without competing with other tasks
+- the ability to turn off resources when not in use, for e.g. intermittent or one-off tasks
+- automatic, tuned-to-the-task caching without the need for configuring storage
+
+A typical example of a multi-query group system is the following:
+
+- an "app" query group that supports a production web application
+- an "analytics" query group for live analytics, so that expensive analytics operations do not compete with the web application for resources
+- a "support" query group for the operations team to query the system, without interfering with other users
+
+Note that each query group can have its own instansize size and group size, tuned to its availability, latency, and scalability requirements.
+
+
+
+
+
+Valcache for Large Databases
+----------------------------
+
+Datomic Cloud automatically manages a [multilayer cache](../whatis/architecture.html#caching) that improves the performance of queries and transactions. If your system makes intensive use of a large database, you can further improve performance by enabling [valcache](../whatis/architecture.html#valcache), an optional additional cache tier backed by SSDs on the primary compute group.
+
+Datomic enables valcache automatically when you choose an [instance type](#instance-sizes) in the i3 family. Before switching to i3, you must increase your AWS i3 instance limit.
+
+
+
+### Verify Your i3 Instance Limit
+
+The default AWS limits on i3 instances will prevent Datomic Cloud from starting. Before you switch to an i3 instance type, check and update your i3 instance limit:
+
+- click on [Limits in the EC2 Dashboard Menu:](https://console.aws.amazon.com/ec2/v2/home?#Limits:)
+- Scroll down to find the `Running On-Demand All...` which includes `i` instances in the instance list.
+- Open the [Limits Calculator](https://console.aws.amazon.com/ec2/v2/home?#LimitsCalculator:)
+- Add a number of i3.large instance types that is 2+ and corresponds to how high you plan to scale your system.
+- Ensure that your `Current limit` is greater than the `vCPUs needed`. Ignore the "New limit" value, as this is assumes that you are currently at your vCPU limit. 
+    - If your `Current limit` exceeds the number of `vCPUs needed` then click the `Request on-demand limit increase` link under "Options".
+    - Request the number of vCPUs that match your planned system needs.
+
+Once complete, submit the form and you will receive confirmation from AWS once your instance limit has been raised
+
+
+
+
+
+
+
+Scaling Storage
+---------------
+
+Datomic [indexes](../architecture.html#indexes) are redundantly stored in S3 and EFS. These high-reliability, high-availability storages are automatically scaled by AWS, with no user configuration required.
+
+Database logs are stored in a DynamoDB table named "\[system\]". This table is configured with provisioned throughput and a broad range of autoscaling for both read and write. For most systems, these settings are a good sweet spot: when the system is under low transaction load, autoscaling will turn throughput down, saving money. When load increases, autoscaling will inrease throughput to match.
+
+That said, there are two situations where you may want to increase DynamodDB provisioning for the "\[system\]" table.
+
+- If you have very bursty transaction load, and your system is intolerant of increased latency before autoscaling kicks in, you can increase the DynamoDB write minimum.
+- If your system has very high write volume, and you are seeing regular DynamoDB throttling of writes, you can increase the DynamoDB write maximum.
+
+The Datomic catalog is stored in a DynamoDB table named "\[system\]-catalog", configured with modest provisioned throughput. [Catalog operations](../client/client-api.html#catalog-operations) are very low volume, you should never need to adjust this table.
+
+
+
+
+
+Understanding Your AWS Bill
+---------------------------
+
+The total cost of running a Datomic system is the sum of the *base price* and the *usage price*.
+
+- The base price is the total monthly price of services that are billed per unit time, usually per hour (e.g. EC2 instances) or per month (e.g. KMS keys). A running Datomic system has a well-known base price based on its configuration, regardless of how the system used.
+- The usage price is the monthly total prices of services that are billed by some measure of utilization, e.g. data stored, data transferred, or autoscaled DDB provisioning.
+
+All prices below are for us-east-1, and were most recently updated on May 17, 2021.
+
+
+
+### Base Price
+
+The base price for a Datomic system combines all the hourly and monthly components of Datomic into a single monthly price. These components are enumerated below:
+
+
+
+#### Hourly Prices
+
+Each compute group will have a single ALB, with an hourly price of $0.0225, plus an instance hourly price based on the numbers and types of instances you choose:
+
+Instance TypeOn-DemandReservedt3.small$0.0208$0.0130t3.medium$0.0624$0.0429t3.large$0.1248$0.0938t3.xlarge$0.2496$0.1875t3.2xlarge$0.4980$0.3746i3.large$0.2340$0.1850i3.xlarge$0.4680$0.3700
+
+
+
+#### Monthly Prices
+
+ResourceMonthly PriceKMS key$1.99Route53$0.50basic metrics~$7.00detailed metrics~$15.00metrics dashboard$3.00Basic metrics include [all the metrics normally used by operators](monitoring.html#metrics). Detailed metrics include the basic metrics, plus a number of additional metrics that are useful for Datomic support. The metrics dashboard is enabled whenever you select at least basic metrics. The metrics prices are approximate because AWS charges only for metrics actually recorded, and systems do not necessarily report every possible metric.
+
+The [instance sizes table](#instance-sizes) calculates a base price from the information above using the following assumptions:
+
+- a Datomic system with a single compute group
+- default metrics level
+- no unlimited mode costs (see the next section)
+
+Your AWS bill will show line items for each AWS service separately.
+
+
+
+
+
+
+
+### Usage Price
+
+Datomic uses several AWS services that have a pricing model based on use:
+
+- indexes are stored in [S3](https://aws.amazon.com/s3/pricing/) and [EFS](https://aws.amazon.com/efs/pricing/)
+- the log is stored in [DynamoDB](https://aws.amazon.com/dynamodb/pricing/)
+- internet access is via [API Gateway](https://aws.amazon.com/api-gateway/pricing/)
+- t3 family [unlimited mode](https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/burstable-performance-instances-unlimited-mode.html)
+
+While the usage price is specific to your specific usage pattern, there are a few very useful rules of thumb:
+
+- All of the usage-base services used by Datomic participate in the [AWS "Always Free" Tier](https://aws.amazon.com/free). A system at low utilization (e.g. a system used to interactively develop a prototype) will typically fit entirely in the free tier and have a usage cost of $0.
+- The base price will typically by higher than the usage price, until you have a lot of data or high request volume.
+- Datomic's t3 instances are configured to run in unlimited mode. If an instance is under continuous high CPU load, there is an additional [$0.05 per-instance-hour CPU credit charge](https://aws.amazon.com/ec2/pricing/on-demand/#T2.2FT3.2FT4g_Unlimited_Mode_Pricing). See the [AWS unlimited mode documentation](https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/burstable-performance-instances-unlimited-mode.html) for additional details. If your system incurs these CPU credit charges, you should consider switching to the [i3 instance family](#instance-sizes).
+
+
+
+
+
+
+
+Reducing AWS Costs
+------------------
+
+There are a number of things you can do to reduce the AWS costs for Datomic Cloud:
+
+- Develop and test your code with dev-local, which has no cost.
+- Choose the [smallest EC2 instance size](../whatis/configurations-and-pricing.html) that can handle your performance requirements.
+- If you intend to run a compute group for a long period of time, [purchase AWS Reserved Instances](../tech-notes/reserve.html).
+- If you have a compute group that is used intermittently, [turn off the compute instances](../tech-notes/turn-off.html) when they are not in use.
+
+
+
+
+
+Development Workflow
+--------------------
+
+If you plan to support multiple environments with Datomic systems, keep the following points in mind:
+
+- The Datomic system is the unit of AWS IAM access control. If different environments need to have different AWS controls, put them in separate Datomic sysems.
+- Within a Datomic system, the compute group is the unit of ion *deployment*. So a single system can host many applications simultaneously. These applications could serve entirely separate purposes, or or they could be various revisions of the same fuctionality.
+- Transaction functions execute only in the primary compute group, so you must deploy them there (not to a query group).
+- The CodeDeploy application name is the unit of ion *push*. If you give different Datomic systems the same application name, they will all be able to deploy from the same push. This is probably what you want if you e.g. test an application in one system and release it in another.
+
+The picture below shows an example deployment designed to meet the following dev workflow objectives:
+
+- Keep production code and data separate from all development work.
+- Support two different user bases, webapp and analytics, that have different performance requirements.
+- Demo and test code before deploying to production.
+- Allow developers to access test data from their laptops.
+
+[![transaction-functions.png](../images/transaction-functions.png)](../images/transaction-functions.png)

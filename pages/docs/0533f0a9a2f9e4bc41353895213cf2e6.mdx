@@ -1,0 +1,26 @@
+Log API
+=======
+
+Datomic's database log is a recording of all transaction data in historic order, organized for efficient access by transaction.
+
+tx-range
+--------
+
+ You can access the log via the [tx-range API function](https://docs.datomic.com/client-api/datomic.client.api.async.html#var-tx-range).
+
+```
+<pre class="src src-clojure">(d/tx-range conn {<span style="color: #008b8b;">:start</span> 1000 <span style="color: #008b8b;">:end</span> 1020})
+```
+
+
+
+The arguments are *startT* (inclusive), and *endT* (exclusive). Legal values for these arguments are:
+
+- txes (transaction entity ids)
+- ts (as e.g. returned from Database.nextT)
+- transaction instants (java.util.Dates)
+- *nil* (to represent the beginning/end of the log)
+
+*tx-range* returns a collection of transactions, each of which contains key/value pairs:
+
+KeywordValue:tthe transaction t:dataa collection of datomsThe datoms implement the datomic.Datom interface. In Clojure, they act as both sequential and associative collections, and can be destructured accordingly.

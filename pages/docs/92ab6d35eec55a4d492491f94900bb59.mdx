@@ -1,0 +1,162 @@
+Monitoring Ions
+===============
+
+Topics
+------
+
+- [Overview](#overview)
+- [Events](#events)
+- [Alerts](#alerts)
+- [Dev](#dev)
+- [Metrics](#metrics)
+- [Local Development Workflow](#local-workflow)
+- [Java Logging](#java-logging)
+
+All the code examples shown below are available in the [Ion Event Example](https://github.com/Datomic/ion-event-example) project.
+
+
+
+
+
+Overview
+--------
+
+AWS CloudWatch provides a powerful set of tools for monitoring a software system running on AWS, and Datomic [fully integrates with these tools](../operation/monitoring.html).
+
+The `datomic.ion.cast` namespace lets Ion application code add your own monitoring data alongside the monitoring data already being produced by Datomic applications. Cast supports four categories of monitoring data:
+
+- An [event](#events) is an ordinary occurrence that is of interest to an operator, such as start and stop events for a process or activity.
+- An [alert](#alerts) is an extraordinary occurrence that requires operator intervention, such as the failure of some important process.
+- A [metric](#metrics) is a numeric value in a named time series, such as the latency for an operation.
+- [Dev](#dev) is information of interest during development. e.g. fine-grained logging to troubleshoot a problem during development. Dev data can be much higher volume than events or alerts.
+
+Cast is part of the [com.datomic/ion](../releases.html#current) library.
+
+
+
+
+
+Events
+------
+
+An event is an ordinary occurrence that is of interest to an operator, such as start and stop events for a process or activity. The `event`function takes a map with a single required key, `:msg`, a string, plus any additional namespace-qualified keys you choose.
+
+For example, the `event` call below logs the raw JSON sent to an AWS Lambda ion:
+
+```
+<pre class="src src-clojure">(cast/event {<span style="color: #008b8b;">:msg</span> <span style="color: #8b2252;">"CodeDeployEvent"</span> <span style="color: #008b8b;">::json</span> input})
+```
+
+
+
+When Ion code is running on Datomic Cloud, events are posted to [Datomic's CloudWatch log](../operation/monitoring.html#logs). Datomic transforms data to [searchable JSON](../operation/monitoring.html#finding-logs) as follows:
+
+- Datomic adds the key/value pair `{"Type "Event"}`.
+- Keywords are converted to CamelCase strings, with the delimiters `.`, `/`, and `_` introducing a new capital letter. For example, `my.app/key` becomes "MyAppKey".
+- Exceptions are converted to data via Clojure's Throwable-&gt;map.
+- `Double/Nan` and `Double/Infinity` are converted to the strings "NaN" and "Infinity".
+- Other datatypes are converted to strings via Clojure's str function.
+
+
+
+
+
+Alerts
+------
+
+An alert is an extraordinary occurrence that requires operator intervention, such as the failure of some important process. The `alert` function takes a map with
+
+- a required `:msg` string
+- an optional `:ex` Java Throwable
+- any additional namespace-qualified keys you choose
+
+For example, the `alert` call below is used in the catch block of a web service ion to report an unexpected server failure:
+
+```
+<pre class="src src-clojure">(cast/alert {<span style="color: #008b8b;">:msg</span> <span style="color: #8b2252;">"SlackHandlerFailed"</span> <span style="color: #008b8b;">:ex</span> t})
+```
+
+
+
+When Ion code is running on Datomic Cloud, alerts are posted to [Datomic's CloudWatch log](../operation/monitoring.html). The data transformation is the same as for [events](#events), except that the value for `Type` is "Alert".
+
+In addition to the log entry, alerts create a [Datomic CloudWatch metric](../operation/monitoring.html#metrics) value named "Alerts. You can use the occurrence of this metric to e.g. send an SNS message to an operator.
+
+
+
+
+
+Metrics
+-------
+
+In order to create your own metrics, you must enable detailed metrics for your compute group. This is the default for EC2 instances "large" and larger. For smaller instance sizes, choose the "detailed" metrics level in your [CloudFormation template parameters](../operation/compute-template.html#parameters).
+
+A metric is a numeric value in a named time series, such as the latency for an operation. The `metric` function takes a map with the following required keys:
+
+- `name`, a keyword
+- `value`, a number that can be cast via Clojure `double`
+- `units`, one of `:msec`, `:bytes`, `:kb`, `:mb`, `:gb`, `:sec`, `:count`
+
+For example, the `metric` call below is used to record the occurrence of a CodeDeployEvent:
+
+```
+<pre class="src src-clojure">(cast/metric {<span style="color: #008b8b;">:name</span> <span style="color: #008b8b;">:CodeDeployEvent</span> <span style="color: #008b8b;">:value</span> 1 <span style="color: #008b8b;">:units</span> <span style="color: #008b8b;">:count</span>})
+```
+
+
+
+> **NOTE** AWS will display all metrics in lowercase with the first character capitalized. As an example, the aforementioned `:CodeDeployEvent` will display as `Codedeployevent` in both the metrics and the logs. Additionally, CloudWatch Metric names do not have namespaces, and any namespace provided in the metric name will be ignored.
+
+You should choose metric names that do not collide with Datomic's [built-in metric names](../operation/monitoring.html#metrics).
+
+
+
+
+
+Dev
+---
+
+`dev` is information of interest during development.g. fine-grained logging to troubleshoot a problem during development. Dev data can be much higher volume than events or alerts.
+
+The `cast/dev` function takes an arbitrary map. In the example below, `cast/dev` shows the channel and text of a slack post (presumably so that a developer can verify that a function is being called correctly):
+
+```
+<pre class="src src-clojure">(cast/dev {<span style="color: #008b8b;">:msg</span> <span style="color: #8b2252;">"PostingToSlack"</span> <span style="color: #008b8b;">::channel</span> channel <span style="color: #008b8b;">::text</span> text})
+```
+
+
+
+You can redirect cast/dev as part of your [local dev workflow](#local-workflow).
+
+> **NOTE** Configuring a destination for `cast/dev` when running in Datomic Cloud is currently not supported, and `dev` calls do not post to CloudWatch.
+
+
+
+
+
+Local Workflow
+--------------
+
+You may find it useful to see monitoring data when you are developing on a machine outside Datomic. You can call `initialize-redirect` once per process to prn all `alert`, `event`, and `dev` output to one of the following targets:
+
+- `:stdout` standard output
+- `:stderr` standard error
+- (string) a filename
+
+Alternatively, if you are running Clojure 1.10 or greater, you can send all `alert`, `event`, and `dev` output to registered taps by calling `initialize-redirect`with a target of `:tap`.
+
+There is no redirection when running in Datomic Cloud, so it is ok to leave calls to initialize-redirect in your production code.
+
+While running in Cloud, calls to `dev` are not posted to CloudWatch.
+
+
+
+
+
+Java Logging
+------------
+
+Datomic Cloud uses [SLF4J](https://www.slf4j.org/index.html) to redirect output from all Java logging frameworks to `cast/alert`:
+
+- `ERROR` and `WARN` level logs produce an alert whose message includes the logger name, level, and message.
+- Lower log levels are ignored.

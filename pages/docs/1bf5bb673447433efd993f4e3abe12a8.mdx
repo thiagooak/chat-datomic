@@ -1,0 +1,118 @@
+Transact a Schema
+=================
+
+Previously: you learned how to [connect to a database.](connect-to-a-database.html) This tutorial expects that you have a running REPL where you have already connected to the database "hello".
+
+One of the great things about Datomic is that everything is data, including the definition of the schema for your database. Because it is just data, it can be created and manipulated just like any other data you put into the database. To add new schema, you issue a transaction that carries the new schema definition.
+
+We'll create a basic model for movies: a movie can have a title, a release year, and a genre. Title and genre are represented as strings, while release year is an integer. In a relational database, each of those (title, release year, and genre) would be considered "fields" in a "table".
+
+In Datomic, each of those is an attribute, which can be associated with an entity. In order to start adding movie data to our database, we'll have to tell it about those three attributes. And, since schema is just data, you describe your custom attributes using Datomic's built-in attributes.
+
+Since schema is just data, you describe your custom attributes using Datomic's built-in attributes.
+
+Every attribute definition has three required attributes:
+
+- `:db/ident` which specifies a unique name for your attribute
+- `:db/valueType` which specifies the type of data that can be stored in the attribute
+- `:db/cardinality` which specifies whether the attribute stores a single value, or a collection of values
+
+You should also supply the optional `:db/doc` attribute, which stores a docstring of the attribute which you can query for later.
+
+Attribute definitions are defined as maps of data. Our first attribute, "title", would be defined as:
+
+```
+<pre class="src src-clojure">{<span style="color: #008b8b;">:db/ident</span> <span style="color: #008b8b;">:movie/title</span>
+ <span style="color: #008b8b;">:db/valueType</span> <span style="color: #008b8b;">:db.type/string</span>
+ <span style="color: #008b8b;">:db/cardinality</span> <span style="color: #008b8b;">:db.cardinality/one</span>
+ <span style="color: #008b8b;">:db/doc</span> <span style="color: #8b2252;">"The title of the movie"</span>}
+```
+
+
+
+> (Note that `:db.type/string` and `:db.cardinality/one` are examples of built-in attributes, used for the purpose of defining attributes. You can learn more about them in the [reference guide](../schema/schema.html).)
+
+Similarly, "genre" would be:
+
+```
+<pre class="src src-clojure">{<span style="color: #008b8b;">:db/ident</span> <span style="color: #008b8b;">:movie/genre</span>
+ <span style="color: #008b8b;">:db/valueType</span> <span style="color: #008b8b;">:db.type/string</span>
+ <span style="color: #008b8b;">:db/cardinality</span> <span style="color: #008b8b;">:db.cardinality/one</span>
+ <span style="color: #008b8b;">:db/doc</span> <span style="color: #8b2252;">"The genre of the movie"</span>}
+```
+
+
+
+Since "year" will be stored as a number, we'll have to change the :db.type for it:
+
+```
+<pre class="src src-clojure">{<span style="color: #008b8b;">:db/ident</span> <span style="color: #008b8b;">:movie/release-year</span>
+ <span style="color: #008b8b;">:db/valueType</span> <span style="color: #008b8b;">:db.type/long</span>
+ <span style="color: #008b8b;">:db/cardinality</span> <span style="color: #008b8b;">:db.cardinality/one</span>
+ <span style="color: #008b8b;">:db/doc</span> <span style="color: #8b2252;">"The year the movie was released in theaters"</span>}
+```
+
+
+
+You could choose to send each of these attributes to the database in individual transactions. We'll batch them up into a single transaction to be more efficient and combine the three maps into a single vector of maps. Let's bind our schema vector to a var called `movie-schema`:
+
+```
+<pre class="src src-clojure">(<span style="color: #a020f0;">def</span> <span style="color: #0000ff;">movie-schema</span> [{<span style="color: #008b8b;">:db/ident</span> <span style="color: #008b8b;">:movie/title</span>
+                    <span style="color: #008b8b;">:db/valueType</span> <span style="color: #008b8b;">:db.type/string</span>
+                    <span style="color: #008b8b;">:db/cardinality</span> <span style="color: #008b8b;">:db.cardinality/one</span>
+                    <span style="color: #008b8b;">:db/doc</span> <span style="color: #8b2252;">"The title of the movie"</span>}
+
+                   {<span style="color: #008b8b;">:db/ident</span> <span style="color: #008b8b;">:movie/genre</span>
+                    <span style="color: #008b8b;">:db/valueType</span> <span style="color: #008b8b;">:db.type/string</span>
+                    <span style="color: #008b8b;">:db/cardinality</span> <span style="color: #008b8b;">:db.cardinality/one</span>
+                    <span style="color: #008b8b;">:db/doc</span> <span style="color: #8b2252;">"The genre of the movie"</span>}
+
+                   {<span style="color: #008b8b;">:db/ident</span> <span style="color: #008b8b;">:movie/release-year</span>
+                    <span style="color: #008b8b;">:db/valueType</span> <span style="color: #008b8b;">:db.type/long</span>
+                    <span style="color: #008b8b;">:db/cardinality</span> <span style="color: #008b8b;">:db.cardinality/one</span>
+                    <span style="color: #008b8b;">:db/doc</span> <span style="color: #8b2252;">"The year the movie was released in theaters"</span>}])
+```
+
+
+
+Now that we have our attribute definitions ready to go, we have to issue a transaction via the Peer library, using the "transact" method. Transact takes two parameters:
+
+- an active connection
+- a collection of transaction data, formatted in [List or Map form.](../transactions/transactions.html#list-forms)
+
+Go ahead and transact the schema:
+
+```
+<pre class="src src-clojure">@(d/transact conn movie-schema)
+```
+
+
+
+```
+<pre class="src src-clojure">=>
+  {<span style="color: #008b8b;">:db-before</span> datomic.db.Db@624b73ed, <span style="color: #008b8b;">:db-after</span> datomic.db.Db@f0d17d2a,
+   <span style="color: #008b8b;">:tx-data</span>
+    [#datom[13194139534312 50 #inst <span style="color: #8b2252;">"2017-02-16T16:24:50.487-00:00"</span> 13194139534312 true] 
+     #datom[63 10 <span style="color: #008b8b;">:movie/title</span> 13194139534312 true] 
+     #datom[63 40 23 13194139534312 true] 
+     #datom[63 41 35 13194139534312 true] 
+     #datom[63 62 <span style="color: #8b2252;">"The title of the movie"</span> 13194139534312 true]
+     #datom[64 10 <span style="color: #008b8b;">:movie/genre</span> 13194139534312 true]
+     #datom[64 40 23 13194139534312 true] 
+     #datom[64 41 35 13194139534312 true] 
+     #datom[64 62 <span style="color: #8b2252;">"The genre of the movie"</span> 13194139534312 true] 
+     #datom[65 10 <span style="color: #008b8b;">:movie/release-year</span> 13194139534312 true] 
+     #datom[65 40 22 13194139534312 true] 
+     #datom[65 41 35 13194139534312 true] 
+     #datom[65 62 <span style="color: #8b2252;">"The year the movie was released in theaters"</span> 13194139534312 true]
+     #datom[0 13 65 13194139534312 true]
+     #datom[0 13 64 13194139534312 true]
+     #datom[0 13 63 13194139534312 true]],
+   <span style="color: #008b8b;">:tempids</span> {-9223301668109598144 63, -9223301668109598143 64, -9223301668109598142 65}}
+```
+
+
+
+The presence of the `:db-before` and `:db-after` values shows you that new information was transmitted and persisted in your database. You can learn more about the details of this return value by reading the details of [transact](../clojure/#datomic.api/transact) in the reference guide.
+
+Next, we'll start [adding movies into the database](transact-data.html).

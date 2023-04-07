@@ -1,0 +1,351 @@
+CLI Tools
+=========
+
+Table of Contents
+-----------------
+
+- [General Usage](#general)
+- [Log](#log)
+- [System](#system)
+- [Cloud](#cloud)
+- [Legacy](#orgbfb874f)
+
+
+
+
+
+General Usage
+-------------
+
+The Datomic CLI tool is distributed as a zip file containing a single program. Download the latest version of the tool from the [releases page](../releases.html), and documentation is found here.
+
+`datomic` utilizes the sourced or specified [AWS Credentials](https://docs.aws.amazon.com/cli/latest/userguide/cli-configure-files.html)to operate or retrieve information about your Datomic system.
+
+The documentation assumes that you have [AWS Administrator](https://docs.aws.amazon.com/IAM/latest/UserGuide/access_policies_job-functions.html#jf_administrator) permissions.
+
+Information about the command can be seen using the help command after the specific command or sub-command:
+
+- `datomic cloud help`
+- `datomic cloud list-systems help`
+
+Supplied options are passed *after* the required information for the command.
+
+
+
+### General Options
+
+Most commands support the following options:
+
+- `-h` **or** `--help` - Specify `<command> help` for help about a command.
+- `-p` **or** `--profile` - named AWS Credentials to use for accessing the AWS account.
+- `-r` **or** `--region` - AWS Region of the Datomic system.
+
+
+
+
+
+
+
+Log
+---
+
+
+
+#### list
+
+Queries the supplied Datomic Compute Group for logs.
+
+`log` requires one argument: a [`compute-group-name`](../operation/howto.html#compute-group-name)
+
+```
+<pre class="example" id="org68fa625">
+datomic log list <compute-group>
+```
+
+- `-f` **or** `--filter` - `alerts` by default or `all` if specified.
+- `-t` **or** `--tod` - logs from the specified time provided as a [Clojure #inst literal](https://clojure.org/reference/reader#_built_in_tagged_literals) to the value of `--minutes-back`. Defaults to the current time.
+- `-m` **or** `--minutes-back` - logs from `--tod` to an integer number of minutes in the past. Defaults to 20 minutes.
+- `-i` **or** `--instance-id` - Limit log results to EC2 instances with this prefix.
+- [General Options](#gen-opts)
+
+
+
+
+
+#### detail
+
+Returns the details of a specific log. Returns a JSON array.
+
+`detail` requires two arguments: a [`compute-group-name`](../operation/howto.html#compute-group-name) and a [message-id](#log-list) supplied to `-m`.
+
+```
+<pre class="example" id="org53124d4">
+datomic log detail <compute-group> -m <message-id>
+```
+
+- `-m` **or** `--msg` - message id (provided by [log list](#log-list) command)
+- `-i` **or** `--instance-id` - only show logs from compute groups with a prefix matching the supplied string.
+- [General Options](#gen-opts)
+
+
+
+
+
+
+
+System
+------
+
+
+
+#### list-instances
+
+`list-instances` displays the [EC2 Instances](https://aws.amazon.com/ec2/instance-types/), with their instance-id and current status, that are utilized by the supplied `system-name`.
+
+```
+<pre class="example" id="orge2bad93">
+datomic system list-instances <system>
+```
+
+- [General Options](#gen-opts)
+
+
+
+
+
+#### describe-groups
+
+`describe-groups` displays information about the compute groups of the supplied Datomic Cloud system.
+
+```
+<pre class="example" id="org4360f9f">
+datomic system describe-groups <system>
+```
+
+A json array of compute group information is returned:
+
+```
+<pre class="src src-js">[{<span style="color: #8b2252;">"name"</span>: <span style="color: #8b2252;">"<group-name>"</span>,
+  <span style="color: #8b2252;">"type"</span>: <span style="color: #8b2252;">"<group-type>"</span>,
+  <span style="color: #8b2252;">"endpoints"</span>:
+  [{<span style="color: #8b2252;">"type"</span>: <span style="color: #8b2252;">"<endpoint-type>"</span>,
+    <span style="color: #8b2252;">"api-gateway-endpoint"</span>: <span style="color: #8b2252;">"<endpoint-address>"</span>,
+    <span style="color: #8b2252;">"api-gateway-id"</span>:<span style="color: #8b2252;">" <gateway-id>"</span>,
+    <span style="color: #8b2252;">"api-gateway-name"</span>: <span style="color: #8b2252;">"<gateway-name>"</span>},
+   ...],
+  <span style="color: #8b2252;">"cft-version"</span>: <span style="color: #8b2252;">"<cloudformation-version>"</span>,
+  <span style="color: #8b2252;">"cloud-version"</span>: <span style="color: #8b2252;">"<cloud-version>"</span>},
+ ...]
+```
+
+
+
+
+
+
+
+
+
+Cloud
+-----
+
+
+
+#### list-systems
+
+lists all current active and inactive Datomic systems on the sourced or specified account.
+
+```
+<pre class="example" id="org9fe0296">
+datomic cloud list-systems
+```
+
+- [General Options](#gen-opts)
+
+
+
+
+
+
+
+Legacy
+------
+
+> This section only applies to [Datomic 781-9041](../changes.html#781-9041) and lower.
+
+
+
+### Client
+
+The `client` commands use ssh to allow connections from outside the [Datomic VPC](../whatis/architecture.html#security) through the [access gateway](../whatis/architecture.html#access-gateway) to a [Datomic system](../whatis/architecture.html#system).
+
+`client` commands requires a single argument: [`system-name`](../operation/howto.html#system-name).
+
+
+
+- <a id="client-access"></a>access  
+    The `access` uses ssh to allow connections from outside the [Datomic VPC](../whatis/architecture.html#security) to the [access gateway](../whatis/architecture.html#access-gateway) to a [Datomic system](../whatis/architecture.html#system).
+    
+    The `access` script continues to run once launched. If the script terminates (as it might for e.g. connection loss after laptop sleep), you will need to restart it.
+    
+    ```
+    <pre class="example" id="org03f7d7e">
+    datomic client access <system>
+    ```
+    
+    Opens a SOCKS proxy to the access gateway in the system for Datomic client access.
+    
+    
+    - `--port` - local port to use for forwarding. Default 8192.
+    - `--ssho` - pass ssh configuration options as if using ssh -o &lt;option&gt;.
+    - [General Options](#gen-opts)
+
+
+
+### Gateway
+
+The access gateway runs inside a Datomic system's private VPC. It acts as an entry point for Client API and analytics connections from outside the VPC.
+
+While the gateway runs automatically based on your CloudFormation template, there are some situations where you may want to explicitly control it:
+
+- You can start or stop the gateway to control access or EC2 instance costs.
+- You can restart the gateway to recover from a process failure.
+- You can restart the gateway to pick up new analytics catalog settings.
+
+You can monitor the status of the access gateway in the [AWS EC2 Management Console.](https://console.aws.amazon.com/ec2/#Instances:search=-bastion;sort=desc:launchTime)The access gateway is named *SystemName*-bastion.
+
+- When the `Instance State` is `running`, the access gateway is available for use.
+- An `Instance State` of `terminated` indicates the access gateway has terminated. You will incur no future charges for that instance.
+
+
+
+#### enable
+
+Enable the access gateway, setting the ASG to 1.
+
+`enable` requires a single argument: [`system-name`](../operation/howto.html#system-name)
+
+```
+<pre class="example" id="orgc6305a2">
+datomic gateway enable <system>
+```
+
+- [General Options](#gen-opts)
+
+
+
+
+
+#### disable
+
+Disable the access gateway, setting the ASG to 0.
+
+`disable` requires a single argument: [`system-name`](../operation/howto.html#system-name)
+
+```
+<pre class="example" id="org0cf8b50">
+datomic gateway disable <system>
+```
+
+- [General Options](#gen-opts)
+
+
+
+
+
+#### restart
+
+Restarts the analytics support on the access gateway.
+
+`restart` requires a single argument: [`system-name`](../operation/howto.html#system-name)
+
+```
+<pre class="example" id="org424da01">
+datomic gateway restart <system>
+```
+
+- [General Options](#gen-opts)
+
+
+
+
+
+
+
+### Solo
+
+`solo` manages the [ASG](https://docs.aws.amazon.com/autoscaling/ec2/userguide/AutoScalingGroup.html) for a Datomic solo instance.
+
+`solo` commands require a single argument: [`system-name`](../operation/howto.html#system-name)
+
+
+
+- <a id="solo-up"></a>up  
+    Sets the [ASG](https://docs.aws.amazon.com/autoscaling/ec2/userguide/AutoScalingGroup.html) for the specified Datomic solo system to 1.
+    
+    ```
+    <pre class="example" id="org79d6ddd">
+    datomic solo up <system> 
+    ```
+    
+    
+    - `--wait` - Wait until the command against the instances has finished.
+    - [General Options](#gen-opts)
+- <a id="solo-down"></a>down  
+    Sets the [ASG](https://docs.aws.amazon.com/autoscaling/ec2/userguide/AutoScalingGroup.html) for the specified Datomic solo system to 0.
+    
+    ```
+    <pre class="example" id="orgffd4dae">
+    datomic solo down <system> 
+    ```
+    
+    
+    - `--wait` - Wait until the command against the instances has finished.
+    - [General Options](#gen-opts)
+- <a id="solo-reset"></a>reset  
+    Terminates the Datomic Solo system node and access gateway which allows [the ASG](https://docs.aws.amazon.com/autoscaling/ec2/userguide/AutoScalingGroup.html)to start new instances.
+    
+    ```
+    <pre class="example" id="org55774c7">
+    datomic solo reset <system> 
+    ```
+    
+    
+    - `--wait` - Wait until the command against the instances has finished.
+    - [General Options](#gen-opts)
+
+
+
+### Analytics
+
+Tools for utilizing [Datomic Analytics](../analytics/analytics-concepts.html).
+
+
+
+- <a id="analytics-access"></a>access  
+    `access` uses ssh to allow connections from outside the [Datomic VPC](../whatis/architecture.html#security) through the [access gateway](../whatis/architecture.html#access-gateway) to a [Datomic system](../whatis/architecture.html#system)for [Analytics Support](../analytics/analytics-concepts.html).
+    
+    `access` requires a single argument: [`system-name`](../operation/howto.html#system-name).
+    
+    ```
+    <pre class="example" id="orga4a7d13">
+    datomic analytics access <system> 
+    ```
+    
+    
+    - `--port` - local port to use for forwarding. Default 8989.
+    - `--ssho` - pass ssh configuration options as if using ssh -o &lt;option&gt;.
+    - [General Options](#gen-opts)
+- <a id="analytics-sync"></a>sync  
+    `sync` syncs your local [configuration directory](../analytics/analytics-configuring.html#configuration-directory) to the Datomic System's analytics configuration.
+    
+    `sync` requires two arguments: [`system-name`](../operation/howto.html#system-name) and your local configuration directory
+    
+    ```
+    <pre class="example" id="org7d507af">
+    datomic analytics sync <system> <directory>
+    ```
+    
+    
+    - `-q` **or** `--query-group` - Datomic Query Group to target for sync (defaults to the primary compute group).
+    - [General Options](#gen-opts)

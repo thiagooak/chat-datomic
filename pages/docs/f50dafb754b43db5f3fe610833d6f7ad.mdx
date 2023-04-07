@@ -1,0 +1,16 @@
+Configurations and Pricing
+==========================
+
+When you start a Datomic system, you will make two choices that determine the capacity and base price of your system:
+
+- the compute instance type
+- the cluster size (number of compute instances)
+
+The table below shows the impact of the these choices. The columns show instance size, and the rows show the capacity of each instance, as well as the monthly [base price](../operation/growing-your-system.html#understanding-bill) of running each instance type at a cluster size of one or two instances.
+
+ dev-local\*t3.smallt3.mediumt3.larget3.xlarget3.2xlarge(v)CPUsany22248GB RAMany2481632default metricsn/anonebasicdetaileddetaileddetailed1 instance on-demand$0$34$74$127$216$3952 instances on-demandn/a$49$118$216$396$7541 instance reservedn/a$28$62$104$172$3062 instances reservedn/a$37$96$172$307$576- The dev-local column is included in the table as a reminder that you can develop and test Datomic applications at no cost using [dev-local](../dev-local.html).
+- Two instances are necessary only if you require high availability.
+- AWS EC2 instance pricing is on-demand by default. You can switch to EC2 reserved capacity at any time (before or after starting Datomic).
+- If you are uncertain how much capacity you need, start with the defaults. You can change the instance type or cluster size at any time later as your needs change.
+
+The table above summarizes all you need to know to [start your first system](../getting-started/start-system.html). For more details, and a number of more advanced options, see [growing your system](../operation/growing-your-system.html).

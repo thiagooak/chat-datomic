@@ -1,0 +1,78 @@
+Enabling CORS in a Lambda Proxy
+===============================
+
+The Problem
+-----------
+
+Preflight OPTIONS requests are blocked by CORS policy when using Cognito to authorize requests to an API Gateway HTTP Direct `$default`.
+
+
+
+
+
+The Solution
+------------
+
+- Go to the AWS [API Gateway console](https://console.aws.amazon.com/apigateway/home)
+- Select your HTTP Direct API
+- Attach your authorizer to your `$default` route and follow the steps to set it up.
+- Click Routes.
+- Click "Create".
+- Create a new `OPTIONS` route with a path of `/{proxy+}`
+- Attach your HTTP Direct (port 8184) integration to this path.
+- Click CORS.
+- Click Configure.
+- Configure as required by your application.
+
+
+
+### Adding CORS Headers In Your App
+
+With the above change, requests will now be passed to your application which will be responsible for adding the desired CORS headers. A maximally permissive set of headers is provided here as a reference. You may adjust based on your specific needs:
+
+```
+<pre class="src src-clojure">(<span style="color: #a020f0;">def</span> <span style="color: #0000ff;">cors-headers</span> {<span style="color: #8b2252;">"Access-Control-Allow-Origin"</span> <span style="color: #8b2252;">"*"</span>
+                   <span style="color: #8b2252;">"Access-Control-Allow-Methods"</span> <span style="color: #8b2252;">"GET, PUT, PATCH, POST, DELETE, OPTIONS"</span>
+                   <span style="color: #8b2252;">"Access-Control-Allow-Headers"</span> <span style="color: #8b2252;">"Authorization, Content-Type"</span>})
+```
+
+
+
+
+
+
+
+
+
+The Solution (Legacy)
+---------------------
+
+> This section only applies to [Datomic 781-9041](../changes.html#781-9041) and lower.
+
+Add an unauthenticated lambda proxy OPTIONS method to your API Gateway. Then add the appropriate cors headers to the request response from within your application.
+
+
+
+### Adding The Method
+
+- Go to the AWS [API Gateway console](https://console.aws.amazon.com/apigateway/home)
+- Under the Actions dropdown, choose **Create Method**
+- Select **OPTIONS** from the drop-down
+- Click the checkmark next to the dropdown box.
+- In **Lambda Function**, choose the region and lambda function that proxies to your app.
+- Click **Save**
+- Under the Actions dropdown, select **Deploy API** and use the next window to deploy your API.
+
+
+
+
+
+### Adding CORS Headers In Your App
+
+With the above change, requests will now be passed to your application which will be responsible for adding the desired CORS headers. A maximally permissive set of headers is provided here as a reference. You may adjust based on your specific needs:
+
+```
+<pre class="src src-clojure">(<span style="color: #a020f0;">def</span> <span style="color: #0000ff;">cors-headers</span> {<span style="color: #8b2252;">"Access-Control-Allow-Origin"</span> <span style="color: #8b2252;">"*"</span>
+                   <span style="color: #8b2252;">"Access-Control-Allow-Methods"</span> <span style="color: #8b2252;">"GET, PUT, PATCH, POST, DELETE, OPTIONS"</span>
+                   <span style="color: #8b2252;">"Access-Control-Allow-Headers"</span> <span style="color: #8b2252;">"Authorization, Content-Type"</span>})
+```

@@ -1,0 +1,38 @@
+Ions Tutorial
+=============
+
+Cleanup
+-------
+
+If you wish to [delete your Datomic Cloud system](../operation/deleting.html) after you've deployed an Ion, then you must first deploy an Ion with an `resources/datomic/ion-config.edn` that consists of a map of the `:app-name`of your application.
+
+Change your `resources/datomic/ion-config.edn` to the following map, and replace `:app-name` with your application name.
+
+```
+<pre class="src src-clojure">{<span style="color: #008b8b;">:app-name</span> <span style="color: #8b2252;">"app-name"</span>}
+```
+
+
+
+Now [push](push-and-deploy.html#push) and [deploy](push-and-deploy.html#deploy).
+
+Once this ion-config.edn is deployed, the Datomic Cloud system can [be deleted](../operation/deleting.html).
+
+
+
+
+
+Conclusion
+----------
+
+In this tutorial, you have seen how ions can take ordinary Clojure functions, and install them in Datomic Cloud where they have in-memory access to Datomic data. You have used ions to deliver:
+
+- [a data-driven application via AWS Lambda](entry-points.html#invoke-lambda)
+- [attribute predicates](entry-points.html#attribute-predicate)
+- [a web service via API Gateway](entry-points.html#http-direct)
+
+There is a lot more to explore! Here are some things to try:
+
+- Use ions to implement a lambda that [handles events](https://docs.aws.amazon.com/lambda/latest/dg/lambda-services.html) from other AWS services. See the [ion-event-example](https://github.com/datomic/ion-event-example) project.
+- Instead of wiring a web handler to a single function, use a routing library such as [Compojure](https://jacobobryant.com/post/2019/ion/) or [pedestal](https://github.com/pedestal/pedestal.ions).
+- Learn to [Authenticate with Cognito](cognito-authentication.html)

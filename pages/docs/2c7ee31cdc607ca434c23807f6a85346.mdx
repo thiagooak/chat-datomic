@@ -1,0 +1,55 @@
+Split CloudFormation Stacks
+===========================
+
+This page tells you how to convert a master stack system into a split stack system.
+
+Rationale
+---------
+
+A Datomic Cloud system comprises at least 2 CloudFormation stacks per [AWS best practice guidelines](https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/best-practices.html#organizingstacks):
+
+- one storage resource stack
+- one or more compute stacks
+
+In the AWS Marketplace install, these stacks are nested under a master stack. This master stack is necessary for Marketplace integration, but it is **not** necessary for Datomic itself. More importantly, the master stack makes various operational tasks more difficult.
+
+For production operation, you should use a *split stack* system, i.e. separate top-level storage and compute stacks.
+
+There are two ways to run a split stack system:
+
+- Create a [split stack](new-system.html) system from scratch.
+- Convert a [master stack](../getting-started/start-system.html) system into a split stack system, per the instructions below.
+
+
+
+
+
+How To Split Datomic Stacks
+---------------------------
+
+The following steps convert a Datomic system from the master stack setup to the split stack setup. There are three steps:
+
+- [Delete the master stack](#delete-master)
+- [Recreate the stacks](#recreate)
+
+
+
+### Delete the master stack
+
+Deleting the master stack will make your system temporarily unavailable, but does not harm your data!
+
+1. Select the root stack for your system in the [ CloudFormation console](https://console.aws.amazon.com/cloudformation/home?#/stacks?filter=active). The root stack will have a *Stack Name* that is the same as your [system name](howto.html#system-name).
+2. Click "Delete" from the menu bar. Confirm this in the Delete Stack popup, then wait for the stack deletion to complete. This can take 10 minutes or more.
+
+
+
+
+
+### Recreating Stacks
+
+The process of recreating the stacks is the same as [starting a new split stack system](new-system.html#storage) with the following exceptions:
+
+- Storage stack name is the name of the system which you just deleted.
+- Reuse existing storage must be set to "True"
+
+The [split stack instructions](new-system.html#storage) are annotated where necessary for recreating your stack.

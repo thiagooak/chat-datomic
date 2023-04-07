@@ -1,0 +1,113 @@
+Integrating the Client Library
+==============================
+
+The Datomic Client library is provided via
+
+[ Maven Central.](https://search.maven.org/search?q=client-pro)It can be integrated in a [Maven project](#maven), [tools.deps](#deps) or [Leiningen project](#leiningen).
+
+Download Client Library
+-----------------------
+
+The Datomic Client library is provided via
+
+[ Maven Central.](https://search.maven.org/search?q=client-pro)Create a new Clojure project and add the client library to your dependencies:
+
+> **NOTE**: The Datomic Client requires Clojure version 1.9 or later
+
+
+
+### Maven
+
+To retrieve the Client library for a Maven project, add the following snippet inside the &lt;dependencies&gt; block of your pom.xml file:
+
+```
+<pre class="src src-xml"><<span style="color: #0000ff;">dependency</span>>
+   <<span style="color: #0000ff;">groupId</span>>com.datomic</<span style="color: #0000ff;">groupId</span>>
+   <<span style="color: #0000ff;">artifactId</span>>client-pro</<span style="color: #0000ff;">artifactId</span>>
+   <<span style="color: #0000ff;">version</span>>1.0.76</<span style="color: #0000ff;">version</span>
+</<span style="color: #0000ff;">dependency</span>>
+```
+
+
+
+
+
+
+
+### Clojure CLI
+
+To use the Client library from a [Clojure CLI REPL](https://clojure.org/guides/deps_and_cli), add the following to your [deps.edn dependencies map](https://clojure.org/guides/deps_and_cli):
+
+```
+<pre class="src src-clojure">com.datomic/client-pro {<span style="color: #008b8b;">:mvn/version</span> <span style="color: #8b2252;">"1.0.76"</span>}
+```
+
+
+
+
+
+
+
+### Leiningen
+
+Add the following snippet in collection under `:dependencies` key to your [project.clj file](https://github.com/technomancy/leiningen):
+
+```
+<pre class="src src-clojure">[com.datomic/client-pro <span style="color: #8b2252;">"1.0.76"</span>]
+```
+
+
+
+
+
+
+
+
+
+Start a Clojure REPL
+--------------------
+
+
+
+### Clojure CLI
+
+Start a REPL with the [Clojure CLI](https://clojure.org/guides/deps_and_cli) in your terminal:
+
+```
+<pre class="example" id="orgbcb4d25">
+clj
+```
+
+Once the REPL is running, you have to import the Client library.
+
+```
+<pre class="src src-clojure">(<span style="color: #a0522d;">require</span> '[datomic.client.api <span style="color: #008b8b;">:as</span> d])
+```
+
+
+
+You now have a running environment you can use to execute commands against Datomic.
+
+
+
+
+
+### Leiningen
+
+Start your Leiningen REPL with:
+
+```
+<pre class="src src-sh">lein repl
+```
+
+
+
+Once the REPL is running, you have to import the Client library.
+
+```
+<pre class="src src-clojure">(<span style="color: #a0522d;">require</span> '[datomic.client.api <span style="color: #008b8b;">:as</span> d])
+```
+
+
+
+You now have a running environment you can use to execute commands against Datomic.

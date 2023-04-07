@@ -1,0 +1,55 @@
+ACID
+====
+
+Transactions are ACID: Atomic, Consistent, Isolated, and Durable. This document defines the four components of ACID and explains how Datomic Cloud delivers them.
+
+Atomicity
+---------
+
+Atomicity requires that each transaction is "all or nothing". If one part of a transaction fails, the entire transaction fails, and the database is left unchanged.
+
+A Datomic transaction is written to the [log](../whatis/architecture.html#log) in a single atomic write, so there is no possibility of partial work. Inside peer processes, the in-memory representation of a database is a pointer to a persistent data structure, and is also updated via a single atomic operation.
+
+
+
+
+
+Consistency
+-----------
+
+Consistency ensures that any transaction will take the database from one valid state to another. Datomic makes the following consistency guarantees:
+
+- Every peer sees completed transactions as of a particular point in time, called a *time basis*.
+- The time basis of transactions is a global ordering of transactions for a particular database. Peers always see all transactions up to their time basis, in order, with no gaps.
+
+Datomic also provides first class support for accessing the time basis of information:
+
+- Every fact in the database knows its time basis via the transaction component of a datom.
+- A database value knows its time basis.
+
+To correctly implement domain models, transactions need to be able to derive new facts based on existing facts (e.g. adding to a bank balance). Datomic [transaction functions](../transactions/transaction-functions.html) support arbitrary transformations of transaction data based on the current value of the database, enabling both optimistic and pessimistic concurrency strategies.
+
+Transactions often need to enforce domain-specific functional constraints (e.g. a valid account must include name, email, and password hash). Datomic supports functional constraints at both the attribute and entity level:
+
+- [attribute predicates](../schema/schema-reference.html#attribute-predicates) support functional constraints on individual attribute values
+- [entity specs](../schema/schema-reference.html#entity-specs) support required attributes and functional constraints on individual entities
+
+
+
+
+
+Isolation
+---------
+
+The Isolation property ensures *serializability*: concurrent transactions result in the same system state that would result if the transactions were executed serially.
+
+Datomic transaction are not just serializable, they are fully *serialized*. Every transaction uses DynamoDB conditional put to ensure that it is the sole successor of the preceding transaction. To increase throughput, Datomic can automatically batch more than one transaction into a single conditional put, amortizing the latency of storage writes across transactions.
+
+
+
+
+
+Durability
+----------
+
+Durability means that once a transaction has been committed, it has been recorded in the log. Datomic is fully durable–it always awaits acknowledgment from DynamoDB before reporting that a transaction is complete.

@@ -1,0 +1,52 @@
+JDBC
+====
+
+Overview
+--------
+
+The JDBC analytics connection is read-only and intended for analytics applications and is not low latency. It should not be considered a substitute for the [client api](../client/client-setup.html)for programmatic access to Datomic.
+
+
+
+
+
+Presto JDBC Driver
+------------------
+
+To use analytics support from JDBC, add the [Presto JDBC Driver](https://prestosql.io/docs/current/installation/jdbc.html) to your classpath. For applications, add this dependency to your maven XML:
+
+```
+<pre class="src src-xml"><<span style="color: #0000ff;">dependency</span>>
+    <<span style="color: #0000ff;">groupId</span>>io.prestosql</<span style="color: #0000ff;">groupId</span>>
+    <<span style="color: #0000ff;">artifactId</span>>presto-jdbc</<span style="color: #0000ff;">artifactId</span>>
+    <<span style="color: #0000ff;">version</span>>348</<span style="color: #0000ff;">version</span>>
+</<span style="color: #0000ff;">dependency</span>>
+```
+
+
+
+If you are using a tool such as [DBeaver](https://dbeaver.io), specify version 338 of the driver.
+
+
+
+
+
+Connecting
+----------
+
+You can connect to a running analytics service via JDBC using the URI format:
+
+```
+<pre class="src src-sh">jdbc:presto://<host>:<port>/<catalog>/<schema>?<span style="color: #a0522d;">user</span>=<user>
+```
+
+
+
+Replacing `<host>`, `<port>`, `<catalog>`, `<schema>`, and `<user>` as appropriate for your analytics system:
+
+- `host` and `port` are the host and port of your [running presto server](analytics-connecting.html#running) (usually `localhost:8998`)
+- `catalog` is the name of your [catalog](analytics-configuring.html#configuring-catalog)
+- `schema` is the name of your Datomic database
+- `user` it not currently used, but some tools may require that you specify it
+
+For `catalog` and `schema`, keep in mind the [naming conventions](analytics-metaschema.html#naming-conventions).

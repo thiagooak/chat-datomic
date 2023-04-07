@@ -1,0 +1,120 @@
+Processing Transactions
+=======================
+
+Processing transactions
+-----------------------
+
+After a transaction data structure is built, you must submit it to the transactor for processing. The transactor queues transactions and processes them serially. Since the transactor is not processing queries (they are handled in the peers), no locking is required and the processing is very fast.
+
+
+
+### Submitting transactions
+
+Once a transaction data structure is built, you submit it to the transactor by calling the *datomic.Connection.transact* or *transactAsync* method. Both methods return a *Future&lt;Map&gt;*. Its *get* method returns a map with information about transaction if the transaction commits and throws an exception if the transaction aborts. In Clojure, you can also use the *deref* method or *@* to get a transaction's result.
+
+```
+<pre class="src src-java">txResult = conn.transact(tx).get();
+
+future = conn.transactAsync(tx);
+
+... <span style="color: #b22222;">// </span><span style="color: #b22222;">do other work</span>
+
+txResult = future.get();
+```
+
+
+
+
+
+
+
+### Transaction Timeouts
+
+The *transact* method is synchronous, it waits until the transaction completes before returning. The *transactAsync* method is asynchronous, it submits the transaction to the transactor and returns immediately. A call to *get* on the *Future&lt;Map&gt;* returned from *transactAsync* will block until the transaction completes. Application code should use the overload for *get* that takes a timeout value expressed as a long and a *java.util.concurrent.TimeUnit* in order to ensure that the calling thread never blocks indefinitely.
+
+When a transaction times out, the peer does not know whether the transaction succeeded, and will need to query a recent value of the database to discover what happened.
+
+
+
+
+
+### Monitoring transactions
+
+Peers can monitor all transactions being processed by the system's transactor. The *datomic.Connection.txReportQueue* method provides a method to get a queue of transaction notifications.
+
+The queue delivers a report for every transaction submitted while a peer is connected to the database, even those submitted by other peers. The reports are instances of the *datomic.TxReport* type, which provides access to the value of the database before and after the transaction was applied, and the set of facts added by the transaction.
+
+Once your code gets the transaction report queue, reports will be added to it. It is the responsibility of your peer code to empty the queue. When you are done monitoring the queue, you must remove it by calling the *datomic.Connection/removeTxReportQueue* method so it doesn't continue to consume memory.
+
+This example shows how to connect to the notification queue, and retrieve a transaction report from it.
+
+```
+<pre class="src src-java">queue = conn.txReportQueue();
+
+report = (<span style="color: #228b22;">Map</span>) queue.poll();
+```
+
+
+
+The report map contains the following keys, which are static members of the *datomic.Connection* class:
+
+keyusageDB\_BEFOREdatabase value before the transactionDB\_AFTERdatabase value after the transactionTX\_DATAdatoms produced by the transactionTEMPIDSused to resolve temporary idsThe *TX\_DATA* member of a transaction report contains the set of datoms created by a transaction (both assertions and retractions). The *TX\_DATA* can be used as an input source for a query. The query below uses the transaction data and the database value after the transaction was applied to show each datom of the transaction.
+
+```
+<pre class="src src-clojure">[<span style="color: #008b8b;">:find</span> ?e ?aname ?v ?added
+ <span style="color: #008b8b;">:in</span> $ [[?e ?a ?v _ ?added]]
+ <span style="color: #008b8b;">:where</span>
+ [?e ?a ?v _ ?added]
+ [?a <span style="color: #008b8b;">:db/ident</span> ?aname]]
+```
+
+
+
+The query expects the *DB\_AFTER* and *TX\_DATA* values of a transaction report as its two input sources, in that order.
+
+See [Query](../query/query.html) for more information on using sets of tuples as input sources in queries.
+
+
+
+
+
+### Reified transactions
+
+When the transactor processes a transaction, it creates a transaction entity to represent it. By default, this entity has one attribute, *:db/txInstant*, whose value is the instant that the transaction was processed. In addition, every datom in a transaction refers to the transaction entity through the *:tx* field of datom.
+
+You can add additional attributes to a transaction entity to capture other useful information, such as the purpose of the transaction, the application that executed it, the provenance of the data it added, or the user who caused it to execute, or any other information that might be useful for auditing purposes.
+
+To annotate the current transaction, simply include an add statement (either map or list) that uses a temporary id from the *:db.part/tx*partition. The transactor will resolve a temporary id from that partition to the actual id of the transaction entity it creates.
+
+Here is an example that annotates a transaction using a *:data/src*attribute to indicate where the data came from.
+
+```
+<pre class="src src-java">tx = Util.list(
+       Util.map(<span style="color: #8b2252;">":db/id"</span>, <span style="color: #8b2252;">"datomic.tx"</span>,
+                <span style="color: #8b2252;">":data/src"</span>, <span style="color: #8b2252;">"catalog-2_29_2012.xml"</span>),
+       Util.map(<span style="color: #8b2252;">":product/name"</span>, <span style="color: #8b2252;">"Marbles"</span>));
+
+txResult = conn.transact(tx).get(); 
+```
+
+
+
+You can query for transaction entities with particular attributes and values the same way you would query for any other entity in the system (see [Query](../query/query.html)).
+
+
+
+
+
+### Explicit :db/txInstant
+
+You can set *:db/txInstant* explicitly, overriding the transactor's clock time. When you do, you must choose a *:db/txInstant* value that is not older than any existing transaction, and not newer than the transactor's clock time. This capability enables initial imports of existing data that has its own timestamps.
+
+
+
+
+
+### Redundancy Elimination
+
+A datom is *redundant* with the current value of the database if there is a matching datom that differs only by transaction id. If a transaction would produce redundant datoms, those datoms are filtered out, and do not appear a second time in either the indexes or the transaction log.
+
+Transactions are never entirely redundant, because the transaction's *:db/txInstant* is always a new fact. Also, the schema attributes *:db.install/attribute* and *:db.alter/attribute* trigger side effects, and are never considered redundant.

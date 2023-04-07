@@ -1,0 +1,107 @@
+Read
+====
+
+Database Values
+---------------
+
+Datomic maintains the entire history of your data. From this, you can query against a database value as of a particular point in time.
+
+The *db* API returns the latest database value from a connection.
+
+noslide
+
+```
+<pre class="src src-clojure">(<span style="color: #a020f0;">def</span> <span style="color: #0000ff;">db</span> (d/db conn))
+```
+
+
+
+An analogy with source control is helpful here. A Datomic connection references the entire history of your data, analogous to a source code repository. A database value from *db* is analogous to checkout.
+
+
+
+
+
+Pull
+----
+
+If you know an entity id, you can use the pull API to return information about that entity (or recursively about related entities. Better still, if the entity has a unique attribue, you do not even need to knows its entity id. A lookup ref is a two element list of unique attribute + value that uniquely identifies an entity, e.g.
+
+noslide
+
+```
+<pre class="src src-clojure">[<span style="color: #008b8b;">:inv/sku</span> <span style="color: #8b2252;">"SKU-42"</span>]
+```
+
+
+
+The following call pulls the color, type, and size for *SKU-42*.
+
+```
+<pre class="src src-clojure">(d/pull db
+        [{<span style="color: #008b8b;">:inv/color</span> [<span style="color: #008b8b;">:db/ident</span>]}
+         {<span style="color: #008b8b;">:inv/size</span> [<span style="color: #008b8b;">:db/ident</span>]}
+         {<span style="color: #008b8b;">:inv/type</span> [<span style="color: #008b8b;">:db/ident</span>]}]
+        [<span style="color: #008b8b;">:inv/sku</span> <span style="color: #8b2252;">"SKU-42"</span>])
+```
+
+
+
+```
+<pre class="src src-clojure">=> #<span style="color: #008b8b;">:inv</span>{<span style="color: #008b8b;">:color</span> #<span style="color: #008b8b;">:db</span>{<span style="color: #008b8b;">:ident</span> <span style="color: #008b8b;">:blue</span>}, 
+         <span style="color: #008b8b;">:size</span> #<span style="color: #008b8b;">:db</span>{<span style="color: #008b8b;">:ident</span> <span style="color: #008b8b;">:large</span>}, 
+         <span style="color: #008b8b;">:type</span> #<span style="color: #008b8b;">:db</span>{<span style="color: #008b8b;">:ident</span> <span style="color: #008b8b;">:dress</span>}}
+```
+
+
+
+Note that the arguments and return value of pull are both just ordinary data structures, i.e. lists and maps.
+
+
+
+
+
+Query
+-----
+
+Storing and retrieving data by unique id is useful, but a database needs also to provide a declarative, logic-based query. Datomic uses Datalog with negation, which has expressive power similar to SQL + recursion.
+
+The following query finds the skus of all products that share a color with *SKU-42*
+
+noslide
+
+```
+<pre class="src src-clojure">(d/q '[<span style="color: #008b8b;">:find</span> ?sku
+       <span style="color: #008b8b;">:where</span> [?e <span style="color: #008b8b;">:inv/sku</span> <span style="color: #8b2252;">"SKU-42"</span>]
+              [?e <span style="color: #008b8b;">:inv/color</span> ?color]
+              [?e2 <span style="color: #008b8b;">:inv/color</span> ?color]
+              [?e2 <span style="color: #008b8b;">:inv/sku</span> ?sku]]
+     db)
+```
+
+
+
+```
+<pre class="src src-clojure">=>
+[[<span style="color: #8b2252;">"SKU-42"</span>] 
+ [<span style="color: #8b2252;">"SKU-32"</span>] 
+  ...]
+```
+
+
+
+Note that the arguments and return value of *q* are both just ordinary data structures, i.e. lists and maps.
+
+In the *:where* clauses, each list further constrains the results. For each list:
+
+- the first element matches the entity id
+- the second element matches an attribute
+- the third element matches an attribute's value
+
+Symbols beginning with a question mark are datalog *variables*. When the same symbol occurs more than once, it causes a join. In the queryabove
+
+- *?e* joins *SKU-42* to its color
+- *?e2* joins to all entities sharing the color
+- *?sku* joins all *?e2* entities to their skus
+
+Now we are confident that we can get basic inventory in and out. Just in time, too, because our stakeholders are back with [more feature requests](accumulate.html).

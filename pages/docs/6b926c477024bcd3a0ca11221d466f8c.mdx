@@ -1,0 +1,33 @@
+Ions Tutorial
+=============
+
+This tutorial will show you how to write applications that run entirely inside Datomic Cloud without any additional servers.
+
+With ions you can build
+
+- [Web services accessed](entry-points.html#http-direct) via AWS API Gateway for use by other applications or single page web apps
+- Data-driven applications that [are invoked](entry-points.html#invoke-lambda) via AWS Lambda
+
+In this tutorial, you will deploy a simple inventory application with functions to add and query inventory, and then expose this application via both Lambda and AWS API Gateway. Along the way, you will learn how to develop, [push](push-and-deploy.html#push), [deploy](push-and-deploy.html#deploy) and [use](entry-points.html) your functions via:
+
+- [API Gateway HTTP Direct](entry-points.html#http-direct)
+- [AWS Lambda](entry-points.html#invoke-lambda)
+- [Datomic attribute and entity predicates, query functions, and transaction functions](entry-points.html#attribute-predicate)
+
+The [Day of Datomic Cloud](https://youtu.be/qplsC2Q2xBA?t=1371) and [Datomic Ions](https://www.youtube.com/watch?v=3BRO-Xb32Ic) videos discuss use of an Ion, with the code [on Github](https://github.com/Datomic/ion-event-example). Some parts of these videos reference workflows or technologies which may not apply in datomic 884-9095 and later.
+
+Tutorial Prerequisites
+----------------------
+
+Before this tutorial, you should
+
+- Install Datomic Cloud Version 884-9095 or later. Follow the instructions to [create](../getting-started/start-system.html) a new Datomic Cloud system, or to [upgrade](../operation/upgrading.html) an existing system.
+- Run a [compute group](../operation/compute-template.html) with parameter [Ions="yes"](../operation/compute-template.html#parameters). 
+    - Know the [app name of your system](../operation/howto.html#application-name) .
+- Read the [Ions](../ions/ions.html) overview.
+- Know how to launch and use a [Clojure CLI REPL](../operation/howto.html#clojure-cli).
+- Know how to work with a git repository.
+- Run in an environment with [proper AWS access keys](../operation/account-setup.html#ec2-keypair).
+- Have [AWS Administrator](https://docs.aws.amazon.com/IAM/latest/UserGuide/access_policies_job-functions.html#jf_administrator) permissions.
+
+You are now ready to [setup your first Ion](setup.html).

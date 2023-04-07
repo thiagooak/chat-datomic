@@ -1,0 +1,202 @@
+See Historic Data
+=================
+
+Previously: you learned [how to query domain data in the database](query-the-data.html). This tutorial expects that you have a running REPL where you have already [connected to](connect-to-a-database.html) the database "hello", [installed the movie schema](transact-schema.html), and [added three movies](transact-data.html).
+
+You've done all the basics - created, defined and populated a database, and learned how to ask it some questions. Now, we will explore the chronological side of Datomic.
+
+You've created a database with three movies in it. One of them, "Commando", is assigned the "action/adventure" genre. Now, the MPAA has updated its approved list of genres, and added "future governor", for movies starring a future governor. Obviously, Commando needs to be updated.
+
+To change the value of the `:movie/genre` attribute, you'll first need to find the entity id of Commando:
+
+```
+<pre class="src src-clojure">(d/q '[<span style="color: #008b8b;">:find</span> ?e 
+              <span style="color: #008b8b;">:where</span> [?e <span style="color: #008b8b;">:movie/title</span> <span style="color: #8b2252;">"Commando"</span>]] 
+            db)
+```
+
+
+
+```
+<pre class="src src-clojure">=>
+  #{[17592186045419]}
+```
+
+
+
+You should really be binding the found entity id to a local variable so you can use it in your subsequent transactions.
+
+```
+<pre class="src src-clojure">(<span style="color: #a020f0;">def</span> <span style="color: #0000ff;">commando-id</span> 
+  (<span style="color: #a0522d;">ffirst</span> (d/q '[<span style="color: #008b8b;">:find</span> ?e 
+                 <span style="color: #008b8b;">:where</span> [?e <span style="color: #008b8b;">:movie/title</span> <span style="color: #8b2252;">"Commando"</span>]] 
+                db)))
+```
+
+
+
+```
+<pre class="src src-clojure">=> #user/commando-id
+```
+
+
+
+Next, you need to issue a transaction, telling Datomic about the new value for `:movie/genre`.
+
+Remember back to the [Transact Data](transact-data.html) tutorial that a transaction requires an active connection and a map of data passed to `:tx-data`. In this case, we will specify one very special new attribute, `:db/id`, to which we will bind the entity id we just retrieved in the previous query. The transaction looks like this:
+
+```
+<pre class="src src-clojure">@(d/transact conn [{<span style="color: #008b8b;">:db/id</span> commando-id <span style="color: #008b8b;">:movie/genre</span> <span style="color: #8b2252;">"future governor"</span>}])
+```
+
+
+
+```
+<pre class="src src-clojure">=>
+{<span style="color: #008b8b;">:db-before</span> datomic.db.Db@6bc4da95, <span style="color: #008b8b;">:db-after</span> datomic.db.Db@ef7748f8,
+ <span style="color: #008b8b;">:tx-data</span>
+  [#datom[13194139534317 50 \#inst <span style="color: #8b2252;">"2017-02-16T16:42:16.787-00:00"</span> 13194139534317 true] 
+   #datom[17592186045419 64 <span style="color: #8b2252;">"future governor"</span> 13194139534317 true] 
+   #datom[17592186045419 64 <span style="color: #8b2252;">"action/adventure"</span> 13194139534317 false]], 
+ <span style="color: #008b8b;">:tempids</span> {}}
+```
+
+
+
+The transaction succeeded. Let's go and verify that Commando has been updated.
+
+```
+<pre class="src src-clojure">(d/q all-data-from-1985 db)
+```
+
+
+
+```
+<pre class="src src-clojure">=> [[<span style="color: #8b2252;">"The Goonies"</span> 1985 <span style="color: #8b2252;">"action/adventure"</span>] [<span style="color: #8b2252;">"Commando"</span> 1985 <span style="color: #8b2252;">"action/adventure"</span>]]
+```
+
+
+
+WAIT? What happened? You saw that your transaction succeeded, but when you asked the database, it still shows "action/adventure" for Commando. Is something wrong?
+
+Absolutely not. Remember this from the "Querying the Data" tutorial:
+
+"A database value is the state of the database at a given point in time. You can issue as many queries against that database value as you want, they will always return the same results."
+
+We issued our transaction against a **connection**, but we are issuing queries against a **database value**, which is a snapshot as of a point in time. And we captured that database value in a var called "db" which we pass into the query as the final argument. It doesn't matter that our transaction succeeded - we aren't seeing the new data because we are querying against the old database value.
+
+Get a current value of the database then issue your query again:
+
+```
+<pre class="src src-clojure">(<span style="color: #a020f0;">def</span> <span style="color: #0000ff;">db</span> (d/db conn))  
+```
+
+
+
+```
+<pre class="src src-clojure">=> #'user/db
+```
+
+
+
+```
+<pre class="src src-clojure">(d/q all-data-from-1985 db)
+```
+
+
+
+```
+<pre class="src src-clojure">=> [[<span style="color: #8b2252;">"Commando"</span> 1985 <span style="color: #8b2252;">"future governor"</span>] [<span style="color: #8b2252;">"The Goonies"</span> 1985 <span style="color: #8b2252;">"action/adventure"</span>]]
+```
+
+
+
+Great~ now we see "Commando" **has** been updated to the latest MPAA specification. What you have seen here is half of the immutability story. As long as you are holding onto a database value and issuing queries against it, you will always see the data as of a single point in time. In order to get see the latest values, you need to update your database value.
+
+But what if you are at the latest value, and want to see where you came from? You have to go and get another version of the database value, at a time before your last transaction. To do this, you have to know the "time basis" of the database value you want. Datomic tracks the time basis in a value called "t", which you can see in the map of results from issuing a transaction. Recall the `:db-before` and `:db-after` values from the "Transact Data" tutorial:
+
+```
+<pre class="src src-clojure"><span style="color: #008b8b;">:db-before</span> {<span style="color: #008b8b;">:database-id</span> <span style="color: #8b2252;">"58a47389-f1ab-4d81-85b6-715cecde9bac"</span>, 
+            <span style="color: #008b8b;">:t</span> 1000, 
+            <span style="color: #008b8b;">:next-t</span> 1001, 
+            <span style="color: #008b8b;">:history</span> false}, 
+<span style="color: #008b8b;">:db-after</span> {<span style="color: #008b8b;">:database-id</span> <span style="color: #8b2252;">"58a47389-f1ab-4d81-85b6-715cecde9bac"</span>, 
+           <span style="color: #008b8b;">:t</span> 1001, 
+           <span style="color: #008b8b;">:next-t</span> 1005, 
+           <span style="color: #008b8b;">:history</span> false}
+```
+
+
+
+The `:db-before` has a `:t` of 1000 and `:db-after` has a `:t` of 1005. You can also always inspect the current database value you have to know what your current time basis is:
+
+```
+<pre class="src src-clojure">db
+```
+
+
+
+```
+<pre class="src src-clojure">=> {<span style="color: #008b8b;">:t</span> 1005, <span style="color: #008b8b;">:next-t</span> 1006, <span style="color: #008b8b;">:db-name</span> <span style="color: #8b2252;">"hello"</span>, <span style="color: #008b8b;">:database-id</span> <span style="color: #8b2252;">"5a381758-6e47-4504-aa08-07067b5c241a"</span>, <span style="color: #008b8b;">:type</span> <span style="color: #008b8b;">:datomic.client/db</span>}
+```
+
+
+
+In our case, we know exactly which time basis we want - the one right before our current state, which was created when we updated the genre of "Commando". To grab a different view as of a different time basis, we use the "*as-of*" function, which takes a database value and a time basis:
+
+```
+<pre class="src src-clojure">user=> (<span style="color: #a020f0;">def</span> <span style="color: #0000ff;">old-db</span> (d/as-of db 1004))
+```
+
+
+
+Now we have a database value from the past, including only changes up until that point in time. Issuing the same query against it, we'll see the value of `:movie/genre` from before our transaction:
+
+```
+<pre class="src src-clojure">(d/q all-data-from-1985 old-db)
+```
+
+
+
+```
+<pre class="src src-clojure">=> [[<span style="color: #8b2252;">"The Goonies"</span> 1985 <span style="color: #8b2252;">"action/adventure"</span>] [<span style="color: #8b2252;">"Commando"</span> 1985 <span style="color: #8b2252;">"action/adventure"</span>]]
+```
+
+
+
+It turns out that you can pass a transaction id, a `t` value, or a Date for the time basis, depending on how you need to slice the history. n You can also use `since` instead of `as-of`, which returns a database value with only changes added after a point in time.
+
+Finally, if you want to see all the values that a given attribute has held over time, you will need to access a special view on the database value, called **history**. To get it, call history on your existing database value:
+
+```
+<pre class="src src-clojure">(<span style="color: #a020f0;">def</span> <span style="color: #0000ff;">hdb</span> (d/history db))
+```
+
+
+
+```
+<pre class="src src-clojure">=> #'user/hdb
+```
+
+
+
+Now pass that in to your query instead of db, and voila:
+
+```
+<pre class="src src-clojure">(d/q '[<span style="color: #008b8b;">:find</span> ?genre 
+       <span style="color: #008b8b;">:where</span> [?e <span style="color: #008b8b;">:movie/title</span> <span style="color: #8b2252;">"Commando"</span>]
+              [?e <span style="color: #008b8b;">:movie/genre</span> ?genre]] 
+      hdb)           
+```
+
+
+
+```
+<pre class="src src-clojure">=> [[<span style="color: #8b2252;">"action/adventure"</span>] [<span style="color: #8b2252;">"future governor"</span>]]
+```
+
+
+
+You can see that the `:movie/genre` attribute of "Commando" has held two different values over time, "`action/adventure`" and "`future governor`". There is much more you can do with `as-of`, `since`, and `history`, which you can learn more about in [the Filters reference](../time/filters.html).
+
+Congratulations, you've finished a whirlwind tour of using Datomic.

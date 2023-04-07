@@ -1,0 +1,81 @@
+High Availability
+=================
+
+High Availability (HA) is a Datomic Cloud feature ensuring the availability of a [compute group](../whatis/architecture.html#compute-group) for reads and writes in the event of node failures.
+
+All nodes implement the entire Datomic API, so HA covers all Datomic functionality: query, transactions, and database administration.
+
+Enabling HA
+-----------
+
+To enable HA for the primary compute group, set its minimum number of compute nodes [higher than one](growing-your-system.html#primary-compute-group).
+
+To enable HA for a query group, set its minimum number of nodes [higher than one](growing-your-system.html#query-group).
+
+You can change these settings at any time if your needs change.
+
+
+
+
+
+How HA Works
+------------
+
+Every compute group includes an AWS Application Load Balancer (ALB) and an Auto Scaling Group (ASG). Application requests to the compute group endpoint are routed through the ALB to a compute node.
+
+If the ASG decides that a node is unhealthy, it will
+
+- start a replacement node
+- remove the ailing node from the ALB
+- terminate the ailing node
+
+When a compute group has more than one node, the group is considered HA because it will remain available in the face of a single node failure, as the ALB transparently routes traffic to the remaining node(s) while the ASG replaces the failed node.
+
+
+
+
+
+Running Without HA
+------------------
+
+If you run a Datomic compute group with a single node, the architecture remains the same. Even with only one node, a compute group still has an ALB and an ASG. If the one (and only) node becomes unhealthy, the ASG will replace it as described above. During this time window, there is nowhere for the ALB to send requests, and the compute group is unavailable.
+
+The time window to replace a node is usually [less than five minutes](https://aws.amazon.com/ec2/autoscaling/faqs/) at the EC2 level. If that recovery window (plus any application specifc startup time) is sufficient for your availability needs, then you can choose to run a compute group without HA.
+
+
+
+
+
+Running Multiple Compute Groups
+-------------------------------
+
+Datomic HA is a property of a compute group, not of an entire system. When your Datomic system includes multiple compute groups, you can make separate HA and capacity decisions for each group.
+
+For example, a web application compute group might prefer to run many more than just two instances. This would provide not only HA, but also a smaller degradation of capacity in the event of a single instance failure. An analytics group for the same system might not have strict availability requirements, but might benefit from increased memory and caching, and choose instead a single very large instance.
+
+
+
+
+
+Primary Group Determines Availability for Transactions
+------------------------------------------------------
+
+When you plan, keep in mind that query groups forward all transactions to the primary compute group. As a result:
+
+- Read capacity and HA are configured per query group.
+- Write capacity and HA for the entire system are determined by the configuraiton of the primary compute group, regardless of which group callers use to initiate transactions.
+
+At any point in time a database has a preferred node for transactions. In normal operation all txes for a db will flow to/through that node. If for any reason (e.g. a temporary network partition) that node can't be reached, **any** node can and will handle txes. Consistency is ensured by [CAS at the DynamoDB level](../transactions/acid.html#how-it-works). This situation increases contention for DynamoDB and decreases throughput, so if the condition persists (or in the case where the preferred node disappears) a different node will become preferred. This is all immediate, there are no transfer/recovery intervals etc. Thus it is not like the mastership transfer and failover of Datomic On-Prem (and many other dbs). But neither should it be confused with parallel multi-writer (a la Cassandra).
+
+In the event of node failures, Datomic will remain available for transactions (albeit with reduced capacity) as long as *even a single primary compute node* stays healthy!
+
+
+
+
+
+Programs Should Be Ready for Transient Anomalies
+------------------------------------------------
+
+When a node becomes unhealthy for any reason, client requests that are routed from the ALB to that node may experience slow responses or transient `unavailable` [anomalies](../client/client-api.html#anomalies). (Client requests that reach one of the other, healthy nodes during this time will experience normal behavior and performance.)
+
+The Datomic client may transparently retry requests when it is safe to do so, but programs should not rely on this. Programs should be implemented to detect and handle transient anomalies in a manner appropriate to the program's needs.

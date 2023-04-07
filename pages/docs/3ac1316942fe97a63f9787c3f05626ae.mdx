@@ -1,0 +1,97 @@
+Troubleshooting Analytics Support
+=================================
+
+Monitoring Analytics Server
+---------------------------
+
+The Presto server provides a live monitoring dashboard that shows running and completed queries. You can access the dashboard by visiting `localhost:8989`in a web browser.
+
+
+
+
+
+Debug CLI
+---------
+
+The [SQL CLI](analytics-cli.html) is recommended for troubleshooting analytics connection and configuration issues.
+
+Launch the CLI in debug mode:
+
+```
+<pre class="example" id="org9991394">
+./presto --server <local-ip OR localhost>:8989 --debug
+```
+
+
+
+
+
+Checking Analytics Server Status
+--------------------------------
+
+In the [debug CLI](#debug-cli), run the following system queries:
+
+```
+<pre class="src src-sql">SHOW SCHEMAS <span style="color: #a020f0;">FROM</span> <span style="color: #a020f0;">system</span>;
+
+SHOW TABLES <span style="color: #a020f0;">FROM</span> <span style="color: #a020f0;">system</span>.runtime;
+```
+
+
+
+If these queries work correctly your analytics system is up and functioning correctly.
+
+If you do not see results from these queries, you should ensure that you have both [Peer Server](../client/peer-server.html) and [Presto server](analytics-connecting.html#running)running.
+
+
+
+
+
+Troubleshooting Configuration Issues
+------------------------------------
+
+If you encounter a `schemaName is null` error when using the CLI, you may have a catalog or metaschema configuration issue.
+
+Run the following query in the [debug CLI](#debug-cli):
+
+```
+<pre class="src src-sql"><span style="color: #a020f0;">SELECT</span> * <span style="color: #a020f0;">FROM</span> <span style="color: #a020f0;">system</span>.metadata.catalogs;
+```
+
+
+
+The results of this query will include all `catalog~s that are available in theanalytics system. You should see [[file:analytics-configuring.html#configuring-catalog][your catalog]]listed in the results. If you do not, you should ensure that you have[[file:analytics-configuring.html#configuring-catalog][created]] your catalog properties file correctly. Be surethat you have the correct directory structure (a ~catalog` and a `datomic` directory).
+
+Another possible cause of this error is that your [metaschema file](analytics-configuring.html#configuring-metaschema) is not properly formatted edn or is not correctly located. Also, verify that your metaschema file ends with a .edn extension.
+
+
+
+
+
+Troubleshooting Metaschema
+--------------------------
+
+If you are able to connect using your catalog and schema, but don't see your expected tables, you likely have a misconfiguration of your [metaschema file](analytics-configuring.html#configuring-metaschema).
+
+Metaschemas are dynamically associated with Datomic databases and errors or typos in metaschemas can prevent association, resulting in the lack of any Presto tables.
+
+Start the [SQL CLI](analytics-cli.html) with your catalog and schema names and run the following:
+
+```
+<pre class="src src-sql">SHOW tables;
+```
+
+
+
+You should see at least two tables: `db__idents` and `db__attrs`, which are both automatically generated for any Datomic database.
+
+You can examine the contents of these tables with:
+
+```
+<pre class="src src-sql"><span style="color: #a020f0;">SELECT</span> * <span style="color: #a020f0;">FROM</span> db__idents;
+<span style="color: #a020f0;">SELECT</span> * <span style="color: #a020f0;">FROM</span> db__attrs;
+```
+
+
+
+The contents of these tables indicate the attributes and idents that Datomic analytics was able to read from your Datomic database. If you do not see any additional tables, your metaschema does not match the schema of this Datomic database. Ensure that all attributes listed in your metaschema file exist in your Datomic database (or in the two `db__` tables in Presto) and that you have not accidentially mistyped or included an attribute that is not present in your database.

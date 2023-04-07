@@ -1,0 +1,64 @@
+Setting Up Python
+=================
+
+We recommend using a Python virtualenv for any Python-based analytics tools. Python 3 ships with virtualenv by default, however if it is missing in your environment you can install it with your package manager or using pip:
+
+```
+<pre class="example" id="org22c8c59">
+pip3 install virtualenv
+```
+
+Setting Up a Python Virtual Environment
+---------------------------------------
+
+Create an new empty directory for your Python environment and cd into it:
+
+```
+<pre class="src src-sh">mkdir my-python-env
+<span style="color: #483d8b;">cd</span> my-python-env
+```
+
+
+
+If you do not yet have it, install Python 3 locally:
+
+```
+<pre class="src src-sh">brew install python3
+```
+
+
+
+Set up a Python virtual environment
+
+> This step is only required once, when you first create the virtual environment NOTE: if you have multiple versions of python 3+ installed, you will need to use version 3.6 or greater for the following command (i.e. python3.7 instead of python3):
+
+```
+<pre class="src src-sh">python3 -m venv venv
+```
+
+
+
+You can now start your virtual environment with:
+
+```
+<pre class="src src-sh"><span style="color: #483d8b;">.</span> venv/bin/activate
+```
+
+
+
+You will now see a `(venv)` at the front of your terminal prompt This lets you know that you're using this virtual environment
+
+Now update Python tools and install the libraries used by the various python tools:
+
+```
+<pre class="src src-sh">pip install --upgrade setuptools pip
+pip install <span style="color: #a0522d;">pandas</span>==0.23.4
+pip install <span style="color: #a0522d;">sqlalchemy</span>==1.2.18
+pip install pyhive[presto]
+```
+
+
+
+You can exit the venv any time with:
+
+\#+begin\_src ssh deactivate #+begin\_src

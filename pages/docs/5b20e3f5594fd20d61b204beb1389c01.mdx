@@ -1,0 +1,463 @@
+Client API
+==========
+
+All access to Datomic is via the Datomic Client API. This page covers everything you need to use the Datomic Client API:
+
+- How to [install](#installing) the client library.
+- An overview of the two API flavors: [synchronous](#sync) ([clojuredoc](https://docs.datomic.com/client-api/datomic.client.api.html)) and [asynchronous](#async) ([clojuredoc](https://docs.datomic.com/client-api/datomic.client.api.async.html))
+- Key API objects: [clients](#client) and [connections](#connection).
+- Key API concepts: [catalog operations](#catalog-operations), [error handling](#anomalies), [timeouts](#timeouts), [chunking](#chunking), and [offset/limit](#offset-and-limit).
+
+The [Day of Datomic Cloud](https://youtu.be/ZP-E2IgqKfA?t=2032) videos include an overview of the Client API.
+
+Installing the Client Library
+-----------------------------
+
+The Datomic Client library includes both the synchronous and asynchronous APIs, and is provided via [ Maven Central.](http://search.maven.org/#search%7Cga%7C1%7Ca%3A%22client-cloud%22)
+
+
+
+### Clojure CLI
+
+To use the Client library from a [Clojure CLI REPL](../operation/howto.html#clojure-cli), add the following to your [deps.edn](https://clojure.org/guides/deps_and_cli) dependencies map:
+
+```
+<pre class="src src-clojure">com.datomic/client-cloud {<span style="color: #008b8b;">:mvn/version</span> <span style="color: #8b2252;">"1.0.123"</span>}
+```
+
+
+
+
+
+
+
+### Maven
+
+To retrieve the Client library for a Maven project, add the following snippet inside the `<dependencies>` block of your pom.xml file:
+
+```
+<pre class="src src-xml"><<span style="color: #0000ff;">dependency</span>>
+ <<span style="color: #0000ff;">groupId</span>>com.datomic</<span style="color: #0000ff;">groupId</span>>
+ <<span style="color: #0000ff;">artifactId</span>>client-cloud</<span style="color: #0000ff;">artifactId</span>>
+ <<span style="color: #0000ff;">version</span>>1.0.123</<span style="color: #0000ff;">version</span>>
+</<span style="color: #0000ff;">dependency</span>>
+```
+
+
+
+
+
+
+
+### Leiningen
+
+To include the Client library in a Leiningen project, add the following snippet to your [project.clj](https://github.com/technomancy/leiningen#configuration) file in the collection under :dependencies key.
+
+```
+<pre class="src src-clojure">com.datomic/client-cloud {<span style="color: #008b8b;">:mvn/version</span> <span style="color: #8b2252;">"1.0.123"</span>}
+```
+
+
+
+Make sure that Clojure dependency is set to at least `[org.clojure/clojure "1.9.0"]`.
+
+
+
+
+
+
+
+Synchronous API
+---------------
+
+[Synchronous API](https://docs.datomic.com/client-api/datomic.client.api.html) functions have the following common semantics:
+
+- they block the calling thread if they access a remote resource
+- they return a value
+- they indicate anomalies by [throwing an exception](#anomalies)
+
+The following example shows a simple transaction using the [Synchronous API.](https://docs.datomic.com/client-api/datomic.client.api.html)
+
+```
+<pre class="src src-clojure"><span style="color: #b22222;">;; </span><span style="color: #b22222;">load the Synchronous API with prefix 'd'</span>
+(<span style="color: #a0522d;">require</span> '[datomic.client.api <span style="color: #008b8b;">:as</span> d])
+
+<span style="color: #b22222;">;; </span><span style="color: #b22222;">transact a movie</span>
+(<span style="color: #a020f0;">def</span> <span style="color: #0000ff;">result</span> (d/transact conn {<span style="color: #008b8b;">:tx-data</span> [{<span style="color: #008b8b;">:db/id</span> <span style="color: #8b2252;">"goonies"</span>
+                                         <span style="color: #008b8b;">:movie/title</span> <span style="color: #8b2252;">"The Goonies"</span>
+                                         <span style="color: #008b8b;">:movie/genre</span> <span style="color: #8b2252;">"action/adventure"</span>
+                                         <span style="color: #008b8b;">:movie/release-year</span> 1985}]}))
+
+<span style="color: #b22222;">;; </span><span style="color: #b22222;">what id was assigned to The Goonies?</span>
+(<span style="color: #483d8b;">-></span> result <span style="color: #008b8b;">:tempids</span> (<span style="color: #a0522d;">get</span> <span style="color: #8b2252;">"goonies"</span>))
+```
+
+
+
+
+
+
+
+Asynchronous API
+----------------
+
+The [Asynchronous API](https://docs.datomic.com/client-api/datomic.client.api.async.html) functions differ from those in the Synchronous API in that
+
+- they return a core.async channel if they access a remote resource
+- they never block the calling thread
+- they place result(s) on the channel
+- they place [anomalies](#anomalies) on the channel
+- A [server type of `:ion`](#client) is only supported by the [synchronous API](#sync)
+
+You must use a channel-taking operator such as [&lt;!!](https://clojure.github.io/core.async/#clojure.core.async/%3C!!) to retrieve the result of an asynchronous operation, and you must explicitly check for anomalies:
+
+```
+<pre class="src src-clojure"><span style="color: #b22222;">;; </span><span style="color: #b22222;">load the Asynchronous API with prefix 'd', plus core.async and anomaly APIs</span>
+(<span style="color: #a0522d;">require</span> '[clojure.core.async <span style="color: #008b8b;">:refer</span> (<!!)]
+         '[cognitect.anomalies <span style="color: #008b8b;">:as</span> anom]
+         '[datomic.client.api.async <span style="color: #008b8b;">:as</span> d])
+
+<span style="color: #b22222;">;; </span><span style="color: #b22222;">transact a movie</span>
+(<span style="color: #a020f0;">def</span> <span style="color: #0000ff;">result</span> (<!! (d/transact conn {<span style="color: #008b8b;">:tx-data</span> [{<span style="color: #008b8b;">:db/id</span> <span style="color: #8b2252;">"goonies"</span>
+                                              <span style="color: #008b8b;">:movie/title</span> <span style="color: #8b2252;">"The Goonies"</span>
+                                              <span style="color: #008b8b;">:movie/genre</span> <span style="color: #8b2252;">"action/adventure"</span>
+                                              <span style="color: #008b8b;">:movie/release-year</span> 1985}]})))
+
+<span style="color: #b22222;">;; </span><span style="color: #b22222;">what id was assigned to The Goonies?</span>
+(<span style="color: #483d8b;">when-not</span> (<span style="color: #008b8b;">::anom/anomaly</span> result)
+  (<span style="color: #483d8b;">-></span> result <span style="color: #008b8b;">:tempids</span> (<span style="color: #a0522d;">get</span> <span style="color: #8b2252;">"goonies"</span>)))
+```
+
+
+
+
+
+
+
+Client Object
+-------------
+
+All use of the Client API begins by [creating a client](https://docs.datomic.com/client-api/datomic.client.api.async.html#var-client). The args map for creating a client uses the following keys:
+
+KeyValue:server-type:cloud (or :ion for [ion applications](../ions/ions-reference.html#server-type-ion)):regionAWS region:systemyour system name:endpointcompute group endpoint, see below:timeoutoptional msec timeout (default 60000):creds-profileoptional [AWS Profile](https://docs.aws.amazon.com/cli/latest/userguide/cli-configure-profiles.html) used to [retrieve keys](../operation/access-control.html#how-datomic-access-control-works):proxy-portoptional local port for SSH tunnelFor most systems, the `:endpoint` is an API gateway endpoint. You can find the endpoint name under the `ClientApiGatewayEndpoint` [output](../operation/howto.html#template-outputs) from your [compute group's CloudFormation template](../operation/howto.html#compute-group-name) or use [the CLI tool's `describe-groups` command](../operation/cli-tools.html)
+
+If the `ClientApiGatewayEndpoint` output is missing, you will need to get an `:endpoint` from the Datomic system administrator who configured [intra- and inter- VPC access](../operation/vpc-access.html) or [created a custom API Gateway](../operation/custom-api-gateway.html).
+
+Client access through API Gateway is securely managed by [IAM permissions](../operation/access-control.html#how-datomic-access-control-works).
+
+
+
+
+
+Catalog Operations
+------------------
+
+The client object can be used to [list](https://docs.datomic.com/client-api/datomic.client.api.html#var-list-databases), [create](https://docs.datomic.com/client-api/datomic.client.api.html#var-create-database) and [delete](https://docs.datomic.com/client-api/datomic.client.api.html#var-delete-database) databases.
+
+Create and delete operations take effect immediately. After a database is deleted, a Primary Compute Node will asynchronously delete all resources associated with a database.
+
+
+
+
+
+Connection
+----------
+
+All use of a database is through a connection object. The [connect API](https://docs.datomic.com/client-api/datomic.client.api.html#var-connect)returns a connection, which is then passed as an argument to the transaction and db APIs.
+
+Database values remember their association with a connection, so APIs that work against a single database (e.g. [datoms](https://docs.datomic.com/client-api/datomic.client.api.html#var-datoms)) do not need to redundantly specify a connection argument.
+
+Connections do not require any special handling on the client side:
+
+- Connections are thread safe.
+- Connections do not need to be pooled.
+- Connections do not need to be closed when not in use.
+- Connections do not need to be recreated. On `:cognitect.anomalies/busy`, `cognitect.anomalies/unavailable` or `cognitect.anomalies/interrupted` the same Connection can be reused on retry. The Connection can be reused for other anomalies as well, but they may indicate an issue with the code creating the Connection or using it.
+- Connections are cached automatically, so creating the same connection multiple times is inexpensive.
+
+
+
+
+
+Handling Errors
+---------------
+
+Errors are represented as an [anomalies map](https://github.com/cognitect-labs/anomalies). In the sync API, you can retrieve the specific anomaly as the ex-data of an exception. In the async API, the anomaly will be placed on the channel.
+
+
+
+### ::cognitect.anomalies/busy
+
+If you get a *busy* response from the Client API, your request rate has temporarily exceeded the capacity of a node, and has already been through an exponential backoff and retry implemented by the client. At this point you have three options:
+
+- For transactions: continue to retry the request at the application level with your own exponential backoff. The [Mbrainz Importer](https://github.com/Datomic/mbrainz-importer) example project demonstrates a [batch import with retry](https://github.com/Datomic/mbrainz-importer/blob/master/src/cognitect/xform/batch.clj#L70-L92).
+- For queries: retry the request as long as the returned anomaly is retryable. If you consistently receive *busy* responses, you may wish to expand the capacity of your system, by [choosing new instance sizes](operation/growing-your-system.html) or by adding/scaling a [query group](../whatis/architecture.html#query-groups).
+- Give up on completing the request.
+
+
+
+
+
+### Sync API Error Example
+
+The query below is incorrect because the `:find` clause uses a variable name `?nomen` that is not bound by the query. The sync API will throw an exception:
+
+```
+<pre class="src src-clojure">(<span style="color: #a0522d;">require</span> '[datomic.client.api <span style="color: #008b8b;">:as</span> d])
+(d/q '[<span style="color: #008b8b;">:find</span> ?nomen
+       <span style="color: #008b8b;">:where</span> [_ <span style="color: #008b8b;">:artist/name</span> ?name]]
+     db)
+```
+
+
+
+```
+<pre class="src src-clojure">=> <span style="color: #483d8b;">ExceptionInfo</span> <span style="color: #483d8b;">Query</span> is referencing unbound variables: #{?nomen}
+```
+
+
+
+You can discover the category of anomaly by inspecting the `ex-data`of the exception:
+
+```
+<pre class="src src-clojure">(ex-data *e)
+```
+
+
+
+```
+<pre class="src src-clojure">=>
+{<span style="color: #008b8b;">:cognitect.anomalies/category</span> 
+ <span style="color: #008b8b;">:cognitect.anomalies/incorrect</span>, 
+ <span style="color: #008b8b;">:cognitect.anomalies/message</span> 
+ <span style="color: #8b2252;">"Query is referencing unbound variables: #{?nomen}"</span>, 
+ ...}
+```
+
+
+
+
+
+
+
+### Async API Error Example
+
+With the async API, the same anomaly appears as a map on channel:
+
+```
+<pre class="src src-clojure">(<span style="color: #a0522d;">require</span> '[datomic.client.api.async <span style="color: #008b8b;">:as</span> d])
+(<!! (d/q {<span style="color: #008b8b;">:query</span> '[<span style="color: #008b8b;">:find</span> ?nomen
+                    <span style="color: #008b8b;">:where</span> [_ <span style="color: #008b8b;">:artist/name</span> ?name]]
+           <span style="color: #008b8b;">:args</span> [db]}))
+```
+
+
+
+```
+<pre class="src src-clojure">=>
+{<span style="color: #008b8b;">:cognitect.anomalies/category</span> 
+ <span style="color: #008b8b;">:cognitect.anomalies/incorrect</span>, 
+ <span style="color: #008b8b;">:cognitect.anomalies/message</span> 
+ <span style="color: #8b2252;">"Query is referencing unbound variables: #{?nomen}"</span>, 
+ ...}
+```
+
+
+
+
+
+
+
+
+
+Timeouts
+--------
+
+All APIs that communicate with a remote process enforce a timeout that you can specify via the args map:
+
+KeyMeaningDefault:timeoutmax msec wait before giving up60000The call to create a client takes a `:timeout` which establishes the default for all API calls through that client.
+
+API timeouts cause an anomaly with category `::anom/unavailable`, as shown below:
+
+```
+<pre class="src src-clojure">(d/q {<span style="color: #008b8b;">:query</span> '[<span style="color: #008b8b;">:find</span> (<span style="color: #a0522d;">count</span> ?name)
+               <span style="color: #008b8b;">:where</span> [_ <span style="color: #008b8b;">:artist/name</span> ?name]]
+      <span style="color: #008b8b;">:args</span> [db]
+      <span style="color: #008b8b;">:timeout</span> 1})
+(ex-data *e)
+```
+
+
+
+```
+<pre class="src src-clojure">=>
+#<span style="color: #008b8b;">:cognitect.anomalies</span>{<span style="color: #008b8b;">:category</span> <span style="color: #008b8b;">:cognitect.anomalies/unavailable</span>, 
+                      <span style="color: #008b8b;">:message</span> <span style="color: #8b2252;">"Total timeout elapsed"</span>} 
+```
+
+
+
+
+
+
+
+Chunked Results
+---------------
+
+Client APIs that can return an arbitrary number of results return those results in *chunks*. You can control chunking by adding the `:chunk` keyword to argument maps:
+
+KeyMeaningDefaultMax:chunkmax results in a single chunk1000(unlimited)The default chunk size delivers good performance, and should only be changed to address a measurable performance need.
+
+- Smaller chunks require more roundtrips and potentially higher latency overall, but require less memory on the client (assuming the client program drops each chunk after use).
+- Larger chunks reverse this tradeoff, delivering results in fewer roundtrips but requiring more memory on the client side.
+
+Note that the chunk size is orthogonal to the actual work done by the server:
+
+- Datalog queries always realize the entire result in memory first, and then chunk the result back to the client.
+- APIs that pull datoms from indexes ([datoms](https://docs.datomic.com/client-api/datomic.client.api.html#var-datoms), [index-range](https://docs.datomic.com/client-api/datomic.client.api.html#var-index-range) and [tx-range](https://docs.datomic.com/client-api/datomic.client.api.html#var-tx-range)) are lazy and realize chunks one at a time on both the server and client.
+
+When you use an [ion client](../ions/ions.html), the "client" and "server" are the same process, and the `:chunk` argument is ignored.
+
+[Synchronous API](https://docs.datomic.com/client-api/datomic.client.api.html) functions are designed for convenience. They return a single collection or iterable and do not expose chunks directly. The chunk size argument is nevertheless available and relevant for performance tuning.
+
+The [Asynchronous API](https://docs.datomic.com/client-api/datomic.client.api.async.html) provides more flexibility, exposing the chunks directly, one at a time, on a core.async channel. Processing results by async transduction is the most efficient way to deal with large results, and is demonstrated in the example below.
+
+
+
+### Chunked Results Example
+
+If you wanted to know the average length of an artist name in the mbrainz data set, you could use the following async transduction to process all the names in chunks of 10,000.
+
+```
+<pre class="src src-clojure">(<span style="color: #a020f0;">defn</span> <span style="color: #0000ff;">averager</span>
+  <span style="color: #8b2252;">"Reducing fn that calculates average of its inputs"</span>
+  ([] [0 0])                  <span style="color: #b22222;">;; </span><span style="color: #b22222;">init</span>
+  ([[n total]]                <span style="color: #b22222;">;; </span><span style="color: #b22222;">complete</span>
+     (<span style="color: #a0522d;">/</span> total (<span style="color: #a0522d;">double</span> n)))
+  ([[n total] count]          <span style="color: #b22222;">;; </span><span style="color: #b22222;">step</span>
+     [(<span style="color: #a0522d;">inc</span> n) (<span style="color: #a0522d;">+</span> total count)]))
+
+(<span style="color: #a020f0;">defn</span> <span style="color: #0000ff;">nth-counter</span>
+  <span style="color: #8b2252;">"Transform for chunked query results that gets the count of</span>
+<span style="color: #8b2252;">the nth item from each result tuple."</span>
+  [n]
+  (<span style="color: #a0522d;">comp</span> (halt-when <span style="color: #008b8b;">:anom/category</span>)  <span style="color: #b22222;">;; </span><span style="color: #b22222;">fail fast</span>
+        cat                         <span style="color: #b22222;">;; </span><span style="color: #b22222;">flatten the chunks</span>
+        (<span style="color: #a0522d;">map</span> #(<span style="color: #a0522d;">nth</span> % n))            <span style="color: #b22222;">;; </span><span style="color: #b22222;">nth of chunk</span>
+        (<span style="color: #a0522d;">map</span> count)))
+
+(<span style="color: #a020f0;">def</span> <span style="color: #0000ff;">datoms-query</span> {<span style="color: #008b8b;">:limit</span> -1
+                   <span style="color: #008b8b;">:chunk</span> 10000
+                   <span style="color: #008b8b;">:index</span> <span style="color: #008b8b;">:aevt</span>
+                   <span style="color: #008b8b;">:components</span> [<span style="color: #008b8b;">:artist/name</span>]})
+(<span style="color: #483d8b;">->></span> (async/datoms db datoms-query)
+     (a/transduce (nth-counter 2) averager (averager))
+     <!!)
+```
+
+
+
+```
+<pre class="src src-clojure">=> 13.893066724625081
+```
+
+
+
+The decomposition of async programs into named reducing fns and transforms such as `averager` and `nth-counter` makes it easy to test the parts of an async program entirely synchronously, and without the need for mocking and stubbing:
+
+```
+<pre class="src src-clojure"><span style="color: #b22222;">;; </span><span style="color: #b22222;">check that averager actually averages</span>
+(transduce identity averager [5 4])
+```
+
+
+
+```
+<pre class="src src-clojure">=> 4.5
+```
+
+
+
+noslide
+
+```
+<pre class="src src-clojure"><span style="color: #b22222;">;; </span><span style="color: #b22222;">check that nth-counter returns count of nth element in chunk of tuples</span>
+(<span style="color: #a020f0;">def</span> <span style="color: #0000ff;">chunks</span> [[[<span style="color: #008b8b;">:person-1</span> <span style="color: #008b8b;">:name</span> <span style="color: #8b2252;">"Flintstone"</span>]
+              [<span style="color: #008b8b;">:person-2</span> <span style="color: #008b8b;">:name</span> <span style="color: #8b2252;">"Rubble"</span>]]])
+(<span style="color: #a0522d;">sequence</span> (nth-counter 2) chunks)
+```
+
+
+
+```
+<pre class="src src-clojure">=> (10 6)
+```
+
+
+
+```
+<pre class="src src-clojure"><span style="color: #b22222;">;; </span><span style="color: #b22222;">check that the reducing fn and xform compose</span>
+(transduce (nth-counter 2) averager chunks)
+```
+
+
+
+```
+<pre class="src src-clojure">=> 8.0
+```
+
+
+
+You should add async transductions to your program when you have e.g. a measured performance need. For this simple example, all the code above could be replaced by a simple API query:
+
+```
+<pre class="src src-clojure">(d/q '[<span style="color: #008b8b;">:find</span> (avg ?ct)
+       <span style="color: #008b8b;">:with</span> ?artist
+       <span style="color: #008b8b;">:where</span> [?artist <span style="color: #008b8b;">:artist/name</span> ?name]
+              [(<span style="color: #a0522d;">count</span> ?name) ?ct]]
+     db)
+```
+
+
+
+```
+<pre class="src src-clojure">=> [[13.893066724625081]]
+```
+
+
+
+
+
+
+
+
+
+Offset and Limit
+----------------
+
+Client APIs that can return an arbitrary number of results allow you to request only part of these results by specifying the following optional keys in the args map:
+
+KeyMeaningDefault:offsetnumber of results to omit from the beginning0:limitmaximum number of results to return1000You can specify a `:limit` of `-1` to request all results.
+
+
+
+### Offset and Limit Example
+
+The full [mbrainz example](https://github.com/Datomic/mbrainz-importer) has over 600,000 names. The following query uses `:offset` and `:limit` to return 2 names starting with the 10th item in the query result.
+
+```
+<pre class="src src-clojure"><span style="color: #b22222;">;; </span><span style="color: #b22222;">query</span>
+{<span style="color: #008b8b;">:query</span> '[<span style="color: #008b8b;">:find</span> ?name
+          <span style="color: #008b8b;">:where</span> [_ <span style="color: #008b8b;">:artist/name</span> ?name]]
+          <span style="color: #008b8b;">:args</span> [db]
+          <span style="color: #008b8b;">:offset</span> 10
+          <span style="color: #008b8b;">:limit</span> 2}
+```
+
+
+
+```
+<pre class="src src-clojure">=>
+[[<span style="color: #8b2252;">"Kenneth Ishak & The Freedom Machines"</span>] 
+ [<span style="color: #8b2252;">"The Plastik"</span>]]
+```

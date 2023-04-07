@@ -1,0 +1,228 @@
+Entry Points
+============
+
+There are [many entry points for Ions](ions-reference.html#entry-points).
+
+This section covers:
+
+- [lambda invocation](#invoke-lambda)
+- [HTTP Direct](#http-direct)
+- [Attribute Predicates](attribute-predicate)
+
+Invoke a Lambda
+---------------
+
+Lambda entry points can be invoked from the [AWS CLI](https://docs.aws.amazon.com/cli/latest/reference/lambda/index.html). First, call `get-schema`. In the command below, replace `$(GROUP)` with the [name of your compute group](../operation/howto.html#compute-group-name):
+
+```
+<pre class="src src-sh">aws lambda invoke --function-name $(<span style="color: #cd00cd;">GROUP</span>)-get-schema --payload <span style="color: #8b2252;">''</span> /dev/stdout
+```
+
+
+
+This may return pending while AWS [creates or configures external resources](https://aws.amazon.com/blogs/compute/tracking-the-state-of-lambda-functions/).
+
+On success, this call will print your lambda's response, plus some AWS CLI status information:
+
+```
+<pre class="src src-clojure">(#<span style="color: #008b8b;">:db</span>{<span style="color: #008b8b;">:id</span> 39,
+      <span style="color: #008b8b;">:ident</span> <span style="color: #008b8b;">:fressian/tag</span>,
+      <span style="color: #008b8b;">:valueType</span> <span style="color: #008b8b;">:db.type/keyword</span>,
+      <span style="color: #008b8b;">:cardinality</span> <span style="color: #008b8b;">:db.cardinality/one</span>,
+      <span style="color: #008b8b;">:doc</span>
+      <span style="color: #8b2252;">"Keyword-valued attribute of a value type that specifies the underlying fressian type used for serialization."</span>}
+ <span style="color: #b22222;">;; </span><span style="color: #b22222;">more schema elided</span>
+ #<span style="color: #008b8b;">:db</span>{<span style="color: #008b8b;">:id</span> 80,
+      <span style="color: #008b8b;">:ident</span> <span style="color: #008b8b;">:inv/count</span>,
+      <span style="color: #008b8b;">:valueType</span> <span style="color: #008b8b;">:db.type/long</span>,
+      <span style="color: #008b8b;">:cardinality</span> <span style="color: #008b8b;">:db.cardinality/one</span>})
+{
+    <span style="color: #8b2252;">"StatusCode"</span>: 200,
+    <span style="color: #8b2252;">"ExecutedVersion"</span>: <span style="color: #8b2252;">"$LATEST"</span>
+}
+```
+
+
+
+On your first invocation, this call may take a while due to Lambda cold start. Outside of dev, [most lambda invocations are warm](https://blog.symphonia.io/learning-lambda-part-8-addfab6b460d), so try calling the function a second time to see typical production performance.
+
+To see a function that takes an argument, try `get-items-by-type`.
+
+> If `aws --version` returns version 2, then add the flag `--cli-binary-format raw-in-base64-out` to the command:
+
+```
+<pre class="src src-bash">aws lambda invoke --function-name $(<span style="color: #cd00cd;">GROUP</span>)-get-items-by-type --payload <span style="color: #8b2252;">'"shirt"'</span> /dev/stdout
+```
+
+
+
+On success, this will return details about shirts:
+
+```
+<pre class="src src-clojure">[[#<span style="color: #008b8b;">:inv</span>{<span style="color: #008b8b;">:sku</span> <span style="color: #8b2252;">"SKU-28"</span>, <span style="color: #008b8b;">:size</span> <span style="color: #008b8b;">:xlarge</span>, <span style="color: #008b8b;">:color</span> <span style="color: #008b8b;">:green</span>}]
+ <span style="color: #b22222;">;; </span><span style="color: #b22222;">more shirt details</span>
+ [#<span style="color: #008b8b;">:inv</span>{<span style="color: #008b8b;">:sku</span> <span style="color: #8b2252;">"SKU-56"</span>, <span style="color: #008b8b;">:size</span> <span style="color: #008b8b;">:large</span>, <span style="color: #008b8b;">:color</span> <span style="color: #008b8b;">:yellow</span>}]]
+{
+    <span style="color: #8b2252;">"StatusCode"</span>: 200,
+    <span style="color: #8b2252;">"ExecutedVersion"</span>: <span style="color: #8b2252;">"$LATEST"</span>
+}
+```
+
+
+
+
+
+
+
+Add an Attribute Predicate
+--------------------------
+
+You can use ions to deploy functions for use as [attribute predicates](../schema/schema-reference.html#attribute-predicates), [entity predicates](../schema/schema-reference.html#entity-predicates), [transaction functions](../transactions/transaction-functions.html#custom), or [query functions](../query/query-data-reference.html#calling-clojure-functions).
+
+When you deployed the tutorial application, your [ion-config.edn file](https://github.com/Datomic/ion-starter/blob/master/resources/datomic/ion-config.edn)allowed a [valid-sku? function](https://github.com/Datomic/ion-starter/blob/master/src/datomic/ion/starter/attributes.clj) suitable for an attribute predicate.
+
+```
+<pre class="src src-clojure">(<span style="color: #a020f0;">defn</span> <span style="color: #0000ff;">valid-sku?</span>
+  [s]
+  (<span style="color: #a0522d;">boolean</span> (<span style="color: #a0522d;">re-matches</span> #<span style="color: #8b2252;">"SKU-(\d+)"</span> s)))
+```
+
+
+
+You can now test this function at the REPL:
+
+```
+<pre class="src src-clojure">(<span style="color: #a0522d;">load-file</span> <span style="color: #8b2252;">"siderail/user.repl"</span>)
+
+<span style="color: #b22222;">;; </span><span style="color: #b22222;">try the fn at the REPL</span>
+(attrs/valid-sku? <span style="color: #8b2252;">"SKU-112"</span>)
+```
+
+
+
+```
+<pre class="src src-clojure">=> true
+```
+
+
+
+```
+<pre class="src src-clojure">(attrs/valid-sku? <span style="color: #8b2252;">"SKU-1B"</span>)
+```
+
+
+
+```
+<pre class="src src-clojure">=> false
+```
+
+
+
+Then you can install `valid-sku` as a predicate for `:inv/sku`:
+
+```
+<pre class="src src-clojure">(<span style="color: #a020f0;">def</span> <span style="color: #0000ff;">conn</span> (starter/get-connection))
+
+(<span style="color: #a020f0;">def</span> <span style="color: #0000ff;">tx</span> [{<span style="color: #008b8b;">:db/ident</span> <span style="color: #008b8b;">:inv/sku</span>
+          <span style="color: #008b8b;">:db.attr/preds</span> 'datomic.ion.starter.attributes/valid-sku?}])
+(d/transact conn {<span style="color: #008b8b;">:tx-data</span> tx})
+```
+
+
+
+After you install the function, you can use a with-db to prove that the predicate is in effect:
+
+```
+<pre class="src src-clojure">(<span style="color: #a020f0;">def</span> <span style="color: #0000ff;">with-db</span> (d/with-db conn))
+(d/with with-db {<span style="color: #008b8b;">:tx-data</span> [{<span style="color: #008b8b;">:db/id</span> <span style="color: #8b2252;">"should-not-work"</span>
+                            <span style="color: #008b8b;">:inv/sku</span> <span style="color: #8b2252;">"not-a-sku"</span>}]})
+```
+
+
+
+```
+<pre class="src src-clojure">=> <span style="color: #483d8b;">Entity</span> -9223301668109598141 attribute <span style="color: #008b8b;">:inv/sku</span> value not-a-sku failed pred datomic.ion.starter.attributes/valid-sku?
+```
+
+
+
+
+
+
+
+HTTP Direct
+-----------
+
+Invoking an Ion via HTTP Direct is a simple http request.
+
+Find your `IonApiGatewayEndpoint` in your compute group's CloudFormation [template outputs](../operation/howto.html#template-outputs).
+
+Since HTTP Direct is a simple http request, it can be invoked from any platform that supports such requests. Try entering your `IonApiGatewayEndpoint` and data of `:hat` below.
+
+ IonApiGatewayEndpoint:  
+   
+ Payload:  
+   
+ ```
+<pre style="border: 1px solid grey !important; width: 100%;height: auto;margin-top: 30px;margin-bottom: 40px; padding: 15px;">```
+HTTP Direct Results displayed here
+```
+```
+
+<![CDATA[
+function http_direct () {
+    document.getElementById("http-direct-results").innerText = "HTTP Direct Invoked...";
+
+    var service = "https://ion-example.datomic.com";
+
+    var xhr = new XMLHttpRequest();
+    xhr.open("POST", service);
+    
+    xhr.setRequestHeader("Content-Type", "application/json");
+    
+    xhr.onreadystatechange = function () {
+       if (xhr.readyState === 4) {
+          if (xhr.status != 200) {
+              document.getElementById("http-direct-results").innerText = xhr.status;
+          } else {
+              document.getElementById("http-direct-results").innerText = xhr.responseText;
+          }
+          console.log(xhr.status);
+          console.log(xhr.responseText);
+       }};
+    
+    var url = document.getElementById("endpoint").value;
+    var payload = document.getElementById("http-direct-payload").value;
+    var data = {"payload": payload, "url": url}
+    
+    xhr.send(JSON.stringify(data));
+}
+
+document.getElementById("http-direct-submit-form").addEventListener("submit", http_direct);
+
+]]>On success, this will return an EDN representation of inventory data for a particular type.
+
+> The above [XHR](https://developer.mozilla.org/en-US/docs/Web/API/XMLHttpRequest) request would normally require that [CORS for your API Gateway](https://docs.aws.amazon.com/apigateway/latest/developerguide/http-api-cors.html) is setup with an allowed Origin of "<https://docs.datomic.com>".
+> 
+> The demo above sends the request to an Ion we've setup with the appropriate CORS headers. This intermediate Ion makes the request to your supplied endpoint and returns the result.
+> 
+> If your API Gateway was setup with the appropriate CORS response then you could make the request directly to your `IonApiGatewayEndpoint` endpoint.
+
+This is equivalent to invoking your Ion through HTTP Direct with `curl`:
+
+```
+<pre class="src src-sh">curl https://$(<span style="color: #cd00cd;">IonApiGatewayEndpoint</span>) -d :hat
+```
+
+
+
+```
+<pre class="src src-clojure">=>
+#{{<span style="color: #008b8b;">:color</span> <span style="color: #008b8b;">:red</span>, <span style="color: #008b8b;">:type</span> <span style="color: #008b8b;">:hat</span>, <span style="color: #008b8b;">:size</span> <span style="color: #008b8b;">:medium</span>, <span style="color: #008b8b;">:sku</span> <span style="color: #8b2252;">"SKU-7"</span>}
+  ...
+  {<span style="color: #008b8b;">:color</span> <span style="color: #008b8b;">:blue</span>, <span style="color: #008b8b;">:type</span> <span style="color: #008b8b;">:hat</span>, <span style="color: #008b8b;">:size</span> <span style="color: #008b8b;">:small</span>, <span style="color: #008b8b;">:sku</span> <span style="color: #8b2252;">"SKU-35"</span>}}
+```
+
+
+
+Now [delete your system and conclude this tutorial.](cleanup.html)

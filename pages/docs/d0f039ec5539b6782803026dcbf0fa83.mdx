@@ -1,0 +1,860 @@
+Datomic Best Practices
+======================
+
+Datomic Schema Best Practices
+-----------------------------
+
+- [Group Related Attributes in a Namespace](#group-related-attributes)
+- [Plan for Accretion](#plan-for-accretion)
+- [Model Relationships in One Direction Only](#one-direction-only)
+- [Use Idents For Enumerated Types](#idents-for-enumerated-types)
+- [Use Unique Identities for External Keys](#unique-ids-for-external-keys)
+- [Use NoHistory for High-Churn Attributes](#nohistory-for-high-churn)
+
+
+
+
+
+Datomic Production Schema Best Practices
+----------------------------------------
+
+- [Grow Schema and Never Break It](#grow-schema)
+- [Never Remove or Reuse Names](#never-remove-or-reuse)
+- [Use Aliases](#use-aliases)
+- [Annotate Schema](#annotate-schema)
+
+
+
+
+
+Datomic Transaction Best Practices
+----------------------------------
+
+- [Add Facts to the Transaction Entity](#add-facts-about-transaction-entity)
+- [Use Lookup Refs to Specify Entities](#lookup-refs-to-specify-existing-entities)
+- [Use DbAfter to see Result of a Transaction](#use-dbafter)
+- [Set TxInstant on Imports](#set-txinstant-on-imports)
+- [Pipeline Transactions for Higher Throughput](#pipeline-transactions)
+
+
+
+
+
+Datomic Query Best Practices
+----------------------------
+
+- [Put the Most Selective Clauses First](#most-selective-clauses-first)
+- [Join along](#join-along)
+- [Prefer Query over Raw Index Access](#prefer-query)
+- [Pass Collections as Inputs](#collections-as-inputs)
+- [Use Pull to Retrieve Attribute Values](#use-pull-to-retrieve-attribute-values)
+- [Put Blanks in Data Patterns](#blanks-in-data-patterns)
+- [Use Query Inputs to Parameterize Queries and Leverage Caching](#parameterize-queries)
+- [Prefer qseq for large queries](#qseq)
+
+
+
+
+
+Datomic Time Best Practices
+---------------------------
+
+- [Use a Consistent Db Value for a Unit of Work](#consistent-db-value-for-unit-of-work)
+- [Specify t Instead of txInstant for Precise asOf Locations](#t-instead-of-txInstant)
+- [Use the History Filter for Audit Trail Queries](#use-history)
+- [Pass Multiple Points-in-time to a Single Query](#multiple-points-in-time)
+- [Use the Log API if Time is Your Most Selective Criterion](#use-log-api)
+
+
+
+
+
+Group Related Attributes in a Namespace
+---------------------------------------
+
+Datomic data is not stored in separate tables, and any entity can possess any attribute. It is idiomatic to use namespaces to group attributes that typically appear together. The [mbrainz 1968-1973 sample](https://github.com/Datomic/mbrainz-sample)set demonstrates this:
+
+NamespaceExample Attributesartist:artist/name, :artist/countryrelease:release/artists, :release/name, :release/mediatrack:track/name, :track/artists, :track/durationThe namespaces suggest attributes that appear together, without limiting entities in any way.
+
+Further, namespaces greatly reduce the cost of getting a name wrong, as the same local name can safely have different meanings in different namespaces. For example, imagine that the local name *id* is used to refer to a UUID in several namespaces, e.g. :inventory/id, :order/id, but is used to refer to a string as :user/id.
+
+
+
+
+
+Plan for Accretion
+------------------
+
+Programs should not assume that an entity will be limited to the set of attributes that it has at a given point in time. The [Schema Growth](#grow-schema) principle provides a means for entites to develop over time, and tying programmatic usage to a fixed set of attributes can lead to *breakage* in the face of *growth*.
+
+For example, usage should be structured to handle a given set of attributes for an entity, not applying arbitrary usage to all possible attributes:
+
+```
+<pre class="src src-clojure">(do-side-effecty-thing-with-each
+ (<span style="color: #a0522d;">select-keys</span> some-entity keys-i-understand))
+<span style="color: #b22222;">;; </span><span style="color: #b22222;">not (do-side-effecty-thing-with-each some-entity)</span>
+```
+
+
+
+
+
+
+
+Model Relationships in One Direction Only
+-----------------------------------------
+
+When you create a reference type, Datomic automatically indexes the reference in both directions: from entity to value and from value to entity. The indices are equally efficient, so it is entirely redundant to manage relationships in both directions.
+
+For example, the mbrainz sample schema connects artists and releases via the *:release/artists* attribute. There is no need for a separate *:artist/releases* attribute. The data clause below can find *?artist* from *?release* and/or *?release* from *?artist*.
+
+```
+<pre class="src src-clojure">[?release <span style="color: #008b8b;">:release/artists</span> ?artist]
+```
+
+
+
+
+
+
+
+Use Idents for Enumerated Types
+-------------------------------
+
+Enumerated types should be represented by a reference pointing to an entity that has an ident. This is very efficient in memory and storage, as Datomic stores the ident name only once and allows any number of datoms to reference it.
+
+The mbrainz sample schema demonstrates this with *:artist/country*. Note that transactions can use an ident directly as a reference value, eliding the indirection. The transaction data below creates a reference between *artist-id* and the entity whose ident is *:country/GB*
+
+```
+<pre class="src src-clojure">[artist-id <span style="color: #008b8b;">:artist/country</span> <span style="color: #008b8b;">:country/GB</span>]
+```
+
+
+
+
+
+
+
+Use Unique Identities for External Keys
+---------------------------------------
+
+If an attribute is used as a external key, you should set that attribute to be *:db/unique* *:db.unique/identity*. [Unique identities](schema/identity.html#unique-identities)can be domain specific identifiers, such as an account number or an email address.
+
+For example, you could represent an ISO 3166-1 compliant country code external key with the following attribute definition:
+
+```
+<pre class="src src-clojure">{<span style="color: #008b8b;">:db/ident</span> <span style="color: #008b8b;">:country/code</span>
+ <span style="color: #008b8b;">:db/valueType</span> <span style="color: #008b8b;">:db.type/string</span>
+ <span style="color: #008b8b;">:db/cardinality</span> <span style="color: #008b8b;">:db.cardinality/one</span>
+ <span style="color: #008b8b;">:db/unique</span> <span style="color: #008b8b;">:db.unique/identity</span>
+ <span style="color: #008b8b;">:db/doc</span> <span style="color: #8b2252;">"ISO 3166-1 alpha-3 country code"</span>}
+```
+
+
+
+If you need to generate an ID that will be both unique and friendly to Datomic's indexing, use Datomic's [SQUUID](javadoc/datomic/Peer.html#squuid--) generator to create ids for an attribute of type *:db.type/uuid*.
+
+Note that all entities have an internal key - the entity ID.
+
+
+
+
+
+Use NoHistory for High-churn Attributes
+---------------------------------------
+
+For high churn attributes, such as a counter or version incrementer, the cost of storing history is frequently not worth the impact on database size or indexing performance. If you have a high-churn attribute that you don't expect to use in historical queries, you should set *:db/noHistory* to *true*.
+
+
+
+
+
+Grow Schema and Never Break It
+------------------------------
+
+In a production system, one or more codebases depend on your data. In schema terms, *growth* is providing more schema while *breakage* is removing schema or changing the meaning of existing schema.
+
+Growth migrations are suitable for production, and breakage migrations are, at best, a dev-only convenience.
+
+Further details on *growth* vs. *breakage* can be found in Rich Hickey's 2016 Clojure/conj Keynote, [Spec-ulation](https://www.youtube.com/watch?v=oyLBGkS5ICk).
+
+Datomic provides lightweight, flexible schema that can be *grown* as necessary to support new information about your system or domain. *Growth* is always additive, i.e. adding new attributes, adding new 'types', adding relationships between 'types':
+
+```
+<pre class="src src-clojure"><span style="color: #b22222;">;; </span><span style="color: #b22222;">Given some initial schema</span>
+{<span style="color: #008b8b;">:db/ident</span> <span style="color: #008b8b;">:user/id</span>
+ <span style="color: #008b8b;">:db/valueType</span> <span style="color: #008b8b;">:db.type/string</span>
+ <span style="color: #008b8b;">:db/cardinality</span> <span style="color: #008b8b;">:db.cardinality/one</span>}
+
+<span style="color: #b22222;">;; </span><span style="color: #b22222;">Grow system by adding schema:</span>
+{<span style="color: #008b8b;">:db/ident</span> <span style="color: #008b8b;">:user/name</span>
+ <span style="color: #008b8b;">:db/valueType</span> <span style="color: #008b8b;">:db.type/string</span>
+ <span style="color: #008b8b;">:db/cardinality</span> <span style="color: #008b8b;">:db.cardinality/one</span>}
+```
+
+
+
+Although this recommendation may seem difficult, the following three sections provide approaches to facilitate *growth* without *breakage*.
+
+
+
+
+
+Never Remove or Reuse Names
+---------------------------
+
+Removing a named schema component at any level is a breaking change for programs that depend on that name. Never remove a name. The meaning of a name is established when the name is first introduced. Reusing that name to mean something substantially different breaks programs that depend on that meaning. This can be even worse than removing the name, as the breakage may not be as immediately obvious.
+
+
+
+
+
+Use Aliases
+-----------
+
+Instead of removing or reusing names, you should use aliases to allow multiple names to refer to a single schema element. Datomic allows multiple [*:db/idents*](schema/identity.html#idents) to refer to a single entity ID.
+
+For example, to create an alias, *:user/primary-email* that refers to the same schema element as an existing ident (*:user/id*) transact the following assertion:
+
+```
+<pre class="src src-clojure">[<span style="color: #008b8b;">:db/add</span> <span style="color: #008b8b;">:user/id</span> <span style="color: #008b8b;">:db/ident</span> <span style="color: #008b8b;">:user/primary-email</span>]
+```
+
+
+
+This new alias allows new programs to use the new *:user/primary-email* name, while adhering to the [the prior section](#never-remove-or-reuse) ensures that old programs that require *:user/id* will continue to function.
+
+
+
+
+
+Annotate Schema
+---------------
+
+Because Datomic Schema is stored as data, you can and should annotate your schema elements with useful information that can both help users/readers understand the system and provide an understanding of how the schema has grown over time.
+
+For example, in the case of a [preferred newer schema option](#grow-schema), you can add a *:schema/see-instead* flag and a *:db/doc* on the older schema element to point users at the new convention:
+
+```
+<pre class="src src-clojure">{<span style="color: #008b8b;">:db/ident</span> <span style="color: #008b8b;">:user</span>
+ <span style="color: #008b8b;">:schema/see-instead</span> <span style="color: #008b8b;">:user2</span>
+ <span style="color: #008b8b;">:db/doc</span> <span style="color: #8b2252;">"prefer the user2 namespace for new development"</span>}
+```
+
+
+
+
+
+
+
+Add Facts About the Transaction Entity
+--------------------------------------
+
+Most entities in a system model the "what" of your domain. Transactions provide a place to model "when", "who", "where", and "why".
+
+As a part of every transaction, Datomic creates an entity to represent the transaction itself. This *reified transaction* automatically includes a "when" datom, *:db/txInstant*, which records the wall clock time that the transaction was recorded.
+
+Transactions are ordinary entities: you can create attributes that are about transactions and query them just like any other datoms in Datomic.
+
+For example, the following datom uses a *:data/src* attribute to report the source of data being imported from another system:
+
+```
+<pre class="src src-clojure">[<span style="color: #008b8b;">:db/add</span> 
+ <span style="color: #8b2252;">"datomic.tx"</span>
+ <span style="color: #008b8b;">:data/src</span> 
+ <span style="color: #8b2252;">"https://example.com/catalog-2_29_2012.xml"</span>]
+```
+
+
+
+
+
+
+
+Use Lookup Refs to Specify Existing Entities
+--------------------------------------------
+
+Database updates often have a two-step structure:
+
+- Query for database ids using an externally unique identifier
+- Use those database ids as part of a transaction
+
+Lookup refs flatten this into a single step. With a lookup ref, you can specify an entity directly via an external identifier.
+
+So instead of:
+
+```
+<pre class="src src-clojure"><span style="color: #b22222;">;;</span><span style="color: #b22222;">query</span>
+(<span style="color: #a020f0;">def</span> <span style="color: #0000ff;">e</span> (d/q [<span style="color: #008b8b;">:find</span> ?e .
+             <span style="color: #008b8b;">:where</span> [?e <span style="color: #008b8b;">:user/email</span> <span style="color: #8b2252;">"jdoe@example.com"</span>]]))
+
+<span style="color: #b22222;">;;</span><span style="color: #b22222;">then use</span>
+(d/transact conn [[<span style="color: #008b8b;">:db/add</span> 
+                   e
+                   <span style="color: #008b8b;">:db/doc</span>
+                   <span style="color: #8b2252;">"doc about John"</span>]])
+
+```
+
+
+
+you can simply:
+
+```
+<pre class="src src-clojure">(d/transact conn [[<span style="color: #008b8b;">:db/add</span>
+                   [<span style="color: #008b8b;">:user/email</span> <span style="color: #8b2252;">"jdoe@example.com"</span>]
+                   <span style="color: #008b8b;">:db/doc</span>
+                   <span style="color: #8b2252;">"doc about John"</span>]])
+```
+
+
+
+
+
+
+
+Use CAS for Optimistic Concurrency
+----------------------------------
+
+Transactional systems can use optimistic or pessimistic concurrency controls to deal with read-for-update scenarios. Datomic's built-in compare-and-swap enables generic optimistic approaches.
+
+The following example illustrates the use of compare-and-swap for adding a deposit to an account. In only the case that compare-and-swap fails (note that we catch *java.lang.IllegalStateException* for this specific case), we retry the deposit.
+
+```
+<pre class="src src-clojure">(<span style="color: #a020f0;">defn</span> <span style="color: #0000ff;">make-deposit!</span>
+  [conn account-id deposit]
+  (<span style="color: #483d8b;">let</span> [db (d/db conn)
+        acc-lookup [<span style="color: #008b8b;">:account/number</span> account-id]
+        balance (<span style="color: #483d8b;">-></span> (d/pull db '[<span style="color: #008b8b;">:account/balance</span>] acc-lookup)
+                    <span style="color: #008b8b;">:account/balance</span>)]
+             (<span style="color: #483d8b;">try</span> (<span style="color: #a0522d;">deref</span> (d/transact conn [[<span style="color: #008b8b;">:db.fn/cas</span> acc-lookup
+                                            <span style="color: #008b8b;">:account/balance</span> balance
+                                                             (<span style="color: #a0522d;">+</span> balance deposit)]]))
+                  (<span style="color: #483d8b;">catch</span> <span style="color: #483d8b;">java.lang.IllegalStateException</span> e
+                    (make-deposit! conn account-id deposit)))))
+```
+
+
+
+
+
+
+
+Use DbAfter to see Result of a Transaction
+------------------------------------------
+
+The *transact* function returns a future. On a successfully committed transaction, the value of this future is a map which can be used to retrieve information about the outcome of the transaction. This map contains the *DbAfter* value of the database immediately after the transaction is applied. This value can be retrieved as *DB\_AFTER*in Java and *:db-after* in Clojure.
+
+If you want to determine the results of applying a transaction to a database, using *:db-after* ensures that you will see only the impact of the transaction and no other changes to the database that may have been made in the time since.
+
+Because *:db-after* can also be retrieved from [with](clojure/index.html#datomic.api/with), you can examine the results of a prospective or real transaction identically by using *:db-after*.
+
+The following example uses *:db.fn/cas* and *:db-after* in conjunction to verify that a deposit only increases the account by the correct amount:
+
+```
+<pre class="src src-clojure">(<span style="color: #483d8b;">let</span> [db (d/db conn)
+      deposit 850.00
+      acc-lookup [<span style="color: #008b8b;">:account/number</span> <span style="color: #8b2252;">"123-45-6789"</span>]
+      balance-before (<span style="color: #483d8b;">-></span> (d/pull db '[<span style="color: #008b8b;">:account/balance</span>] acc-lookup)
+                         <span style="color: #008b8b;">:account/balance</span>)
+      tx-result (<span style="color: #a0522d;">deref</span>
+                  (d/transact conn [[<span style="color: #008b8b;">:db.fn/cas</span> acc-lookup
+                                     <span style="color: #008b8b;">:account/balance</span> balance-before
+                                                      (<span style="color: #a0522d;">+</span> balance-before deposit)]]))
+      db-after (<span style="color: #008b8b;">:db-after</span> tx-result)
+      balance-after (<span style="color: #483d8b;">-></span> (d/pull db-after '[<span style="color: #008b8b;">:account/balance</span>] acc-lookup)
+                         <span style="color: #008b8b;">:account/balance</span>)]
+  [balance-before deposit balance-after])
+```
+
+
+
+In this case, the constraint of *cas* with *db-after* ensures that we're only seeing the impact of our transaction on this particular account balance. If we had instead used *(d/db conn)* to retrieve the latest version of the database in place of *:db-after*, it's possible the balance would have been changed again by the time we looked at it.
+
+
+
+
+
+Set txInstant on Imports
+------------------------
+
+When importing values (e.g. from another datastore), note that you can override Datomic's default timestamping behavior by setting *:db/txInstant* explicitly. In the typical case you will override this by using the original transaction time logged by the database from which you're importing. When you do this, note that you must choose a *:db/txInstant* value that is not older than any existing transaction's *:db/txInstant* value and not newer than the transactor's clock time as Datomic's *:db/txInstant* values must increase monotonically.
+
+To write your own *:db/txInstant* value, add a map to the transaction with the special *:db/id value* "datomic.tx" and a supplied value for the *:db/txInstant* attribute.
+
+```
+<pre class="src src-clojure">{<span style="color: #008b8b;">:db/id</span> <span style="color: #8b2252;">"datomic.tx"</span>
+ <span style="color: #008b8b;">:db/txInstant</span> #inst <span style="color: #8b2252;">"2014-02-28"</span>}
+```
+
+
+
+
+
+
+
+Pipeline Transactions for Higher Throughput
+-------------------------------------------
+
+Data imports will run significatly faster if you pipeline transactions using *transact-async* to maintain several transactions in-flight at the same time.
+
+This can be accomplished using [pipeline](https://clojure.github.io/core.async/#clojure.core.async/pipeline) in *core.async*:
+
+```
+<pre class="src src-clojure">(<span style="color: #483d8b;">ns</span> your.namespace
+  (<span style="color: #008b8b;">:require</span> [clojure.core.async <span style="color: #008b8b;">:as</span> a <span style="color: #008b8b;">:refer</span> (>!! <! >! go-loop)]
+            [datomic.api <span style="color: #008b8b;">:as</span> d]))
+
+(<span style="color: #a020f0;">defn</span> <span style="color: #0000ff;">tx-pipeline</span>
+  <span style="color: #8b2252;">"Transacts data from from-ch. Returns a map with:</span>
+<span style="color: #8b2252;">     :result, a return channel getting {:error t} or {:completed n}</span>
+<span style="color: #8b2252;">     :stop, a fn you can use to terminate early."</span>
+  [conn conc from-ch]
+  (<span style="color: #483d8b;">let</span> [to-ch (a/chan 100)
+        done-ch (a/chan)
+        transact-data (<span style="color: #a0522d;">fn</span> [data]
+                       (<span style="color: #483d8b;">try</span>
+                          @(d/transact-async conn data)
+                        <span style="color: #b22222;">; if exception in a transaction</span>
+                        <span style="color: #b22222;">; will close channels and put error</span>
+                        <span style="color: #b22222;">; on done channel.</span>
+                        (<span style="color: #483d8b;">catch</span> <span style="color: #483d8b;">Throwable</span> t
+                          (<span style="color: #483d8b;">.printStackTrace</span> t)
+                          (a/close! from-ch)
+                          (a/close! to-ch)
+                          (>!! done-ch {<span style="color: #008b8b;">:error</span> t}))))]
+
+   <span style="color: #b22222;">; go block prints a '.' after every 1000 transactions, puts completed</span>
+   <span style="color: #b22222;">; report on done channel when no value left to be taken.</span>
+   (go-loop [total 0]
+     (<span style="color: #483d8b;">when</span> (zero? (<span style="color: #a0522d;">mod</span> total 1000))
+       (<span style="color: #a0522d;">print</span> <span style="color: #8b2252;">"."</span>) (<span style="color: #a0522d;">flush</span>))
+     (<span style="color: #483d8b;">if-let</span> [c (<! to-ch)]
+       (<span style="color: #483d8b;">recur</span> (<span style="color: #a0522d;">inc</span> total))
+       (>! done-ch {<span style="color: #008b8b;">:completed</span> total})))
+
+   <span style="color: #b22222;">; pipeline that uses transducer form of map to transact data taken from</span>
+   <span style="color: #b22222;">; from-ch and puts results on to-ch</span>
+   (a/pipeline-blocking conc to-ch (<span style="color: #a0522d;">map</span> transact-data) from-ch)
+
+   <span style="color: #b22222;">; returns done channel and a function that you can use</span>
+   <span style="color: #b22222;">; for early termination.</span>
+   {<span style="color: #008b8b;">:result</span> done-ch
+    <span style="color: #008b8b;">:stop</span> (<span style="color: #a0522d;">fn</span> [] (a/close! to-ch))}))
+```
+
+
+
+Additionally, an example of using a Java LinkedBlockingQueue for batch import is provided in the [day of datomic repository.](https://github.com/Datomic/day-of-datomic/blob/master/tutorial/pipelining.clj)
+
+
+
+
+
+Put the Most Selective Clause First in Query
+--------------------------------------------
+
+The *:where* clauses of Datomic queries are executed in order. This gives you total control over how the query engine performs with your data set. One rule of thumb is to place [more restrictive](query/query-executing.html#clause-order) clauses before less restrictive clauses, i.e.:
+
+```
+<pre class="src src-clojure"><span style="color: #008b8b;">:where</span> [?e <span style="color: #008b8b;">:only/matches</span> ?few]
+       [?e <span style="color: #008b8b;">:will/match</span> ?many]
+```
+
+
+
+The restrictive clause limits the size of the first intermediate result. The [query documentation](query/query-executing.html#clause-order) provides an example illustrating this technique.
+
+
+
+
+
+Join Along
+----------
+
+A second rule of thumb is that each clause should join along at least one variable that has been bound in the preceding clauses.
+
+For example, imagine a database with 1000 people, each of whom has one pet. In the query below, the second clause does not join along an existing variable. The intermediate result is a cross product of a million (1000x1000) tuples, which the third clause then reduces back to 1000 results.
+
+```
+<pre class="src src-clojure"><span style="color: #b22222;">;; </span><span style="color: #b22222;">likely a bad ordering!</span>
+[?person <span style="color: #008b8b;">:person/name</span> ?name]
+[?pet <span style="color: #008b8b;">:pet/name</span> ?pet-name]    <span style="color: #b22222;">;; </span><span style="color: #b22222;">matches no previous variables!</span>
+[?person <span style="color: #008b8b;">:person/pet</span> ?pet]    
+```
+
+
+
+In the improved query below, each clause after the first joins along a variable that is already bound. The intermediate result never gets larger than 1000 tuples, a substantial savings in both memory and query time.
+
+```
+<pre class="src src-clojure"><span style="color: #b22222;">;; </span><span style="color: #b22222;">better ordering</span>
+[?person <span style="color: #008b8b;">:person/name</span> ?name]
+[?person <span style="color: #008b8b;">:person/pet</span> ?pet]    <span style="color: #b22222;">;; </span><span style="color: #b22222;">join along: ?person bound</span>
+[?pet <span style="color: #008b8b;">:pet/name</span> ?pet-name]    <span style="color: #b22222;">;; </span><span style="color: #b22222;">join along: ?pet bound</span>
+```
+
+
+
+While neither of the preceding two rules of thumb is absolute, they often make it possible to quickly select a decent clause ordering.
+
+
+
+
+
+Prefer Query over Raw Index Access
+----------------------------------
+
+Datomic's [Datalog](query/query.html#why-datalog) query is simple and declarative. Queries written in datalog are evident, readily optimized (in ways that may improve over time), and logic based. As such, Datomic query decouples logical specification from lookup implementation.
+
+Leveraging Datalog's simple and declarative nature allows for the easy decomposition of queries. With little system knowledge you can troubleshoot query performance. For more details see the [decomposing a query](https://github.com/Datomic/day-of-datomic/blob/master/tutorial/decomposing_a_query.clj) example in our day-of-datomic tutorial examples.
+
+A common anti-pattern is to use the [Datoms API](query/indexes.html#datoms-api) for raw index access pre-emptively in order to chase a perceived performance gain. For the reasons stated above, Query should always be preferred and *datoms* should only be employed when raw index access is (1) iterating through part or all of a database in sequence, as in raw data export or paging through datoms sorted in *AVET*, and/or (2) a concrete performance gain can be made using *datoms* that can be directly linked to an application requirement.
+
+
+
+
+
+Pass Collections As Inputs
+--------------------------
+
+You can use a [collection binding](/on-prem/query/query.html#collection-binding)in query to match several values specified in a collection. This behaves as a logical *or*, that is, it returns a union of the results for each item in the collection. When you want all results that match any of a given collection of entities or values, you should prefer a collection binding in a parameterized query over running multiple queries.
+
+The following query uses a collection binding to return all names for artists based in Japan or Canada:
+
+```
+<pre class="src src-clojure">(d/q '[<span style="color: #008b8b;">:find</span> (pull ?a [<span style="color: #008b8b;">:artist/name</span>])
+       <span style="color: #008b8b;">:in</span> $ [?c ...]
+       <span style="color: #008b8b;">:where</span> [?a <span style="color: #008b8b;">:artist/country</span> ?country]
+              [?country <span style="color: #008b8b;">:country/name</span> ?c]]
+     db [<span style="color: #8b2252;">"Canada"</span> <span style="color: #8b2252;">"Japan"</span>])
+```
+
+
+
+```
+<pre class="src src-clojure">=>
+[[{<span style="color: #008b8b;">:artist/name</span> <span style="color: #8b2252;">"The Guess Who"</span>}]
+ [{<span style="color: #008b8b;">:artist/name</span> <span style="color: #8b2252;">"Whiskey Howl"</span>}]
+ [{<span style="color: #008b8b;">:artist/name</span> <span style="color: #8b2252;">"Yoko Ono"</span>}]
+  ...
+ [{<span style="color: #008b8b;">:artist/name</span> <span style="color: #8b2252;">"Asakawa Maki"</span>}]]
+```
+
+
+
+
+
+
+
+Use Pull to Retrieve Attribute Values
+-------------------------------------
+
+*pull* is usually the simplest way to retrieve a value for a specified attribute for a given entity. Using an [entity identifier](schema/identity.html#entity-identifiers), calling *pull* is very straight forward - see the example below that retrieves the documentation for *:db/ident*:
+
+```
+<pre class="src src-clojure">(d/pull db [<span style="color: #008b8b;">:db/doc</span>] <span style="color: #008b8b;">:db/ident</span>)
+```
+
+
+
+It returns a map:
+
+```
+<pre class="src src-clojure">{<span style="color: #008b8b;">:db/doc</span> <span style="color: #8b2252;">"Attribute used to uniquely name an entity."</span>}
+```
+
+
+
+Inside of a query, you should use the *:where* clauses to identify entites of interest and prefer a *pull* expression to obtain attribute values for those entities. An example:
+
+```
+<pre class="src src-clojure">[<span style="color: #008b8b;">:find</span> [(pull ?e [<span style="color: #008b8b;">:artist/name</span>]) ...]
+ <span style="color: #008b8b;">:where</span> [?e <span style="color: #008b8b;">:artist/country</span> <span style="color: #008b8b;">:country/JP</span>]]
+```
+
+
+
+```
+<pre class="src src-clojure">=>
+[{<span style="color: #008b8b;">:artist/name</span> <span style="color: #8b2252;">"Flower Travellin' Band"</span>}
+ {<span style="color: #008b8b;">:artist/name</span> <span style="color: #8b2252;">"The Tigers"</span>}
+ {<span style="color: #008b8b;">:artist/name</span> <span style="color: #8b2252;">"Jacks"</span>}
+ ...]
+```
+
+
+
+Finds all artists from Japan then uses pull to list their names. Note that the results are now self documenting:
+
+Note also that pull will not limit results that are missing attributes:
+
+```
+<pre class="src src-clojure">[<span style="color: #008b8b;">:find</span> [(pull ?e [<span style="color: #008b8b;">:artist/name</span> <span style="color: #008b8b;">:artist/gender</span>]) ...]
+ <span style="color: #008b8b;">:where</span> [?e <span style="color: #008b8b;">:artist/country</span> <span style="color: #008b8b;">:country/JP</span>]]
+```
+
+
+
+```
+<pre class="src src-clojure">=>
+[{<span style="color: #008b8b;">:artist/gender</span> {<span style="color: #008b8b;">:db/id</span> 17592186045591} <span style="color: #008b8b;">:artist/name</span> <span style="color: #8b2252;">"Yoko Ono"</span>}
+ {<span style="color: #008b8b;">:artist/name</span> <span style="color: #8b2252;">"Far Out"</span>}
+ {<span style="color: #008b8b;">:artist/gender</span> {<span style="color: #008b8b;">:db/id</span> 17592186045591} <span style="color: #008b8b;">:artist/name</span> <span style="color: #8b2252;">"Asakawa Maki"</span>} ...]
+```
+
+
+
+Things to note in using *pull* instead of *:where* in *query*.
+
+- *pull* does not unify on attributes. While a *:where* clause will omit an entity that lacks a specified attribute, *pull* will return *nil* for a requested attribute if the entity does not have a value for it, or omit attributes with missing values in the case of a *pull* that specifies multiple attributes.
+
+Things to note in using *pull* instead of *entity*.
+
+- *pull* eagerly returns raw data, i.e. maps and vectors.
+- *entity* returns a map-like, lazily realized associative data structure.
+- *pull* returns *:db/ident* values as maps, whereas *entity* returns them as keywords.
+
+
+
+
+
+Put Blanks in Data Patterns
+---------------------------
+
+[Blanks](query/query.html#blanks) can be used as placeholders that match anything but do not bind or unify. This mbrainz example finds all countries which have an artist in the mbrainz database, using a blank to match any artist.
+
+```
+<pre class="src src-clojure">[<span style="color: #008b8b;">:find</span> [?c ...]
+ <span style="color: #008b8b;">:where</span> [_ <span style="color: #008b8b;">:artist/country</span> ?c]]
+```
+
+
+
+Using a variable rather than the blank is considered an antipattern for these reasons:
+
+- blanks allow the query engine to avoid extra work tracking binding and unification for a dummy variable.
+- it is clear that a *\_* is meant to match everything - the same is not true for a dummy variable.
+
+
+
+
+
+Use Query Inputs to Parameterize Queries and Leverage Caching
+-------------------------------------------------------------
+
+Datomic will [cache](query/query-executing.html#query-caching)queries, so long as the query (first) argument data structures evaluate as equal. As a result, reusing parameterized queries is much more efficient than building different query data structures. If you need to build data structures at run time for query, you should do so using a standard process so that equivalent queries will evaluate as equal.
+
+The following query finds the names of all bands starting with "B", of type *group*, with a startyear of 1970:
+
+```
+<pre class="src src-clojure">[<span style="color: #008b8b;">:find</span> [?name ...]
+ <span style="color: #008b8b;">:where</span> [?a <span style="color: #008b8b;">:artist/type</span> <span style="color: #008b8b;">:artist.type/group</span>]
+        [?a <span style="color: #008b8b;">:artist/name</span> ?name]
+        [?a <span style="color: #008b8b;">:artist/startYear</span> 1970]
+        [(<span style="color: #483d8b;">.startsWith</span> <span style="color: #228b22;">^String</span> ?name <span style="color: #8b2252;">"B"</span>)]]
+```
+
+
+
+A common antipattern is to make repeated adjustments to the query's data structure to change what facts it will match, e.g.:
+
+```
+<pre class="src src-clojure">[<span style="color: #008b8b;">:find</span> [?name ...]
+ <span style="color: #008b8b;">:where</span> [?a <span style="color: #008b8b;">:artist/type</span> <span style="color: #008b8b;">:artist.type/group</span>]
+        [?a <span style="color: #008b8b;">:artist/name</span> ?name]
+        [?a <span style="color: #008b8b;">:artist/startYear</span> 1971]
+        [(<span style="color: #483d8b;">.startsWith</span> <span style="color: #228b22;">^String</span> ?name <span style="color: #8b2252;">"C"</span>)]]
+```
+
+
+
+Instead, we should parameterize the query so that we can call it multiple times with different inputs:
+
+```
+<pre class="src src-clojure">[<span style="color: #008b8b;">:find</span> [?name ...]
+ <span style="color: #008b8b;">:in</span> $ ?year ?letter
+ <span style="color: #008b8b;">:where</span> [?a <span style="color: #008b8b;">:artist/type</span> <span style="color: #008b8b;">:artist.type/group</span>]
+        [?a <span style="color: #008b8b;">:artist/name</span> ?name]
+        [?a <span style="color: #008b8b;">:artist/startYear</span> ?year]
+        [(<span style="color: #483d8b;">.startsWith</span> <span style="color: #228b22;">^String</span> ?name ?letter)]]
+
+<span style="color: #b22222;">;; </span><span style="color: #b22222;">inputs</span>
+mbrainz-db 1971 <span style="color: #8b2252;">"C"</span>
+```
+
+
+
+
+
+
+
+Prefer qseq for large queries
+-----------------------------
+
+`qseq` utilizes less memory and allows you to acquire the first result quickly.
+
+`qseq` returns a lazy sequence that can be consumed at will.
+
+```
+<pre class="src src-clojure"><span style="color: #b22222;">;; </span><span style="color: #b22222;">Find the names of all artists in the mbrainz database</span>
+
+<span style="color: #b22222;">;; </span><span style="color: #b22222;">q</span>
+(<span style="color: #483d8b;">->></span> (d/q '[<span style="color: #008b8b;">:find</span> ?v
+             <span style="color: #008b8b;">:where</span> [_ <span style="color: #008b8b;">:artist/name</span> ?v]]
+          db)
+     first
+     time)
+
+```
+
+
+
+```
+<pre class="src src-clojure">=> <span style="color: #8b2252;">"Elapsed time: 49123.671445 msecs"</span>
+<span style="color: #b22222;">;; </span><span style="color: #b22222;">result</span>
+[<span style="color: #8b2252;">"Los Dudes"</span>]
+```
+
+
+
+```
+<pre class="src src-clojure"><span style="color: #b22222;">;; </span><span style="color: #b22222;">qseq</span>
+(<span style="color: #483d8b;">->></span> (d/qseq '[<span style="color: #008b8b;">:find</span> ?v
+               <span style="color: #008b8b;">:where</span> [_ <span style="color: #008b8b;">:artist/name</span> ?v]]
+             db)
+     first
+     time)
+```
+
+
+
+```
+<pre class="src src-clojure">=> <span style="color: #8b2252;">"Elapsed time: 1729.227285 msecs"</span>
+<span style="color: #b22222;">;; </span><span style="color: #b22222;">result</span>
+[<span style="color: #8b2252;">"Los Dudes"</span>]
+```
+
+
+
+
+
+
+
+Use a Consistent Db Value for a Unit of Work
+--------------------------------------------
+
+A database value is immutable and calls to *query*, *pull*, or *entity* on the same database value will return consistent results. The result of calling the *database* function on a connection will vary over time, and therefore calling the function repeatedly in sequence can retrieve facts that do not share a common time basis.
+
+You should use a single database value for a unit of work in order to maintain consistency and to reap the resulting benefits for testing, predictability, and composability.
+
+
+
+
+
+Specify t Instead of txInstant for Precise asOf Locations
+---------------------------------------------------------
+
+Datomic's own *t* time value exactly orders transactions in monotonically ascending order, with each transaction receiving its own *t* value. By contrast, wall clock times specicified by *txInstant* are imprecise as more than one transaction can be recorded in the same millisecond.
+
+For filtering databases by time, establishing the relative order of events in a historical database, or any other time based operation requiring exact precision you should always prefer the *t* value.
+
+For example, if we're interested in the wall clock time in which The Rolling Stones were added to the mbrainz database, we might use a query like this:
+
+```
+<pre class="src src-clojure">'[<span style="color: #008b8b;">:find</span> ?<span style="color: #483d8b;">txInstant</span> .
+  <span style="color: #008b8b;">:where</span> [?a <span style="color: #008b8b;">:artist/name</span> <span style="color: #8b2252;">"The Rolling Stones"</span> ?tx]
+         [?tx <span style="color: #008b8b;">:db/txInstant</span> ?<span style="color: #483d8b;">txInstant</span>]]
+```
+
+
+
+But if we want to use the Log API to inspect the other data transacted along with this fact, we should get the transaction ID itself:
+
+```
+<pre class="src src-clojure">[<span style="color: #008b8b;">:find</span> ?tx .
+ <span style="color: #008b8b;">:where</span> [?a <span style="color: #008b8b;">:artist/name</span> <span style="color: #8b2252;">"The Rolling Stones"</span> ?tx]]
+```
+
+
+
+This transaction id can be converted to a t value with exact precision, or itself used as an argument to e.g. *txRange* where it can be used to retrieve the datoms in the transaction.
+
+```
+<pre class="src src-clojure">(<span style="color: #483d8b;">-></span> (d/tx-range log tx (<span style="color: #a0522d;">inc</span> tx))
+    first
+    <span style="color: #008b8b;">:data</span>)
+```
+
+
+
+
+
+
+
+Use the History Filter for Audit Trail Queries
+----------------------------------------------
+
+Use the [history filter](time/filters.html#history) when trying to answer audit trail questions such as "What did we know about this customer when we confirmed this purchase?" or "In which of these four time ranges was this customer active?" Without the history filter, your database will be limited to a particular time view and you will not see all historical datoms, thereby missing facts that have been since retracted.
+
+The following example uses a history database to retrieve all purchases ever entered for a user as well as the time the purchase was logged by the system. Since it uses a history database, it includes facts that were once asserted but have been later retracted.
+
+This will bind *?added* to *true* if the datom is an assertion and *false* if the datom is a retraction, returning results like:
+
+```
+<pre class="src src-clojure">(d/q '[<span style="color: #008b8b;">:find</span> ?p ?inst ?added
+       <span style="color: #008b8b;">:in</span> $ ?userid
+       <span style="color: #008b8b;">:where</span> [?u <span style="color: #008b8b;">:user/purchase</span> ?p ?tx ?added]
+              [?u <span style="color: #008b8b;">:user/id</span> ?userid]
+              [?tx <span style="color: #008b8b;">:db/txInstant</span> ?inst]]
+     (d/history db) userid)
+```
+
+
+
+```
+<pre class="src src-clojure">=>
+[[<span style="color: #8b2252;">"Bread"</span> #inst <span style="color: #8b2252;">"2014-11-18T03:41:59.301-00:00"</span> false]
+ [<span style="color: #8b2252;">"Bread"</span> #inst <span style="color: #8b2252;">"2014-11-18T03:41:37.031-00:00"</span> true]
+ [<span style="color: #8b2252;">"Soda"</span> #inst <span style="color: #8b2252;">"2014-11-18T03:41:39.617-00:00"</span> true]
+ [<span style="color: #8b2252;">"French Fries"</span> #inst <span style="color: #8b2252;">"2014-11-18T03:41:56.115-00:00"</span> true]]
+```
+
+
+
+We can see a cancelled (retracted) order and explain why we sent a loaf of bread to shipping at 3:41:43 even though there was no longer a bread order in the shipping queue when the loaf arrived at 3:43:15.
+
+
+
+
+
+Pass Multiple Points-in-time to a Single Query
+----------------------------------------------
+
+When using filters, you will often need to use multiple points in time for a database. A common mistake encountered with using the *since* filter, for example, is to omit the unfiltered (or differently filtered) database that is the basis for the facts about the [identity](schema/identity.html)of the entity for which the query is being made.
+
+An example of using two points in time is provided in the [day-of-datomic](https://github.com/Datomic/day-of-datomic/blob/98c1d9b2967ad5317e83b6da50f7c0e5c3d7a207/tutorial/filters.clj#L95-L107)sample repository. This query:
+
+```
+<pre class="src src-clojure">[<span style="color: #008b8b;">:find</span> ?count .
+ <span style="color: #008b8b;">:in</span> $ $since ?id
+ <span style="color: #008b8b;">:where</span> [$ ?e <span style="color: #008b8b;">:item/id</span> ?id]
+        [$since ?e <span style="color: #008b8b;">:item/count</span> ?count]]
+```
+
+
+
+Requires two databases as input. The item's id was transacted before the time range was defined by the *since* filter, so we look up the entity id from its domain id using the unfiltered database. We then join that to the *:item/count*from the filtered database.
+
+
+
+
+
+Use the Log API if Time is Your Most Selective Criterion
+--------------------------------------------------------
+
+If you are most interested in retrieving values by or at specific times, the [Log API](api/log.html) is the appropriate (and most efficient) way to do so. The log is ordered by transaction time and provides fast lookup by T.
+
+Transactions can be retrieved directly by *tx-range* in the [Clojure API](clojure/index.html#datomic.api/tx-range)or *txRange* in the [Java API](javadoc/datomic/Database.html#datoms-java.lang.Object-java.lang.Object...-). The log can also be used as an [input to query](api/log.html#log-in-query).
+
+The Log API provides access to the transaction id and data for each transaction. These can be retrieved from the map returned by *tx-range* as *:data* and *:t*, or retrieved in query using the helper functions *tx-ids* and *tx-data*.

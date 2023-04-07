@@ -1,0 +1,19 @@
+Schema Limits
+=============
+
+Schema limits
+-------------
+
+
+
+### Maximum number of schema elements
+
+Datomic enforces the total number of schema elements to be fewer than 2^20, which includes schema attributes, value types and partitions. Attempts to create more than 2^20 schema elements will fail.
+
+
+
+
+
+### Namespace restrictions
+
+The *:db* namespace, and all *:db.\** namespaces, are reserved for use by Datomic. With the exception of *:db/doc* and *:db/ident*, you should not use Datomic attributes on your own entities.

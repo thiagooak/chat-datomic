@@ -1,0 +1,34 @@
+Connecting
+==========
+
+You must first have a running [Peer Server](../client/peer-server.html) that is serving the database(s) you intend to connect to for analytics.
+
+Running Presto
+--------------
+
+Launch your Presto server from the root of the Datomic distribution with the following command. Note that Presto server requires Java 11 or later.
+
+```
+<pre class="src src-sh">bin/presto run --etc-dir=<path-to-your-etc-dir>
+```
+
+
+
+where `<path-to-your-etc-dir>` is the path to your [config etc](analytics-configuring.html#first-configuration) directory.
+
+Running `bin/presto -h` provides a list of the options that can be passed to the Presto launcher script.
+
+The Presto server must be restarted any time you change your catalog files, however changes to metaschema files are adopted dynamically (in 1 minute or less).
+
+See the [metaschema documentation](analytics-concepts.html#metaschemas) and [metaschema grammar](analytics-metaschema.html) for more information on writing your metaschema.
+
+You can view a [monitoring dashboard](analytics-troubleshooting.html#monitoring-server) by visiting `localhost:8989` in a web browser.
+
+The following pages include details on connecting to your analytics endpoint using a variety of tools:
+
+- [SQL CLI](analytics-cli.html)
+- [Metabase](analytics-metabase.html)
+- [R](analytics-R.html)
+- [Jupyter](analytics-jupyter.html)
+- [Superset](analytics-superset.html)
+- [Other Tools](analytics-other.html)
