@@ -167,7 +167,7 @@ Since HTTP Direct is a simple http request, it can be invoked from any platform 
 HTTP Direct Results displayed here
 ```
 
-<![CDATA[
+```
 function http_direct () {
     document.getElementById("http-direct-results").innerText = "HTTP Direct Invoked...";
 
@@ -198,7 +198,7 @@ function http_direct () {
 
 document.getElementById("http-direct-submit-form").addEventListener("submit", http_direct);
 
-]]>On success, this will return an EDN representation of inventory data for a particular type.
+```On success, this will return an EDN representation of inventory data for a particular type.
 
 > The above [XHR](https://developer.mozilla.org/en-US/docs/Web/API/XMLHttpRequest) request would normally require that [CORS for your API Gateway](https://docs.aws.amazon.com/apigateway/latest/developerguide/http-api-cors.html) is setup with an allowed Origin of "<https://docs.datomic.com>".
 > 

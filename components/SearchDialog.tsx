@@ -269,10 +269,10 @@ export function SearchDialog() {
                   rounded border border-slate-200 dark:border-slate-600
                   transition-colors"
                   onClick={(_) =>
-                    setSearch('Create a table called profiles with fields id, name, email')
+                    setSearch('How can I identify slow queries on Datomic?')
                   }
                 >
-                  Create a table called profiles with fields id, name, email
+                  How can I identify slow queries on Datomic?
                 </button>
               </div>
             </div>
