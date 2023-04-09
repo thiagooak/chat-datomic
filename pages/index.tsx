@@ -11,7 +11,7 @@ export default function Home() {
   return (
     <>
       <Head>
-        <title>Next.js OpenAI Template</title>
+        <title>Chat Datomic</title>
         <meta
           name="description"
           content="Next.js Template for building OpenAI applications with Supabase."
@@ -20,14 +20,15 @@ export default function Home() {
         <link rel="icon" href="/favicon.ico" />
       </Head>
       <main className={styles.main}>
+      <SearchDialog />
         <div className={styles.center}>
-          <SearchDialog />
+
         </div>
 
         <div className="py-8 w-full flex items-center justify-center space-x-6">
           <div className="opacity-75 transition hover:opacity-100 cursor-pointer">
-            <Link href="https://supabase.com" className="flex items-center justify-center">
-              <p className="text-base mr-2">Built by Supabase</p>
+            <Link href="https://github.com/supabase-community/nextjs-openai-doc-search" className="flex items-center justify-center">
+              <p className="text-base mr-2">Based on</p>
               <Image src={'/supabase.svg'} width="20" height="20" alt="Supabase logo" />
             </Link>
           </div>
@@ -35,18 +36,10 @@ export default function Home() {
           <div className="flex items-center justify-center space-x-4">
             <div className="opacity-75 transition hover:opacity-100 cursor-pointer">
               <Link
-                href="https://github.com/supabase/supabase"
+                href="https://github.com/thiagooak/chat-datomic"
                 className="flex items-center justify-center"
               >
                 <Image src={'/github.svg'} width="20" height="20" alt="Github logo" />
-              </Link>
-            </div>
-            <div className="opacity-75 transition hover:opacity-100 cursor-pointer">
-              <Link
-                href="https://twitter.com/supabase"
-                className="flex items-center justify-center"
-              >
-                <Image src={'/twitter.svg'} width="20" height="20" alt="Twitter logo" />
               </Link>
             </div>
           </div>
