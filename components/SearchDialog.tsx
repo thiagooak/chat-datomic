@@ -130,7 +130,7 @@ export function SearchDialog() {
 
       setIsLoading(true)
     },
-    [promptIndex, promptData]
+    [promptIndex]
   )
 
   const handleSubmit: React.FormEventHandler<HTMLFormElement> = (e) => {
@@ -145,7 +145,7 @@ export function SearchDialog() {
       <Dialog open={open}>
         <DialogContent className="sm:max-w-[850px] text-black">
           <DialogHeader>
-            <DialogTitle>Hi! I'm a OpenAI powered bot that read the public documentation of Datomic.</DialogTitle>
+            <DialogTitle>Hi! I&apos;m a OpenAI powered bot that read the public documentation of Datomic.</DialogTitle>
           </DialogHeader>
 
           <form onSubmit={handleSubmit}>
